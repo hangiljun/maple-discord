@@ -7,7 +7,6 @@ import {
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 
-// ── 타입 정의 ────────────────────────────────────────────
 interface Message {
   id: string
   text: string
@@ -31,6 +30,21 @@ interface UserProfile {
   mannerVoters?: string[]
 }
 
+// ── 별 표시 헬퍼 ─────────────────────────────────────────
+function StarBadge({ profile }: { profile: UserProfile | null }) {
+  if (!profile) return null
+  const count = [profile.emailVerified, profile.phoneVerified, profile.handsVerified].filter(Boolean).length
+  if (count === 0) return null
+  return (
+    <span className="text-yellow-400 text-[10px] leading-none" title={`인증 ${count}개`}>
+      {"⭐".repeat(count)}
+    </span>
+  )
+}
+
+// ── 프로필 캐시 (같은 uid 반복 조회 방지) ────────────────
+const profileCache = new Map<string, UserProfile>()
+
 // ── 프로필 팝업 ──────────────────────────────────────────
 function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUser }: {
   uid: string
@@ -41,59 +55,67 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
   currentUser: any
 }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!isGuest)
   const [voteLoading, setVoteLoading] = useState(false)
   const [voteMsg, setVoteMsg] = useState("")
   const popupRef = useRef<HTMLDivElement>(null)
 
-  const fetchProfile = useCallback(async () => {
-    if (isGuest) { setLoading(false); return }
-    try {
-      const snap = await getDoc(doc(db, "users", uid))
-      if (snap.exists()) setProfile(snap.data() as UserProfile)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
+  useEffect(() => {
+    if (isGuest) return
+    // 캐시 확인
+    if (profileCache.has(uid)) {
+      setProfile(profileCache.get(uid)!)
+      setLoading(false)
+      return
+    }
+    getDoc(doc(db, "users", uid))
+      .then(snap => {
+        if (snap.exists()) {
+          const data = snap.data() as UserProfile
+          profileCache.set(uid, data)
+          setProfile(data)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [uid, isGuest])
 
-  useEffect(() => {
-    fetchProfile()
-  }, [fetchProfile])
-
+  // 바깥 클릭 감지 - setTimeout으로 타이밍 문제 해결
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose()
     }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
+    // 약간 딜레이 줘서 열리자마자 닫히는 문제 방지
+    const timer = setTimeout(() => {
+      document.addEventListener("mousedown", handleClick)
+    }, 100)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("mousedown", handleClick)
+    }
   }, [onClose])
 
-  // 매너 투표
   const handleVote = async (type: "manner" | "badmanner") => {
-    if (!currentUser) return
-    if (voteLoading) return
-
-    const voterUid = currentUser.uid
+    if (!currentUser || voteLoading) return
     const voters = profile?.mannerVoters || []
-
-    if (voters.includes(voterUid)) {
+    if (voters.includes(currentUser.uid)) {
       setVoteMsg("이미 투표하셨어요!")
       setTimeout(() => setVoteMsg(""), 2000)
       return
     }
-
     setVoteLoading(true)
     try {
-      const userRef = doc(db, "users", uid)
-      await updateDoc(userRef, {
+      await updateDoc(doc(db, "users", uid), {
         mannerScore: increment(type === "manner" ? 1 : -1),
-        mannerVoters: arrayUnion(voterUid)
+        mannerVoters: arrayUnion(currentUser.uid)
       })
-      // 로컬 상태 업데이트
-      setProfile(prev => prev ? {
-        ...prev,
-        mannerScore: (prev.mannerScore || 0) + (type === "manner" ? 1 : -1),
-        mannerVoters: [...(prev.mannerVoters || []), voterUid]
-      } : prev)
+      const updated = {
+        ...profile,
+        mannerScore: (profile?.mannerScore || 0) + (type === "manner" ? 1 : -1),
+        mannerVoters: [...(profile?.mannerVoters || []), currentUser.uid]
+      }
+      setProfile(updated)
+      profileCache.set(uid, updated) // 캐시 업데이트
       setVoteMsg(type === "manner" ? "👍 매너 투표 완료!" : "👎 비매너 투표 완료!")
       setTimeout(() => setVoteMsg(""), 2000)
     } catch (e) {
@@ -104,24 +126,23 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
     }
   }
 
-  const left = Math.min(anchorPos.x, window.innerWidth - 240)
-  const top = Math.min(anchorPos.y, window.innerHeight - 300)
+  // 화면 밖으로 나가지 않게 위치 조정
+  const left = Math.min(anchorPos.x, window.innerWidth - 250)
+  const top = Math.min(anchorPos.y, window.innerHeight - 320)
 
   const alreadyVoted = currentUser && profile?.mannerVoters?.includes(currentUser.uid)
   const score = profile?.mannerScore || 0
   const scoreColor = score > 0 ? "text-green-600" : score < 0 ? "text-red-500" : "text-gray-400"
-  const scoreLabel = score > 0 ? `+${score}` : `${score}`
+  const certCount = profile ? [profile.emailVerified, profile.phoneVerified, profile.handsVerified].filter(Boolean).length : 0
 
   const Badge = ({ ok, label, icon }: { ok?: boolean; label: string; icon: string }) => (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
-      ok
-        ? "bg-green-50 text-green-700 border-green-200"
-        : "bg-gray-50 text-gray-400 border-gray-200"
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold ${
+      ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200"
     }`}>
       <span className="text-sm">{icon}</span>
       <span className="flex-1">{label}</span>
-      <span className={`text-xs font-black ${ok ? "text-green-600" : "text-gray-300"}`}>
-        {ok ? "인증 ✓" : "미인증"}
+      <span className={`font-black ${ok ? "text-green-600" : "text-gray-300"}`}>
+        {ok ? "✓ 완료" : "미인증"}
       </span>
     </div>
   )
@@ -131,14 +152,15 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
       ref={popupRef}
       style={{ position: "fixed", left, top, zIndex: 9999 }}
       className="w-60 bg-white border-2 border-[#FFD8A8] rounded-2xl shadow-2xl overflow-hidden"
+      // 팝업 클릭이 바깥으로 전파되지 않게
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
     >
       {/* 헤더 */}
       <div className="bg-[#FFF4E6] px-4 py-3 flex justify-between items-center border-b-2 border-[#FFD8A8]">
         <span className="font-black text-[#A64D13] text-sm">유저 정보</span>
-        <button
-          onClick={onClose}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-[#FFD8A8] hover:bg-[#FFB347] text-[#A64D13] text-xs font-black transition-colors"
-        >
+        <button onClick={onClose}
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-[#FFD8A8] hover:bg-[#FFB347] text-[#A64D13] text-xs font-black transition-colors">
           ✕
         </button>
       </div>
@@ -149,7 +171,6 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
             <div className="w-6 h-6 border-2 border-[#E67E22] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : isGuest ? (
-          /* 비회원 */
           <div className="text-center py-3">
             <div className="text-4xl mb-2">👤</div>
             <p className="font-black text-sm text-[#5D4037]">{displayName}</p>
@@ -159,14 +180,21 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
             <p className="text-[10px] text-gray-400 mt-2">인증 정보가 없어요</p>
           </div>
         ) : profile ? (
-          /* 회원 */
           <div className="space-y-3">
-            {/* 프로필 */}
+            {/* 프로필 헤더 */}
             <div className="text-center pb-3 border-b border-[#FFE8CC]">
               <div className="text-3xl mb-1">🍁</div>
               <p className="font-black text-sm text-[#5D4037]">{profile.nickname || displayName}</p>
+              {/* 별 표시 */}
+              {certCount > 0 && (
+                <div className="flex justify-center gap-0.5 mt-1">
+                  {Array.from({ length: certCount }).map((_, i) => (
+                    <span key={i} className="text-base">⭐</span>
+                  ))}
+                </div>
+              )}
               {profile.server && (
-                <span className="text-[11px] text-[#E67E22] font-bold bg-[#FFF4E6] px-2 py-0.5 rounded-full mt-1 inline-block">
+                <span className="text-[11px] text-[#E67E22] font-bold bg-[#FFF4E6] px-2 py-0.5 rounded-full mt-1.5 inline-block">
                   🗺 {profile.server} 서버
                 </span>
               )}
@@ -181,52 +209,40 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
             </div>
 
             {/* 매너 점수 */}
-            <div className="pb-1 border-t border-[#FFE8CC] pt-3">
-              <div className="flex items-center justify-between mb-2">
+            <div className="border-t border-[#FFE8CC] pt-3 space-y-2">
+              <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">매너 점수</p>
-                <span className={`text-lg font-black ${scoreColor}`}>{scoreLabel}점</span>
+                <span className={`text-lg font-black ${scoreColor}`}>
+                  {score > 0 ? `+${score}` : score}점
+                </span>
               </div>
-
-              {/* 투표 버튼 - 누구나 볼 수 있지만 회원만 클릭 가능 */}
               <div className="flex gap-2">
                 <button
                   onClick={() => handleVote("manner")}
                   disabled={!currentUser || !!alreadyVoted || voteLoading}
-                  title={!currentUser ? "회원만 투표할 수 있어요" : alreadyVoted ? "이미 투표했어요" : "매너 투표"}
+                  title={!currentUser ? "회원만 투표 가능" : alreadyVoted ? "이미 투표함" : ""}
                   className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1 ${
                     !currentUser || alreadyVoted
                       ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed"
                       : "bg-green-50 text-green-700 border-green-300 hover:bg-green-100 active:scale-95 cursor-pointer"
-                  }`}
-                >
+                  }`}>
                   👍 매너
                 </button>
                 <button
                   onClick={() => handleVote("badmanner")}
                   disabled={!currentUser || !!alreadyVoted || voteLoading}
-                  title={!currentUser ? "회원만 투표할 수 있어요" : alreadyVoted ? "이미 투표했어요" : "비매너 투표"}
+                  title={!currentUser ? "회원만 투표 가능" : alreadyVoted ? "이미 투표함" : ""}
                   className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1 ${
                     !currentUser || alreadyVoted
                       ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed"
                       : "bg-red-50 text-red-600 border-red-300 hover:bg-red-100 active:scale-95 cursor-pointer"
-                  }`}
-                >
+                  }`}>
                   👎 비매너
                 </button>
               </div>
-
-              {/* 비회원 안내 */}
-              {!currentUser && (
-                <p className="text-[10px] text-gray-400 text-center mt-1.5">로그인 후 투표할 수 있어요</p>
-              )}
-              {alreadyVoted && (
-                <p className="text-[10px] text-gray-400 text-center mt-1.5">이미 투표한 유저예요</p>
-              )}
-
-              {/* 투표 결과 메시지 */}
-              {voteMsg && (
-                <p className="text-[11px] font-bold text-center mt-1.5 text-[#E67E22]">{voteMsg}</p>
-              )}
+              {!currentUser && <p className="text-[10px] text-gray-400 text-center">로그인 후 투표할 수 있어요</p>}
+              {alreadyVoted && <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>}
+              {voteMsg && <p className="text-[11px] font-bold text-center text-[#E67E22]">{voteMsg}</p>}
             </div>
           </div>
         ) : (
@@ -252,8 +268,11 @@ function ContextMenu({ pos, targetMsg, currentUid, onClose, onViewProfile, onSta
     const handleClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) onClose()
     }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
+    const timer = setTimeout(() => document.addEventListener("mousedown", handleClick), 50)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("mousedown", handleClick)
+    }
   }, [onClose])
 
   if (targetMsg.uid === currentUid) return null
@@ -266,17 +285,16 @@ function ContextMenu({ pos, targetMsg, currentUid, onClose, onViewProfile, onSta
       ref={menuRef}
       style={{ position: "fixed", left, top, zIndex: 9999 }}
       className="w-44 bg-white border-2 border-[#FFD8A8] rounded-xl shadow-2xl overflow-hidden"
+      onMouseDown={(e) => e.stopPropagation()}
     >
       <button
         onClick={() => { onViewProfile(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors flex items-center gap-2"
-      >
+        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors flex items-center gap-2">
         🔍 정보 보기
       </button>
       <button
         onClick={() => { onStartDM(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors border-t border-[#FFD8A8] flex items-center gap-2"
-      >
+        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors border-t border-[#FFD8A8] flex items-center gap-2">
         💬 1:1 대화하기
       </button>
     </div>
@@ -289,7 +307,7 @@ export default function ChatRoom({ room = "main_trade" }) {
   const [newMessage, setNewMessage] = useState("")
   const [sendType, setSendType] = useState<"일반" | "삽니다" | "팝니다">("일반")
   const [user, setUser] = useState<any>(null)
-  const [userNickname, setUserNickname] = useState<string>("")  // ← Firestore nickname
+  const [userNickname, setUserNickname] = useState<string>("")
   const [guestName, setGuestName] = useState("")
   const [profilePopup, setProfilePopup] = useState<{
     uid: string; displayName: string; isGuest: boolean; pos: { x: number; y: number }
@@ -299,7 +317,6 @@ export default function ChatRoom({ room = "main_trade" }) {
   } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // ── 로그인 + Firestore nickname 로드 ──
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
@@ -310,10 +327,7 @@ export default function ChatRoom({ room = "main_trade" }) {
             const data = snap.data()
             setUserNickname(data.nickname || u.email?.split("@")[0] || "모험가")
           }
-        } catch (e) {
-          console.error(e)
-          setUserNickname(u.email?.split("@")[0] || "모험가")
-        }
+        } catch { setUserNickname(u.email?.split("@")[0] || "모험가") }
       } else {
         setUserNickname("")
       }
@@ -321,13 +335,11 @@ export default function ChatRoom({ room = "main_trade" }) {
     return () => unsub()
   }, [])
 
-  // ── 비회원 닉네임 복원 ──
   useEffect(() => {
     const saved = localStorage.getItem("maple_guest_name")
     if (saved) setGuestName(saved)
   }, [])
 
-  // ── Firestore 실시간 리스너 ──
   useEffect(() => {
     const q = query(
       collection(db, "chats"),
@@ -350,7 +362,6 @@ export default function ChatRoom({ room = "main_trade" }) {
     return () => unsub()
   }, [room])
 
-  // ── 메시지 전송 ──
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim()) return
@@ -367,28 +378,50 @@ export default function ChatRoom({ room = "main_trade" }) {
         msgType: sendType,
         isGuest: !user,
         uid: user?.uid || "guest_" + Math.random().toString(36).substring(7),
-        // ✅ nickname 필드 우선 사용
         displayName: user ? userNickname : guestName.trim(),
       })
     } catch (err) { console.error("전송 실패:", err) }
   }
 
+  // ── 닉네임 클릭 → 바로 프로필 팝업 ──
   const handleNameClick = (e: React.MouseEvent, msg: Message) => {
+    e.preventDefault()
     e.stopPropagation()
     if (msg.uid === user?.uid) return
     setContextMenu(null)
-    setProfilePopup({ uid: msg.uid, displayName: msg.displayName, isGuest: msg.isGuest, pos: { x: e.clientX, y: e.clientY } })
+    setProfilePopup({
+      uid: msg.uid,
+      displayName: msg.displayName,
+      isGuest: msg.isGuest,
+      pos: { x: e.clientX, y: e.clientY }
+    })
   }
 
+  // ── 우클릭 → 컨텍스트 메뉴 ──
   const handleContextMenu = (e: React.MouseEvent, msg: Message) => {
-    e.preventDefault(); e.stopPropagation()
+    e.preventDefault()
+    e.stopPropagation()
     if (msg.uid === user?.uid) return
+    // 기존 팝업 닫고 메뉴 열기
     setProfilePopup(null)
     setContextMenu({ msg, pos: { x: e.clientX, y: e.clientY } })
   }
 
+  // ── 정보 보기: 컨텍스트 메뉴 닫고 팝업 열기 ──
+  const handleViewProfile = useCallback((msg: Message, pos: { x: number; y: number }) => {
+    setContextMenu(null)
+    // 다음 프레임에서 열어야 바깥 클릭 이벤트와 충돌 안 함
+    requestAnimationFrame(() => {
+      setProfilePopup({
+        uid: msg.uid,
+        displayName: msg.displayName,
+        isGuest: msg.isGuest,
+        pos
+      })
+    })
+  }, [])
+
   const handleStartDM = (targetMsg: Message) => {
-    // TODO: DM 페이지 연결
     alert(`${targetMsg.displayName}님과 1:1 대화 - 준비 중!`)
   }
 
@@ -403,7 +436,7 @@ export default function ChatRoom({ room = "main_trade" }) {
       className="flex flex-col h-[650px] bg-white border-4 border-[#FFD8A8] rounded-[35px] overflow-hidden shadow-xl"
       onClick={() => { setProfilePopup(null); setContextMenu(null) }}
     >
-      {/* 상단 타이틀 */}
+      {/* 타이틀 */}
       <div className="bg-[#FFF4E6] border-b-4 border-[#FFD8A8] px-5 py-3 flex items-center gap-2">
         <span className="text-lg">🍁</span>
         <span className="font-black text-[#A64D13] text-sm">메이플랜드 거래 채팅</span>
@@ -416,20 +449,25 @@ export default function ChatRoom({ room = "main_trade" }) {
           <div className="text-center py-20 text-[#FFD8A8] font-bold">아직 메시지가 없어요!</div>
         )}
         {messages.map((msg) => (
-          <div
-            key={msg.id}
+          <div key={msg.id}
             className={`flex flex-col ${msg.uid === user?.uid ? "items-end" : "items-start"}`}
-            onContextMenu={(e) => handleContextMenu(e, msg)}
-          >
+            onContextMenu={(e) => handleContextMenu(e, msg)}>
+            
+            {/* 닉네임 + 별 + 시간 */}
             <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#A64D13]">
               <span
                 className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:underline" : ""}`}
-                onClick={(e) => handleNameClick(e, msg)}
-              >
+                onClick={(e) => handleNameClick(e, msg)}>
                 {msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
               </span>
+              {/* 채팅창에서 별 표시 - 회원만, 프로필 캐시 있으면 표시 */}
+              {!msg.isGuest && profileCache.has(msg.uid) && (
+                <StarBadge profile={profileCache.get(msg.uid)!} />
+              )}
               <span className="text-[#FFB347] font-normal">{msg.time}</span>
             </div>
+
+            {/* 메시지 버블 */}
             <div className={`p-3.5 rounded-2xl text-sm font-bold border-2 max-w-[80%] ${
               msg.msgType === "삽니다" ? "border-blue-300 bg-blue-50 text-blue-700" :
               msg.msgType === "팝니다" ? "border-orange-300 bg-orange-50 text-orange-700" :
@@ -450,19 +488,16 @@ export default function ChatRoom({ room = "main_trade" }) {
       </div>
 
       {/* 입력창 */}
-      <form
-        onSubmit={sendMessage}
+      <form onSubmit={sendMessage}
         className="p-4 bg-[#FFF4E6] border-t-4 border-[#FFD8A8] flex flex-col gap-2"
-        onClick={(e) => e.stopPropagation()}
-      >
+        onClick={(e) => e.stopPropagation()}>
         {!user && (
           <input
             className="w-full p-2.5 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] bg-white"
             placeholder="닉네임을 입력하세요 (비회원)"
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
-            maxLength={20}
-          />
+            maxLength={20} />
         )}
         {user && (
           <div className="text-xs font-bold text-[#A64D13] px-1">
@@ -470,11 +505,9 @@ export default function ChatRoom({ room = "main_trade" }) {
           </div>
         )}
         <div className="flex gap-2 items-center">
-          <select
-            value={sendType}
+          <select value={sendType}
             onChange={(e) => setSendType(e.target.value as "일반" | "삽니다" | "팝니다")}
-            className={`p-3 rounded-xl border-2 font-black text-sm outline-none cursor-pointer transition-colors ${typeStyle[sendType]}`}
-          >
+            className={`p-3 rounded-xl border-2 font-black text-sm outline-none cursor-pointer transition-colors ${typeStyle[sendType]}`}>
             <option value="일반">일반</option>
             <option value="삽니다">🔵 삽니다</option>
             <option value="팝니다">🟠 팝니다</option>
@@ -483,8 +516,7 @@ export default function ChatRoom({ room = "main_trade" }) {
             className="flex-1 p-3 rounded-2xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22]"
             placeholder="거래 내용을 입력하세요!"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-          />
+            onChange={(e) => setNewMessage(e.target.value)} />
           <button className="bg-[#E67E22] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap">
             전송
           </button>
@@ -499,8 +531,7 @@ export default function ChatRoom({ room = "main_trade" }) {
           isGuest={profilePopup.isGuest}
           anchorPos={profilePopup.pos}
           onClose={() => setProfilePopup(null)}
-          currentUser={user}
-        />
+          currentUser={user} />
       )}
 
       {/* 우클릭 메뉴 */}
@@ -510,14 +541,8 @@ export default function ChatRoom({ room = "main_trade" }) {
           targetMsg={contextMenu.msg}
           currentUid={user?.uid || null}
           onClose={() => setContextMenu(null)}
-          onViewProfile={() => setProfilePopup({
-            uid: contextMenu.msg.uid,
-            displayName: contextMenu.msg.displayName,
-            isGuest: contextMenu.msg.isGuest,
-            pos: contextMenu.pos
-          })}
-          onStartDM={() => handleStartDM(contextMenu.msg)}
-        />
+          onViewProfile={() => handleViewProfile(contextMenu.msg, contextMenu.pos)}
+          onStartDM={() => handleStartDM(contextMenu.msg)} />
       )}
     </div>
   )
