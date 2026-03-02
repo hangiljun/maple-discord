@@ -15,21 +15,24 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         await createUserWithEmailAndPassword(auth, email, password)
-        alert("회원가입 성공! 메인 화면으로 이동합니다.")
+        alert("회원가입 성공! 환영합니다.")
       } else {
         await signInWithEmailAndPassword(auth, email, password)
         alert("로그인 성공!")
       }
       router.push("/")
     } catch (error: any) {
-      console.error("Firebase 상세 에러:", error)
+      console.error("Firebase Error:", error.code)
       
-      if (error.code === 'auth/network-request-failed') {
-        alert("네트워크 에러: Firebase 콘솔의 '승인된 도메인'에 www.maplediscord.com이 정확히 등록되었는지, 그리고 인터넷 연결을 확인해주세요.")
+      // 사용자 친절 에러 메시지 처리
+      if (error.code === 'auth/invalid-credential') {
+        alert("이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해주세요.")
       } else if (error.code === 'auth/email-already-in-use') {
         alert("이미 사용 중인 이메일입니다.")
       } else if (error.code === 'auth/weak-password') {
-        alert("비밀번호는 6자리 이상이어야 합니다.")
+        alert("비밀번호는 최소 6자리 이상이어야 합니다.")
+      } else if (error.code === 'auth/network-request-failed') {
+        alert("네트워크 연결을 확인해주세요.")
       } else {
         alert("에러 발생: " + error.message)
       }
