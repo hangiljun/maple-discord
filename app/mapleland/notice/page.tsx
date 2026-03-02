@@ -1,11 +1,12 @@
-// app/mapleland/notice/page.tsx
 "use client"
 
-export default function NoticePage() {
+export default function MaplelandNoticePage() {
   return (
-    <div className="p-8 text-white">
-      <h1 className="text-2xl font-bold mb-4">메이플랜드 공지사항</h1>
-      <p className="text-gray-400">새로운 소식을 준비 중입니다.</p>
-    </div>
+    <main className="max-w-5xl mx-auto p-8 text-white">
+      <h1 className="text-3xl font-bold mb-6">메이플랜드 공지사항</h1>
+      <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+        <p className="text-gray-400">등록된 공지사항이 없습니다.</p>
+      </div>
+    </main>
   )
 }
