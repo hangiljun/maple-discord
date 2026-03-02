@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { auth } from "@/lib/firebase" 
+import { auth } from "@/lib/firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
 import { useRouter } from "next/navigation"
 
@@ -22,7 +22,13 @@ export default function LoginPage() {
       }
       router.push("/")
     } catch (error: any) {
-      alert("에러: " + error.message)
+      console.error("Firebase 상세 에러:", error)
+      // 네트워크 에러일 경우 구체적인 안내
+      if (error.code === 'auth/network-request-failed') {
+        alert("네트워크 연결이 불안정하거나 Firebase에서 해당 도메인을 차단했습니다. 승인된 도메인 설정을 확인해주세요.")
+      } else {
+        alert("에러: " + error.message)
+      }
     }
   }
 
@@ -33,19 +39,15 @@ export default function LoginPage() {
       </h1>
       <form onSubmit={handleAuth} className="space-y-4">
         <input 
-          type="email" 
-          placeholder="이메일" 
-          className="w-full bg-gray-900 border border-gray-600 p-3 rounded text-white"
+          type="email" placeholder="이메일" className="w-full bg-gray-900 border border-gray-600 p-3 rounded"
           value={email} onChange={(e) => setEmail(e.target.value)} required 
         />
         <input 
-          type="password" 
-          placeholder="비밀번호" 
-          className="w-full bg-gray-900 border border-gray-600 p-3 rounded text-white"
+          type="password" placeholder="비밀번호" className="w-full bg-gray-900 border border-gray-600 p-3 rounded"
           value={password} onChange={(e) => setPassword(e.target.value)} required 
         />
         <button className="w-full bg-orange-600 font-bold py-3 rounded">
-          {isRegister ? "가입" : "로그인"}
+          {isRegister ? "지금 가입하기" : "로그인하기"}
         </button>
       </form>
       <button onClick={() => setIsRegister(!isRegister)} className="w-full mt-4 text-sm text-gray-400">
