@@ -7,22 +7,22 @@ import { doc, onSnapshot } from 'firebase/firestore'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
-  const [isVerified, setIsVerified] = useState(false)
+  const [userData, setUserData] = useState<any>(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
       if (currentUser) {
-        // Firestore에서 실시간으로 인증 상태 감시
+        // 유저 데이터(닉네임, 인증여부 등) 실시간 감시
         const userRef = doc(db, "users", currentUser.uid)
         const unsubDoc = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
-            setIsVerified(docSnap.data().verified === true)
+            setUserData(docSnap.data())
           }
         })
         return () => unsubDoc()
       } else {
-        setIsVerified(false)
+        setUserData(null)
       }
     })
     return () => unsubscribe()
@@ -74,19 +74,20 @@ export default function Navbar() {
         </ul>
       </div>
 
-      {/* 오른쪽 유저 세션 */}
+      {/* 오른쪽 유저 세션 (닉네임 클릭 시 마이페이지 이동) */}
       <div className="flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3 bg-gray-800 px-4 py-1.5 rounded-full border border-gray-700">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-300 font-semibold">{user.email?.split('@')[0]}님</span>
-              {/* ✅ 인증 마크 표시 섹션 */}
-              {isVerified && (
+            <Link href="/profile" className="flex items-center gap-1.5 hover:text-orange-400 transition">
+              <span className="text-xs text-gray-300 font-semibold cursor-pointer">
+                {userData?.nickname || user.email?.split('@')[0]}님
+              </span>
+              {userData?.verified && (
                 <span className="bg-blue-500 text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold" title="인증된 사용자">
                   ✓
                 </span>
               )}
-            </div>
+            </Link>
             <button 
               onClick={handleLogout}
               className="text-xs font-bold text-orange-500 hover:text-orange-400 transition"
