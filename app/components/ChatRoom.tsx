@@ -1,11 +1,13 @@
 "use client"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, addDoc, query, orderBy, onSnapshot,
   serverTimestamp, where, limit, doc, getDoc, updateDoc, arrayUnion, increment
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
+import { getOrCreateDMRoom } from "@/lib/dm"
 
 interface Message {
   id: string
@@ -42,7 +44,7 @@ function StarBadge({ profile }: { profile: UserProfile | null }) {
   )
 }
 
-// ── 프로필 캐시 (같은 uid 반복 조회 방지) ────────────────
+// ── 프로필 캐시 ───────────────────────────────────────────
 const profileCache = new Map<string, UserProfile>()
 
 // ── 프로필 팝업 ──────────────────────────────────────────
@@ -62,7 +64,6 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
 
   useEffect(() => {
     if (isGuest) return
-    // 캐시 확인
     if (profileCache.has(uid)) {
       setProfile(profileCache.get(uid)!)
       setLoading(false)
@@ -80,15 +81,11 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
       .finally(() => setLoading(false))
   }, [uid, isGuest])
 
-  // 바깥 클릭 감지 - setTimeout으로 타이밍 문제 해결
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose()
     }
-    // 약간 딜레이 줘서 열리자마자 닫히는 문제 방지
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClick)
-    }, 100)
+    const timer = setTimeout(() => document.addEventListener("mousedown", handleClick), 100)
     return () => {
       clearTimeout(timer)
       document.removeEventListener("mousedown", handleClick)
@@ -115,7 +112,7 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
         mannerVoters: [...(profile?.mannerVoters || []), currentUser.uid]
       }
       setProfile(updated)
-      profileCache.set(uid, updated) // 캐시 업데이트
+      profileCache.set(uid, updated)
       setVoteMsg(type === "manner" ? "👍 매너 투표 완료!" : "👎 비매너 투표 완료!")
       setTimeout(() => setVoteMsg(""), 2000)
     } catch (e) {
@@ -126,14 +123,14 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
     }
   }
 
-  // 화면 밖으로 나가지 않게 위치 조정
   const left = Math.min(anchorPos.x, window.innerWidth - 250)
   const top = Math.min(anchorPos.y, window.innerHeight - 320)
-
   const alreadyVoted = currentUser && profile?.mannerVoters?.includes(currentUser.uid)
   const score = profile?.mannerScore || 0
   const scoreColor = score > 0 ? "text-green-600" : score < 0 ? "text-red-500" : "text-gray-400"
-  const certCount = profile ? [profile.emailVerified, profile.phoneVerified, profile.handsVerified].filter(Boolean).length : 0
+  const certCount = profile
+    ? [profile.emailVerified, profile.phoneVerified, profile.handsVerified].filter(Boolean).length
+    : 0
 
   const Badge = ({ ok, label, icon }: { ok?: boolean; label: string; icon: string }) => (
     <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold ${
@@ -152,11 +149,9 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
       ref={popupRef}
       style={{ position: "fixed", left, top, zIndex: 9999 }}
       className="w-60 bg-white border-2 border-[#FFD8A8] rounded-2xl shadow-2xl overflow-hidden"
-      // 팝업 클릭이 바깥으로 전파되지 않게
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {/* 헤더 */}
       <div className="bg-[#FFF4E6] px-4 py-3 flex justify-between items-center border-b-2 border-[#FFD8A8]">
         <span className="font-black text-[#A64D13] text-sm">유저 정보</span>
         <button onClick={onClose}
@@ -181,11 +176,9 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
           </div>
         ) : profile ? (
           <div className="space-y-3">
-            {/* 프로필 헤더 */}
             <div className="text-center pb-3 border-b border-[#FFE8CC]">
               <div className="text-3xl mb-1">🍁</div>
               <p className="font-black text-sm text-[#5D4037]">{profile.nickname || displayName}</p>
-              {/* 별 표시 */}
               {certCount > 0 && (
                 <div className="flex justify-center gap-0.5 mt-1">
                   {Array.from({ length: certCount }).map((_, i) => (
@@ -200,7 +193,6 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
               )}
             </div>
 
-            {/* 인증 뱃지 */}
             <div className="space-y-1.5">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">인증 내역</p>
               <Badge ok={profile.emailVerified} label="이메일" icon="📧" />
@@ -208,7 +200,6 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
               <Badge ok={profile.handsVerified} label="손 인증" icon="🤝" />
             </div>
 
-            {/* 매너 점수 */}
             <div className="border-t border-[#FFE8CC] pt-3 space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">매너 점수</p>
@@ -240,9 +231,15 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
                   👎 비매너
                 </button>
               </div>
-              {!currentUser && <p className="text-[10px] text-gray-400 text-center">로그인 후 투표할 수 있어요</p>}
-              {alreadyVoted && <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>}
-              {voteMsg && <p className="text-[11px] font-bold text-center text-[#E67E22]">{voteMsg}</p>}
+              {!currentUser && (
+                <p className="text-[10px] text-gray-400 text-center">로그인 후 투표할 수 있어요</p>
+              )}
+              {alreadyVoted && (
+                <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>
+              )}
+              {voteMsg && (
+                <p className="text-[11px] font-bold text-center text-[#E67E22]">{voteMsg}</p>
+              )}
             </div>
           </div>
         ) : (
@@ -303,12 +300,14 @@ function ContextMenu({ pos, targetMsg, currentUid, onClose, onViewProfile, onSta
 
 // ── 메인 ChatRoom ─────────────────────────────────────────
 export default function ChatRoom({ room = "main_trade" }) {
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [sendType, setSendType] = useState<"일반" | "삽니다" | "팝니다">("일반")
   const [user, setUser] = useState<any>(null)
   const [userNickname, setUserNickname] = useState<string>("")
   const [guestName, setGuestName] = useState("")
+  const [dmLoading, setDmLoading] = useState(false)
   const [profilePopup, setProfilePopup] = useState<{
     uid: string; displayName: string; isGuest: boolean; pos: { x: number; y: number }
   } | null>(null)
@@ -317,6 +316,7 @@ export default function ChatRoom({ room = "main_trade" }) {
   } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // ── 로그인 + 닉네임 로드 ──
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
@@ -327,7 +327,9 @@ export default function ChatRoom({ room = "main_trade" }) {
             const data = snap.data()
             setUserNickname(data.nickname || u.email?.split("@")[0] || "모험가")
           }
-        } catch { setUserNickname(u.email?.split("@")[0] || "모험가") }
+        } catch {
+          setUserNickname(u.email?.split("@")[0] || "모험가")
+        }
       } else {
         setUserNickname("")
       }
@@ -335,11 +337,13 @@ export default function ChatRoom({ room = "main_trade" }) {
     return () => unsub()
   }, [])
 
+  // ── 비회원 닉네임 복원 ──
   useEffect(() => {
     const saved = localStorage.getItem("maple_guest_name")
     if (saved) setGuestName(saved)
   }, [])
 
+  // ── Firestore 실시간 리스너 ──
   useEffect(() => {
     const q = query(
       collection(db, "chats"),
@@ -362,6 +366,7 @@ export default function ChatRoom({ room = "main_trade" }) {
     return () => unsub()
   }, [room])
 
+  // ── 메시지 전송 ──
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim()) return
@@ -383,7 +388,7 @@ export default function ChatRoom({ room = "main_trade" }) {
     } catch (err) { console.error("전송 실패:", err) }
   }
 
-  // ── 닉네임 클릭 → 바로 프로필 팝업 ──
+  // ── 닉네임 클릭 → 프로필 팝업 ──
   const handleNameClick = (e: React.MouseEvent, msg: Message) => {
     e.preventDefault()
     e.stopPropagation()
@@ -402,15 +407,13 @@ export default function ChatRoom({ room = "main_trade" }) {
     e.preventDefault()
     e.stopPropagation()
     if (msg.uid === user?.uid) return
-    // 기존 팝업 닫고 메뉴 열기
     setProfilePopup(null)
     setContextMenu({ msg, pos: { x: e.clientX, y: e.clientY } })
   }
 
-  // ── 정보 보기: 컨텍스트 메뉴 닫고 팝업 열기 ──
+  // ── 정보 보기 ──
   const handleViewProfile = useCallback((msg: Message, pos: { x: number; y: number }) => {
     setContextMenu(null)
-    // 다음 프레임에서 열어야 바깥 클릭 이벤트와 충돌 안 함
     requestAnimationFrame(() => {
       setProfilePopup({
         uid: msg.uid,
@@ -421,9 +424,31 @@ export default function ChatRoom({ room = "main_trade" }) {
     })
   }, [])
 
-  const handleStartDM = (targetMsg: Message) => {
-    alert(`${targetMsg.displayName}님과 1:1 대화 - 준비 중!`)
-  }
+  // ── 1:1 대화 시작 → DM 방 생성 후 /messages 이동 ──
+  const handleStartDM = useCallback(async (targetMsg: Message) => {
+    if (dmLoading) return
+    setDmLoading(true)
+
+    // 내 uid/이름 결정 (비회원도 임시 uid 사용)
+    const myUid = user?.uid || (() => {
+      const saved = localStorage.getItem("maple_guest_uid")
+      if (saved) return saved
+      const newUid = "guest_" + Math.random().toString(36).substring(7)
+      localStorage.setItem("maple_guest_uid", newUid)
+      return newUid
+    })()
+    const myName = user ? userNickname : (guestName || "비회원")
+
+    try {
+      await getOrCreateDMRoom(myUid, myName, targetMsg.uid, targetMsg.displayName)
+      router.push("/messages")
+    } catch (err) {
+      console.error("DM 시작 실패:", err)
+      alert("DM 시작에 실패했어요. 다시 시도해주세요.")
+    } finally {
+      setDmLoading(false)
+    }
+  }, [user, userNickname, guestName, dmLoading, router])
 
   const typeStyle = {
     일반: "bg-[#FFF4E6] text-[#A64D13] border-[#FFD8A8]",
@@ -452,7 +477,7 @@ export default function ChatRoom({ room = "main_trade" }) {
           <div key={msg.id}
             className={`flex flex-col ${msg.uid === user?.uid ? "items-end" : "items-start"}`}
             onContextMenu={(e) => handleContextMenu(e, msg)}>
-            
+
             {/* 닉네임 + 별 + 시간 */}
             <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#A64D13]">
               <span
@@ -460,7 +485,6 @@ export default function ChatRoom({ room = "main_trade" }) {
                 onClick={(e) => handleNameClick(e, msg)}>
                 {msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
               </span>
-              {/* 채팅창에서 별 표시 - 회원만, 프로필 캐시 있으면 표시 */}
               {!msg.isGuest && profileCache.has(msg.uid) && (
                 <StarBadge profile={profileCache.get(msg.uid)!} />
               )}
@@ -522,6 +546,16 @@ export default function ChatRoom({ room = "main_trade" }) {
           </button>
         </div>
       </form>
+
+      {/* DM 로딩 오버레이 */}
+      {dmLoading && (
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[35px] z-50">
+          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border-2 border-[#FFD8A8]">
+            <div className="w-5 h-5 border-2 border-[#E67E22] border-t-transparent rounded-full animate-spin" />
+            <span className="font-black text-sm text-[#A64D13]">대화방 연결 중...</span>
+          </div>
+        </div>
+      )}
 
       {/* 프로필 팝업 */}
       {profilePopup && (
