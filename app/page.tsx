@@ -3,8 +3,6 @@ import ChatRoom from "./components/ChatRoom"
 
 export default function Home() {
   return (
-    // 💡 Navbar 코드를 여기서 완전히 삭제했습니다. 
-    // 이제 layout.tsx에 있는 상단바 하나만 정상적으로 보입니다.
     <div className="min-h-screen bg-[#FFF9F2] p-6 md:p-12">
       <div className="max-w-5xl mx-auto space-y-10">
         
@@ -30,7 +28,8 @@ export default function Home() {
             </h2>
             <p className="text-[#A64D13] font-bold text-sm">원하는 거래 카테고리를 선택해 보세요.</p>
           </div>
-          <ChatRoom room="main_trade" />
+          {/* ✅ main_trade → mapleland_trade 로 변경 */}
+          <ChatRoom room="mapleland_trade" />
         </div>
 
       </div>
