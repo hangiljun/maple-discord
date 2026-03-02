@@ -10,17 +10,18 @@ export default function Navbar() {
   const [userData, setUserData] = useState<any>(null)
 
   useEffect(() => {
+    // 🔐 로그인 상태 감지
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
       if (currentUser) {
-        // 유저 데이터(닉네임, 인증여부 등) 실시간 감시
+        // 🔥 실시간 유저 데이터(닉네임, 인증여부) 동기화
         const userRef = doc(db, "users", currentUser.uid)
         const unsubDoc = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             setUserData(docSnap.data())
           }
         })
-        return () => unsubDoc()
+        return () => unsubDoc() // 리스너 해제
       } else {
         setUserData(null)
       }
@@ -31,76 +32,60 @@ export default function Navbar() {
   const handleLogout = async () => {
     if (confirm("로그아웃 하시겠습니까?")) {
       await signOut(auth)
-      alert("로그아웃 되었습니다.")
     }
   }
 
   return (
-    <nav className="flex items-center justify-between p-4 bg-[#1a1a1a] border-b border-gray-800 text-white sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 bg-white border-b-4 border-[#FFD8A8] px-6 py-4 flex justify-between items-center shadow-sm">
       
-      {/* 왼쪽 메뉴 그룹 */}
+      {/* 🍁 로고 및 메인 메뉴 */}
       <div className="flex items-center gap-10">
-        <Link href="/" className="text-xl font-bold text-orange-500 tracking-tighter hover:opacity-80 transition">
-          MAPLE DISCORD
+        <Link href="/" className="text-2xl font-black text-[#E67E22] flex items-center gap-2 tracking-tighter hover:scale-105 transition-transform">
+          🍁 <span className="hidden sm:inline">MAPLE DISCORD</span>
         </Link>
         
-        <ul className="flex gap-8 items-center text-sm font-medium">
-          <li className="hover:text-red-400 transition font-bold text-red-500 text-base">
-            <Link href="/report">사기꾼 제보</Link>
-          </li>
-          <li className="hover:text-orange-400 transition font-bold text-orange-200">
-            <Link href="/mapleland">메이플랜드 거래방</Link>
-          </li>
-
-          {/* 메이플스토리 드롭다운 */}
-          <li className="group relative cursor-pointer hover:text-orange-400 transition text-gray-300">
-            메이플스토리
-            <ul className="absolute hidden group-hover:block bg-[#252525] p-2 rounded shadow-2xl top-full left-0 w-32 mt-2 border border-gray-700">
-              <li className="p-2 hover:bg-gray-800 rounded text-xs text-white">
-                <Link href="/maplestory/notice">공지사항</Link>
-              </li>
-            </ul>
-          </li>
-
-          {/* 메이플랜드 드롭다운 */}
-          <li className="group relative cursor-pointer hover:text-orange-400 transition text-gray-300">
-            메이플랜드
-            <ul className="absolute hidden group-hover:block bg-[#252525] p-2 rounded shadow-2xl top-full left-0 w-32 mt-2 border border-gray-700">
-              <li className="p-2 hover:bg-gray-800 rounded text-xs text-white">
-                <Link href="/mapleland/notice">공지사항</Link>
-              </li>
-            </ul>
-          </li>
-        </ul>
+        <div className="hidden md:flex gap-6 font-black text-[#A64D13]">
+          <Link href="/report" className="hover:text-[#E67E22] transition-colors">
+            사기꾼 제보
+          </Link>
+          <Link href="/mapleland" className="text-[#E67E22] bg-[#FFF4E6] px-5 py-1.5 rounded-full border-2 border-[#FFD8A8] hover:bg-[#E67E22] hover:text-white transition-all">
+            메이플랜드 거래소
+          </Link>
+        </div>
       </div>
 
-      {/* 오른쪽 유저 세션 (닉네임 클릭 시 마이페이지 이동) */}
+      {/* 👤 유저 정보 및 로그인 섹션 */}
       <div className="flex items-center gap-4">
         {user ? (
-          <div className="flex items-center gap-3 bg-gray-800 px-4 py-1.5 rounded-full border border-gray-700">
-            <Link href="/profile" className="flex items-center gap-1.5 hover:text-orange-400 transition">
-              <span className="text-xs text-gray-300 font-semibold cursor-pointer">
+          <div className="flex items-center gap-4">
+            {/* 프로필 바로가기 */}
+            <Link href="/profile" className="flex items-center gap-2 bg-[#FFF4E6] px-4 py-2 rounded-full border-2 border-[#FFD8A8] hover:shadow-md transition-all active:scale-95">
+              <span className="text-sm font-black text-[#E67E22]">
                 {userData?.nickname || user.email?.split('@')[0]}님
               </span>
+              {/* 인증 마크 */}
               {userData?.verified && (
-                <span className="bg-blue-500 text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold" title="인증된 사용자">
+                <span className="bg-blue-500 text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-black shadow-sm" title="인증된 사용자">
                   ✓
                 </span>
               )}
             </Link>
+            
+            {/* 로그아웃 버튼 */}
             <button 
-              onClick={handleLogout}
-              className="text-xs font-bold text-orange-500 hover:text-orange-400 transition"
+              onClick={handleLogout} 
+              className="text-xs font-bold text-gray-400 hover:text-red-400 transition-colors"
             >
               로그아웃
             </button>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Link href="/login" className="bg-orange-600 hover:bg-orange-500 px-4 py-2 rounded text-xs font-bold transition shadow-md text-white">
-              로그인 / 가입
-            </Link>
-          </div>
+          <Link 
+            href="/login" 
+            className="bg-[#E67E22] text-white px-7 py-2.5 rounded-full font-black text-sm shadow-md hover:bg-[#D35400] transition-all active:scale-95"
+          >
+            로그인
+          </Link>
         )}
       </div>
     </nav>
