@@ -1,101 +1,104 @@
 "use client"
-import { useEffect, useState, useRef } from "react"
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { useState, useEffect, useRef } from "react"
+import { db, auth } from "@/lib/firebase"
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, where } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
+import Link from "next/link"
 
-export default function ChatRoom({ room }: { room: string }) {
+// ✨ room 속성을 받을 수 있도록 정의
+interface ChatRoomProps {
+  room?: string; 
+}
+
+export default function ChatRoom({ room = "main_trade" }: ChatRoomProps) {
   const [messages, setMessages] = useState<any[]>([])
-  const [nickname, setNickname] = useState("")
-  const [text, setText] = useState("")
+  const [newMessage, setNewMessage] = useState("")
+  const [user, setUser] = useState<any>(null)
+  const [userData, setUserData] = useState<any>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // 1. 실시간 메시지 데이터 로드
   useEffect(() => {
-    const q = query(collection(db, room), orderBy("createdAt", "asc"))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser)
+      if (currentUser) {
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid))
+        if (userSnap.exists()) setUserData(userSnap.data())
+      }
+    })
+
+    // ✨ 특정 room의 메시지만 가져오도록 쿼리 수정
+    const q = query(
+      collection(db, "chats"), 
+      where("room", "==", room), // 👈 room 필드가 일치하는 것만 필터링
+      orderBy("createdAt", "asc")
+    )
+    
+    const unsubChat = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
     })
-    return () => unsubscribe()
-  }, [room])
 
-  // 2. 메시지 추가 시 자동 스크롤
+    return () => { unsubAuth(); unsubChat(); }
+  }, [room]) // room이 바뀌면 채팅방도 새로고침
+
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // 3. 메시지 전송 로직
-  const onSend = async (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!nickname.trim() || !text.trim()) {
-      alert("닉네임과 내용을 모두 입력해주세요.")
-      return
-    }
-    
-    try {
-      await addDoc(collection(db, room), { 
-        nickname, 
-        text, 
-        createdAt: serverTimestamp() 
-      })
-      setText("") // 전송 후 내용창 비우기
-    } catch (error) {
-      console.error("Firebase 전송 에러:", error)
-    }
+    if (!newMessage.trim() || !user) return
+
+    await addDoc(collection(db, "chats"), {
+      text: newMessage,
+      createdAt: serverTimestamp(),
+      uid: user.uid,
+      room: room, // ✨ 어떤 방에서 쓴 채팅인지 저장
+      displayName: userData?.nickname || user.email?.split('@')[0],
+      isVerified: userData?.verified || false,
+      badge: userData?.badge || "B"
+    })
+    setNewMessage("")
   }
 
   return (
-    <div className="flex flex-col h-[600px] bg-[#BACEE0] rounded-lg overflow-hidden border border-gray-400 shadow-xl">
-      {/* 채팅 내역 영역 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="text-center text-gray-600 mt-10 text-sm">첫 메시지를 남겨보세요!</div>
-        )}
-        {messages.map((m) => (
-          <div key={m.id} className="flex flex-col items-start">
-            <span className="text-[11px] font-bold text-gray-700 mb-1 ml-1">{m.nickname}</span>
-            <div className="flex items-end gap-1">
-              <div 
-                className="bg-[#FEE500] p-2 rounded-lg rounded-tl-none text-sm text-black max-w-[250px] shadow-sm cursor-pointer"
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  if(confirm(`${m.nickname}님과 1:1 대화를 하시겠습니까?`)) alert("1:1 채팅 기능은 준비 중입니다!");
-                }}
-              >
-                {m.text}
-              </div>
-              <span className="text-[9px] text-gray-600 mb-0.5">
-                {m.createdAt?.toDate() ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "..."}
-              </span>
+    <div className="flex flex-col h-[600px] bg-[#1a1a1a] border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className="bg-gray-800 p-4 border-b border-gray-700">
+        <h2 className="font-bold text-orange-500 text-sm">
+          {room === "main_trade" ? "전체 거래 채팅" : "메이플랜드 전용 채팅"}
+        </h2>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex flex-col ${msg.uid === user?.uid ? "items-end" : "items-start"}`}>
+            <div className="flex items-center gap-1.5 mb-1">
+              {msg.isVerified && (
+                <span className="bg-green-600 text-white text-[9px] px-1 rounded font-bold uppercase">{msg.badge}</span>
+              )}
+              <Link href={`/profile/${msg.uid}`} className="text-[11px] text-gray-400 hover:text-orange-400 font-medium">
+                {msg.displayName} {msg.isVerified && <span className="text-blue-400">✓</span>}
+              </Link>
+            </div>
+            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+              msg.uid === user?.uid ? "bg-orange-600 text-white rounded-tr-none" : "bg-gray-800 text-gray-200 rounded-tl-none"
+            }`}>
+              {msg.text}
             </div>
           </div>
         ))}
+        <div ref={scrollRef} />
       </div>
-      
-      {/* 입력 영역 (이 부분이 화면에 명확히 보여야 합니다) */}
-      <form onSubmit={onSend} className="p-4 bg-white border-t border-gray-300 flex flex-col gap-2">
-        <div className="flex gap-2">
-          <input 
-            type="text"
-            placeholder="닉네임" 
-            value={nickname} 
-            onChange={e => setNickname(e.target.value)} 
-            className="w-1/4 border border-gray-300 p-2 text-sm rounded text-black bg-gray-50 focus:border-yellow-500 outline-none" 
-          />
-          <input 
-            type="text"
-            placeholder="거래 내용을 입력하세요 (우클릭 시 1:1)" 
-            value={text} 
-            onChange={e => setText(e.target.value)} 
-            className="flex-1 border border-gray-300 p-2 text-sm rounded text-black bg-gray-50 focus:border-yellow-500 outline-none" 
-          />
-          <button 
-            type="submit"
-            className="bg-[#FEE500] hover:bg-[#F7E600] text-black px-6 py-2 text-sm font-bold rounded shadow-sm border border-yellow-500 transition-all active:scale-95"
-          >
-            전송
-          </button>
-        </div>
-        <p className="text-[10px] text-gray-400 font-medium">* 닉네임을 적고 내용을 입력한 뒤 전송을 누르세요.</p>
+
+      <form onSubmit={sendMessage} className="p-4 bg-gray-900 flex gap-2">
+        <input 
+          type="text" 
+          className="flex-1 bg-black border border-gray-700 p-3 rounded-xl text-sm text-white outline-none focus:border-orange-500" 
+          placeholder="메시지를 입력하세요..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          disabled={!user}
+        />
+        <button className="bg-orange-600 px-4 py-2 rounded-xl font-bold text-sm text-white">전송</button>
       </form>
     </div>
   )
