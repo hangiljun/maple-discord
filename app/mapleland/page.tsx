@@ -1,36 +1,35 @@
 "use client"
 import ChatRoom from "../components/ChatRoom"
-import AdBanner from "../components/AdBanner"
 
 export default function MaplelandPage() {
   return (
-    // Navbar는 layout.tsx에 이미 있으므로 여기선 생략합니다.
-    <div className="min-h-screen bg-[#FFF9F2]">
-      <main className="max-w-5xl mx-auto p-4 md:p-10">
-        <AdBanner />
-
-        {/* 메인 타이틀 섹션 */}
-        <div className="mt-10 mb-8 text-center space-y-3">
-           <h1 className="text-4xl md:text-5xl font-black text-[#E67E22] tracking-tighter drop-shadow-sm">
-             MAPLELAND MARKET
-           </h1>
-           <p className="text-[#A64D13] font-bold text-lg italic bg-white/50 py-2 rounded-full inline-block px-10 border-2 border-[#FFD8A8]">
-             "메이플랜드 유저들의 활발한 실시간 거래 광장"
-           </p>
-        </div>
+    <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10">
+      <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* 채팅창 메인 배치 (게시판 삭제로 화면 꽉 채움) */}
-        <div className="w-full">
-            <ChatRoom room="mapleland_trade" />
+        {/* 디스코드 바로가기 UI */}
+        <div className="bg-white border-4 border-[#FFD8A8] p-6 rounded-[30px] shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#5865F2] rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">💬</div>
+            <div>
+              <h3 className="font-black text-[#E67E22] text-lg">공식 디스코드 채널</h3>
+              <p className="text-[#A64D13] text-xs font-bold">더 많은 유저들과 실시간으로 소통해보세요!</p>
+            </div>
+          </div>
+          <button className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-8 py-3 rounded-full font-black text-sm transition-all shadow-md">
+            디스코드 입장하기
+          </button>
         </div>
 
-        {/* 하단 안내 문구 */}
-        <div className="mt-10 p-6 bg-white/40 border-2 border-dashed border-[#FFD8A8] rounded-3xl text-center">
-            <p className="text-[#A64D13] text-sm font-bold">
-              💡 팁: 닉네임을 클릭하면 해당 유저의 신뢰도와 인증 정보를 확인할 수 있습니다.
-            </p>
+        {/* 채팅창 (메인) */}
+        <div className="space-y-4">
+          <div className="text-center">
+            <h1 className="text-3xl font-black text-[#E67E22]">메이플랜드 실시간 거래소</h1>
+            <p className="text-[#A64D13] text-sm font-bold mt-1">게시판 없이 채팅으로 빠르게 거래하세요!</p>
+          </div>
+          <ChatRoom room="mapleland_trade" />
         </div>
-      </main>
+
+      </div>
     </div>
   )
 }

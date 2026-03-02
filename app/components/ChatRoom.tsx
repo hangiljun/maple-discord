@@ -1,13 +1,10 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { db, auth } from "@/lib/firebase"
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, where, limit } from "firebase/firestore"
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, where } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
-import Link from "next/link"
 
-interface ChatRoomProps { room?: string; }
-
-export default function ChatRoom({ room = "main_trade" }: ChatRoomProps) {
+export default function ChatRoom({ room = "main_trade" }) {
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [user, setUser] = useState<any>(null)
@@ -15,114 +12,86 @@ export default function ChatRoom({ room = "main_trade" }: ChatRoomProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
+    onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
       if (currentUser) {
-        const userSnap = await getDoc(doc(db, "users", currentUser.uid))
-        if (userSnap.exists()) setUserData(userSnap.data())
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        if (snap.exists()) setUserData(snap.data());
       }
-    })
-    return () => unsubAuth()
-  }, [])
+    });
 
-  // 🔄 실시간 채팅 동기화 (타인 글 안 보임 해결)
-  useEffect(() => {
-    const q = query(
-      collection(db, "chats"),
-      where("room", "==", room),
-      orderBy("createdAt", "asc")
-    )
-
-    const unsubChat = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        // 시간 포맷팅 (오후 12:30 형식)
-        const date = data.createdAt?.toDate();
-        const timeString = date ? date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true }) : "";
-        return { id: doc.id, ...data, timeString };
-      });
-      setMessages(msgs);
+    const q = query(collection(db, "chats"), where("room", "==", room), orderBy("createdAt", "asc"));
+    return onSnapshot(q, (snapshot) => {
+      setMessages(snapshot.docs.map(doc => ({
+        id: doc.id, 
+        ...doc.data(),
+        time: doc.data().createdAt?.toDate().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      })));
       setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     });
+  }, [room]);
 
-    return () => unsubChat()
-  }, [room])
+  const sendMessage = async (prefix = "") => {
+    const text = prefix ? `[${prefix}] ${newMessage}` : newMessage;
+    if (!text.trim()) return;
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newMessage.trim() || !user) return
-
-    const textToSend = newMessage;
-    setNewMessage(""); // ⚡ 전송 즉시 비우기 (딜레이 제거)
-
-    await addDoc(collection(db, "chats"), {
-      text: textToSend,
+    const chatData = {
+      text,
       createdAt: serverTimestamp(),
-      uid: user.uid,
-      room: room,
-      displayName: userData?.nickname || user.email?.split('@')[0],
+      uid: user?.uid || "guest",
+      room,
+      displayName: userData?.nickname || (user ? user.email.split('@')[0] : "즐거운 손님"),
       isVerified: userData?.verified || false,
-      badge: userData?.badge || "B"
-    });
-  }
+      badge: userData?.badge || (user ? "B" : "G"),
+      type: prefix // 삽니다/팝니다 구분
+    };
+
+    setNewMessage("");
+    await addDoc(collection(db, "chats"), chatData);
+  };
 
   return (
-    <div className="flex flex-col h-[75vh] bg-white border-4 border-[#FFD8A8] rounded-[40px] overflow-hidden shadow-[0_10px_25px_rgba(255,216,168,0.3)]">
-      {/* 파스텔 헤더 */}
-      <div className="bg-[#FFF4E6] p-5 border-b-4 border-[#FFD8A8] flex justify-between items-center">
-        <h2 className="font-black text-[#E67E22] text-xl flex items-center gap-2">
-          <span className="animate-bounce">🍁</span> {room === "mapleland_trade" ? "메이플랜드 공식 거래 광장" : "통합 채팅"}
-        </h2>
-        <div className="px-4 py-1 bg-white rounded-full border-2 border-[#FFD8A8] text-[#E67E22] text-xs font-bold">
-          실시간 접속 중
-        </div>
+    <div className="flex flex-col h-[650px] bg-white border-4 border-[#FFD8A8] rounded-[30px] overflow-hidden shadow-lg">
+      <div className="bg-[#FFF4E6] p-4 border-b-4 border-[#FFD8A8] flex justify-between items-center">
+        <h2 className="font-black text-[#E67E22]">🍁 실시간 거래 광장</h2>
+        <span className="text-[10px] font-bold text-[#A64D13] bg-white px-3 py-1 rounded-full border border-[#FFD8A8]">비회원 채팅 가능</span>
       </div>
 
-      {/* 채팅 메인 영역 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FFFEFA]">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#FFFEFA]">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.uid === user?.uid ? "items-end" : "items-start"}`}>
-            <div className="flex items-center gap-2 mb-1">
-              {msg.isVerified && (
-                <span className="bg-[#E67E22] text-white text-[10px] px-2 py-0.5 rounded-lg font-black shadow-sm">
-                  {msg.badge}
-                </span>
-              )}
-              <Link href={`/profile/${msg.uid}`} className="text-xs font-bold text-[#A64D13] hover:underline">
-                {msg.displayName}
-              </Link>
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-[10px] font-bold text-[#A64D13]">{msg.displayName}</span>
+              <span className="text-[9px] text-gray-400">{msg.time}</span>
             </div>
-            
-            <div className="flex items-end gap-2 max-w-[90%]">
-              {msg.uid === user?.uid && <span className="text-[10px] text-[#FFB347] mb-1 font-bold">{msg.timeString}</span>}
-              <div className={`p-4 rounded-[25px] text-sm font-medium shadow-sm border-2 ${
-                msg.uid === user?.uid 
-                ? "bg-[#FFE8CC] text-[#A64D13] rounded-tr-none border-[#FFD8A8]" 
-                : "bg-white text-[#5D4037] rounded-tl-none border-[#FEE2E2]"
-              }`}>
-                {msg.text}
-              </div>
-              {msg.uid !== user?.uid && <span className="text-[10px] text-[#FFB347] mb-1 font-bold">{msg.timeString}</span>}
+            <div className={`p-3 rounded-2xl text-sm font-bold border-2 shadow-sm ${
+              msg.type === "삽니다" ? "border-green-200 bg-green-50 text-green-700" :
+              msg.type === "팝니다" ? "border-orange-200 bg-orange-50 text-orange-700" :
+              "border-[#FFD8A8] bg-white text-[#5D4037]"
+            }`}>
+              {msg.text}
             </div>
           </div>
         ))}
         <div ref={scrollRef} />
       </div>
 
-      {/* 하단 입력창 */}
-      <form onSubmit={sendMessage} className="p-5 bg-[#FFF4E6] border-t-4 border-[#FFD8A8] flex gap-3">
-        <input 
-          type="text" 
-          className="flex-1 bg-white border-3 border-[#FFD8A8] p-4 rounded-full text-sm font-bold text-[#A64D13] outline-none focus:border-[#E67E22] transition-all placeholder-[#FFD8A8]" 
-          placeholder="거래하실 내용을 입력해주세요! (예: 공노목 10 구매합니다)"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          disabled={!user}
-        />
-        <button className="bg-[#E67E22] hover:bg-[#D35400] px-8 rounded-full font-black text-white shadow-lg transition-transform active:scale-95">
-          전송
-        </button>
-      </form>
+      <div className="p-4 bg-[#FFF4E6] border-t-4 border-[#FFD8A8] space-y-3">
+        <div className="flex gap-2">
+          <button onClick={() => sendMessage("삽니다")} className="flex-1 bg-green-500 text-white py-2 rounded-xl font-black text-xs shadow-md">삽니다 [Green]</button>
+          <button onClick={() => sendMessage("팝니다")} className="flex-1 bg-[#E67E22] text-white py-2 rounded-xl font-black text-xs shadow-md">팝니다 [Orange]</button>
+        </div>
+        <div className="flex gap-2">
+          <input 
+            className="flex-1 p-3 rounded-full border-2 border-[#FFD8A8] text-sm outline-none font-bold" 
+            placeholder="메시지를 입력하세요..." 
+            value={newMessage} 
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          />
+          <button onClick={() => sendMessage()} className="bg-[#A64D13] text-white px-6 rounded-full font-bold text-xs">전송</button>
+        </div>
+      </div>
     </div>
   )
 }
