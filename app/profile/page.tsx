@@ -1,137 +1,223 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { auth, db } from "@/lib/firebase"
-import { doc, onSnapshot, updateDoc } from "firebase/firestore"
+import { db, auth } from "@/lib/firebase"
+import {
+  collection, addDoc, serverTimestamp,
+  query, orderBy, onSnapshot, doc, getDoc, updateDoc
+} from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
+import { isAdmin } from "@/lib/admin"
 
-export default function ProfilePage() {
+interface VerifyRequest {
+  id: string
+  authorUid: string
+  authorName: string
+  type: "이메일" | "전화번호" | "손인증"
+  description: string
+  status: "대기중" | "승인" | "거절"
+  createdAt?: any
+  date: string
+}
+
+export default function VerifyRequestPage() {
   const [user, setUser] = useState<any>(null)
-  const [userData, setUserData] = useState<any>(null)
-  const [nickname, setNickname] = useState("")
-  const [server, setServer] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [userNickname, setUserNickname] = useState("")
+  const [adminUser, setAdminUser] = useState(false)
+  const [requests, setRequests] = useState<VerifyRequest[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ type: "이메일" as VerifyRequest["type"], description: "" })
+  const [posting, setPosting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser)
-        const userRef = doc(db, "users", currentUser.uid)
-        
-        const unsubDoc = onSnapshot(userRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data()
-            setUserData(data)
-            setNickname(data.nickname || "")
-            setServer(data.server || "")
-          }
-          setLoading(false)
-        })
-        return () => unsubDoc()
-      } else {
-        setLoading(false)
-        setUser(null)
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u)
+      if (u) {
+        setAdminUser(await isAdmin(u.uid))
+        try {
+          const snap = await getDoc(doc(db, "users", u.uid))
+          if (snap.exists()) setUserNickname(snap.data().nickname || u.email?.split("@")[0] || "모험가")
+        } catch { setUserNickname(u.email?.split("@")[0] || "모험가") }
       }
     })
-    return () => unsubscribe()
+    return () => unsub()
   }, [])
 
-  const handleSave = async () => {
-    if (!userData?.verified) return;
+  useEffect(() => {
+    if (!adminUser) return
+    const q = query(collection(db, "verify_requests"), orderBy("createdAt", "desc"))
+    return onSnapshot(q, (snap) => {
+      setRequests(snap.docs.map(d => {
+        const data = d.data()
+        const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR") || ""
+        return { id: d.id, ...data, date } as VerifyRequest
+      }))
+    })
+  }, [adminUser])
+
+  const handleSubmit = async () => {
+    if (!user) { alert("로그인 후 신청해주세요"); return }
+    if (!form.description.trim()) { alert("내용을 입력해주세요"); return }
+    setPosting(true)
     try {
-      const userRef = doc(db, "users", user.uid)
-      await updateDoc(userRef, { nickname, server })
-      alert("성공적으로 저장되었습니다!")
-    } catch (e) {
-      alert("저장 중 오류가 발생했습니다.")
+      await addDoc(collection(db, "verify_requests"), {
+        authorUid: user.uid,
+        authorName: userNickname,
+        type: form.type,
+        description: form.description,
+        status: "대기중",
+        createdAt: serverTimestamp(),
+      })
+      setSubmitted(true)
+      setShowForm(false)
+    } catch (e) { console.error(e) }
+    finally { setPosting(false) }
+  }
+
+  // ✅ 5. 승인 시 users 컬렉션에 verified: true 저장 → 닉네임 변경 권한 부여
+  const handleStatus = async (req: VerifyRequest, status: "승인" | "거절") => {
+    await updateDoc(doc(db, "verify_requests", req.id), { status })
+    if (status === "승인") {
+      await updateDoc(doc(db, "users", req.authorUid), {
+        verified: true,
+        [`${req.type === "이메일" ? "emailVerified" : req.type === "전화번호" ? "phoneVerified" : "handsVerified"}`]: true
+      })
     }
   }
 
-  if (loading) return <div className="p-20 text-center text-white">정보를 불러오는 중...</div>
-  if (!user) return <div className="p-20 text-center text-white">로그인이 필요합니다.</div>
+  const statusStyle: Record<string, string> = {
+    대기중: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    승인: "bg-green-100 text-green-700 border-green-300",
+    거절: "bg-red-100 text-red-600 border-red-300",
+  }
+
+  if (!adminUser) {
+    return (
+      <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center">
+            <div className="text-5xl mb-3">🔐</div>
+            <h1 className="text-2xl font-black text-[#E67E22]">인증 신청</h1>
+            <p className="text-sm text-[#A64D13] font-bold mt-2">인증을 신청하면 관리자가 검토 후 처리해요</p>
+          </div>
+
+          <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
+            <p className="font-black text-[#A64D13] text-sm mb-3">📋 인증 종류</p>
+            {[
+              { icon: "📧", label: "이메일 인증", desc: "이메일 주소를 통한 본인 확인" },
+              { icon: "📱", label: "전화번호 인증", desc: "전화번호를 통한 본인 확인" },
+              { icon: "🤝", label: "손 인증", desc: "실제 손 사진을 통한 본인 확인" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-3 p-3 bg-[#FFF9F2] rounded-2xl">
+                <span className="text-xl">{item.icon}</span>
+                <div>
+                  <p className="font-black text-sm text-[#5D4037]">{item.label}</p>
+                  <p className="text-[10px] text-gray-400 font-bold">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {submitted && (
+            <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-4 text-center">
+              <p className="font-black text-green-700 text-sm">✅ 신청이 완료됐어요!</p>
+              <p className="text-xs text-green-600 font-bold mt-1">관리자가 검토 후 처리할게요</p>
+            </div>
+          )}
+
+          {!user && (
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-center">
+              <p className="font-black text-amber-700 text-sm">⚠️ 로그인이 필요해요</p>
+              <a href="/login" className="text-xs text-amber-600 underline font-bold">로그인하러 가기</a>
+            </div>
+          )}
+
+          {user && !submitted && (
+            <>
+              <button onClick={() => setShowForm(!showForm)}
+                className="w-full py-3.5 bg-[#E67E22] text-white rounded-2xl font-black shadow-md active:scale-95">
+                {showForm ? "취소" : "✏️ 인증 신청하기"}
+              </button>
+              {showForm && (
+                <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
+                  <p className="font-black text-[#A64D13] text-sm">🍁 {userNickname} 님의 신청</p>
+                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as VerifyRequest["type"] })}
+                    className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none bg-[#FFF9F2]">
+                    <option value="이메일">📧 이메일 인증</option>
+                    <option value="전화번호">📱 전화번호 인증</option>
+                    <option value="손인증">🤝 손 인증</option>
+                  </select>
+                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="인증 관련 내용을 입력해주세요" rows={4}
+                    className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] resize-none" />
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                    <span className="text-sm mt-0.5">🔒</span>
+                    <p className="text-xs text-blue-700 font-bold">신청 내용은 관리자만 볼 수 있습니다</p>
+                  </div>
+                  <button onClick={handleSubmit} disabled={posting}
+                    className="w-full py-3 bg-[#E67E22] disabled:bg-gray-300 text-white rounded-2xl font-black text-sm">
+                    {posting ? "신청 중..." : "신청하기"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <main className="max-w-xl mx-auto mt-16 p-8 bg-[#1e1e1e] rounded-2xl border border-gray-800 text-white shadow-2xl">
-      <h1 className="text-2xl font-bold text-orange-500 mb-2 text-center">회원 정보</h1>
-      <p className="text-gray-500 text-sm text-center mb-10">{user.email}</p>
-
-      {/* 상단 인증 상태 (참고 사진 스타일 구현) */}
-      <section className="mb-10 bg-black/40 p-6 rounded-2xl border border-gray-800">
-        <h2 className="text-xs font-bold text-gray-500 mb-4 uppercase tracking-widest">Verification Status</h2>
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Badge label="핸즈 인증" active={!!userData?.handsVerified} />
-          <Badge label="이메일 인증" active={!!userData?.emailVerified} />
-          <Badge label="휴대폰 인증" active={!!userData?.phoneVerified} />
-        </div>
-      </section>
-
-      {/* 본문: 인증 여부에 따라 수정 칸 또는 읽기 칸 표시 */}
-      <div className="space-y-8">
-        <div>
-          <label className="text-xs font-bold text-gray-500 ml-1">활동 서버</label>
-          {userData?.verified ? (
-            <select 
-              className="w-full bg-black border border-gray-700 p-4 rounded-xl mt-2 outline-none focus:border-orange-500 transition"
-              value={server}
-              onChange={(e) => setServer(e.target.value)}
-            >
-              <option value="">서버 선택</option>
-              <option value="스카니아">스카니아</option>
-              <option value="루나">루나</option>
-              <option value="제니스">제니스</option>
-              <option value="크로아">크로아</option>
-            </select>
-          ) : (
-            <div className="w-full bg-gray-900/50 border border-gray-800 p-4 rounded-xl mt-2 text-gray-400">
-              {server || "서버 정보가 없습니다."}
-            </div>
-          )}
+    <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10">
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🛡️</span>
+          <div>
+            <h1 className="text-2xl font-black text-[#E67E22]">인증 신청 관리</h1>
+            <p className="text-sm text-[#A64D13] font-bold">총 {requests.length}건</p>
+          </div>
         </div>
 
-        <div>
-          <label className="text-xs font-bold text-gray-500 ml-1">활동 닉네임</label>
-          {userData?.verified ? (
-            <input 
-              type="text"
-              className="w-full bg-black border border-gray-700 p-4 rounded-xl mt-2 outline-none focus:border-orange-500 transition"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="변경할 닉네임 입력"
-            />
-          ) : (
-            <div className="w-full bg-gray-900/50 border border-gray-800 p-4 rounded-xl mt-2 text-gray-400">
-              {nickname || "닉네임 정보가 없습니다."}
-            </div>
-          )}
-        </div>
-
-        {/* 하단 버튼 및 안내 */}
-        {userData?.verified ? (
-          <button 
-            onClick={handleSave}
-            className="w-full bg-orange-600 hover:bg-orange-500 font-bold py-4 rounded-xl transition-all shadow-lg active:scale-95"
-          >
-            프로필 업데이트 하기
-          </button>
+        {requests.length === 0 ? (
+          <div className="text-center py-20 text-[#FFD8A8] font-bold">신청 내역이 없어요</div>
         ) : (
-          <div className="bg-red-900/10 border border-red-900/30 p-4 rounded-xl text-center">
-            <p className="text-red-400 text-xs font-bold">인증되지 않은 계정입니다.</p>
-            <p className="text-gray-500 text-[10px] mt-1">프로필 수정은 운영자 승인 후 가능합니다.</p>
+          <div className="space-y-3">
+            {requests.map((req) => (
+              <div key={req.id} className="bg-white border-2 border-[#FFD8A8] rounded-2xl p-4 space-y-3 shadow-sm">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-[#5D4037]">🍁 {req.authorName}</span>
+                    <span className="text-[10px] bg-[#FFF4E6] text-[#E67E22] font-black px-2 py-0.5 rounded-full border border-[#FFD8A8]">
+                      {req.type} 인증
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border-2 ${statusStyle[req.status]}`}>
+                      {req.status}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-bold">{req.date}</span>
+                  </div>
+                </div>
+                <p className="text-sm text-[#5D4037] font-bold bg-[#FFF9F2] p-3 rounded-xl whitespace-pre-wrap">
+                  {req.description}
+                </p>
+                {req.status === "대기중" && (
+                  <div className="flex gap-2">
+                    <button onClick={() => handleStatus(req, "승인")}
+                      className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
+                      ✅ 승인 (닉네임 변경 권한 부여)
+                    </button>
+                    <button onClick={() => handleStatus(req, "거절")}
+                      className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
+                      ❌ 거절
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
-    </main>
-  )
-}
-
-function Badge({ label, active }: { label: string, active: boolean }) {
-  return (
-    <div className={`px-4 py-2 rounded-xl text-[11px] font-bold border transition-all ${
-      active 
-      ? 'border-orange-500 text-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.1)]' 
-      : 'border-gray-800 text-gray-700 bg-transparent'
-    }`}>
-      <span className="mr-1">{active ? '✓' : '○'}</span> {label}
     </div>
   )
 }

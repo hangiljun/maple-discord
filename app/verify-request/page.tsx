@@ -43,7 +43,6 @@ export default function VerifyRequestPage() {
     return () => unsub()
   }, [])
 
-  // 관리자만 목록 조회
   useEffect(() => {
     if (!adminUser) return
     const q = query(collection(db, "verify_requests"), orderBy("createdAt", "desc"))
@@ -75,8 +74,15 @@ export default function VerifyRequestPage() {
     finally { setPosting(false) }
   }
 
-  const handleStatus = async (id: string, status: "승인" | "거절") => {
-    await updateDoc(doc(db, "verify_requests", id), { status })
+  // ✅ 5. 승인 시 users 컬렉션에 verified: true 저장 → 닉네임 변경 권한 부여
+  const handleStatus = async (req: VerifyRequest, status: "승인" | "거절") => {
+    await updateDoc(doc(db, "verify_requests", req.id), { status })
+    if (status === "승인") {
+      await updateDoc(doc(db, "users", req.authorUid), {
+        verified: true,
+        [`${req.type === "이메일" ? "emailVerified" : req.type === "전화번호" ? "phoneVerified" : "handsVerified"}`]: true
+      })
+    }
   }
 
   const statusStyle: Record<string, string> = {
@@ -85,19 +91,16 @@ export default function VerifyRequestPage() {
     거절: "bg-red-100 text-red-600 border-red-300",
   }
 
-  // ── 일반 유저 화면 ──
   if (!adminUser) {
     return (
       <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10 flex items-center justify-center">
         <div className="max-w-md w-full space-y-6">
-
           <div className="text-center">
             <div className="text-5xl mb-3">🔐</div>
             <h1 className="text-2xl font-black text-[#E67E22]">인증 신청</h1>
             <p className="text-sm text-[#A64D13] font-bold mt-2">인증을 신청하면 관리자가 검토 후 처리해요</p>
           </div>
 
-          {/* 인증 종류 설명 */}
           <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
             <p className="font-black text-[#A64D13] text-sm mb-3">📋 인증 종류</p>
             {[
@@ -115,7 +118,6 @@ export default function VerifyRequestPage() {
             ))}
           </div>
 
-          {/* 신청 완료 메시지 */}
           {submitted && (
             <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-4 text-center">
               <p className="font-black text-green-700 text-sm">✅ 신청이 완료됐어요!</p>
@@ -123,7 +125,6 @@ export default function VerifyRequestPage() {
             </div>
           )}
 
-          {/* 안내 박스 (비로그인) */}
           {!user && (
             <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-center">
               <p className="font-black text-amber-700 text-sm">⚠️ 로그인이 필요해요</p>
@@ -131,14 +132,12 @@ export default function VerifyRequestPage() {
             </div>
           )}
 
-          {/* 신청 버튼 */}
           {user && !submitted && (
             <>
               <button onClick={() => setShowForm(!showForm)}
                 className="w-full py-3.5 bg-[#E67E22] text-white rounded-2xl font-black shadow-md active:scale-95">
                 {showForm ? "취소" : "✏️ 인증 신청하기"}
               </button>
-
               {showForm && (
                 <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
                   <p className="font-black text-[#A64D13] text-sm">🍁 {userNickname} 님의 신청</p>
@@ -149,9 +148,8 @@ export default function VerifyRequestPage() {
                     <option value="손인증">🤝 손 인증</option>
                   </select>
                   <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="인증 관련 내용을 입력해주세요 (이메일 주소, 전화번호 등)" rows={4}
+                    placeholder="인증 관련 내용을 입력해주세요" rows={4}
                     className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] resize-none" />
-                  {/* 안내 문구 */}
                   <div className="flex items-start gap-2 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
                     <span className="text-sm mt-0.5">🔒</span>
                     <p className="text-xs text-blue-700 font-bold">신청 내용은 관리자만 볼 수 있습니다</p>
@@ -169,7 +167,6 @@ export default function VerifyRequestPage() {
     )
   }
 
-  // ── 관리자 화면 ──
   return (
     <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -187,7 +184,7 @@ export default function VerifyRequestPage() {
           <div className="space-y-3">
             {requests.map((req) => (
               <div key={req.id} className="bg-white border-2 border-[#FFD8A8] rounded-2xl p-4 space-y-3 shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <span className="font-black text-sm text-[#5D4037]">🍁 {req.authorName}</span>
                     <span className="text-[10px] bg-[#FFF4E6] text-[#E67E22] font-black px-2 py-0.5 rounded-full border border-[#FFD8A8]">
@@ -206,11 +203,11 @@ export default function VerifyRequestPage() {
                 </p>
                 {req.status === "대기중" && (
                   <div className="flex gap-2">
-                    <button onClick={() => handleStatus(req.id, "승인")}
+                    <button onClick={() => handleStatus(req, "승인")}
                       className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
-                      ✅ 승인
+                      ✅ 승인 (닉네임 변경 권한 부여)
                     </button>
-                    <button onClick={() => handleStatus(req.id, "거절")}
+                    <button onClick={() => handleStatus(req, "거절")}
                       className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
                       ❌ 거절
                     </button>
