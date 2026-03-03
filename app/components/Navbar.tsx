@@ -9,7 +9,7 @@ export default function Navbar() {
   const [user, setUser] = useState<any>(null)
   const [userData, setUserData] = useState<any>(null)
   const [unreadTotal, setUnreadTotal] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false) // ✅ 햄버거 메뉴 상태
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -36,29 +36,30 @@ export default function Navbar() {
   }, [])
 
   const menuItems = [
-    { href: "/report", label: "사기꾼 제보", highlight: false },
-    { href: "/mapleland", label: "메이플랜드 거래방", highlight: true },
-    { href: "/maplestory", label: "메이플스토리", highlight: false },
-    { href: "/mapleland-info", label: "메이플랜드", highlight: false },
+    { href: "/notice",         label: "📢 공지사항",      highlight: false },
+    { href: "/board",          label: "자유게시판",        highlight: false },
+    { href: "/mapleland",      label: "메이플랜드 거래방", highlight: true  },
+    { href: "/verify-request", label: "인증 신청",         highlight: false },
+    { href: "/report",         label: "사기꾼 제보",       highlight: false },
   ]
 
   return (
     <>
       <nav className="sticky top-0 z-50 bg-white border-b-4 border-[#FFD8A8] px-4 py-3 shadow-sm">
         <div className="flex justify-between items-center">
-          
+
           {/* 왼쪽: 로고 + 데스크탑 메뉴 */}
           <div className="flex items-center gap-6">
             <Link href="/" className="text-xl font-black text-[#E67E22] flex items-center gap-1">
               🍁 메이플 디스코드
             </Link>
             {/* 데스크탑 메뉴 */}
-            <div className="hidden lg:flex gap-6 font-bold text-[#A64D13] text-sm">
+            <div className="hidden lg:flex gap-4 font-bold text-[#A64D13] text-sm">
               {menuItems.map((item) => (
                 <Link key={item.href} href={item.href}
                   className={item.highlight
-                    ? "text-[#E67E22] bg-[#FFF4E6] px-4 py-1 rounded-full border border-[#FFD8A8]"
-                    : "hover:text-[#E67E22] transition"}>
+                    ? "text-[#E67E22] bg-[#FFF4E6] px-4 py-1 rounded-full border border-[#FFD8A8] whitespace-nowrap"
+                    : "hover:text-[#E67E22] transition whitespace-nowrap"}>
                   {item.label}
                 </Link>
               ))}
@@ -70,7 +71,8 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center gap-2">
                 {/* DM 아이콘 */}
-                <Link href="/messages" className="relative flex items-center justify-center w-9 h-9 rounded-full bg-[#FFF4E6] border-2 border-[#FFD8A8] hover:bg-[#FFE8CC] transition-colors">
+                <Link href="/messages"
+                  className="relative flex items-center justify-center w-9 h-9 rounded-full bg-[#FFF4E6] border-2 border-[#FFD8A8] hover:bg-[#FFE8CC] transition-colors">
                   <span className="text-base">💬</span>
                   {unreadTotal > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
@@ -79,7 +81,8 @@ export default function Navbar() {
                   )}
                 </Link>
                 {/* 프로필 */}
-                <Link href="/profile" className="flex items-center gap-1 bg-[#FFF4E6] px-3 py-1.5 rounded-full border-2 border-[#FFD8A8] hover:bg-[#FFE8CC] transition-colors">
+                <Link href="/profile"
+                  className="flex items-center gap-1 bg-[#FFF4E6] px-3 py-1.5 rounded-full border-2 border-[#FFD8A8] hover:bg-[#FFE8CC] transition-colors">
                   <span className="text-xs font-black text-[#E67E22]">{userData?.nickname || "모험가"}님</span>
                   {userData?.verified && <span className="text-[10px] text-blue-500 font-black">✓</span>}
                 </Link>
@@ -90,23 +93,24 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link href="/login" className="bg-[#E67E22] text-white px-5 py-2 rounded-full font-black text-xs shadow-md active:scale-95">
+              <Link href="/login"
+                className="bg-[#E67E22] text-white px-5 py-2 rounded-full font-black text-xs shadow-md active:scale-95">
                 로그인
               </Link>
             )}
 
-            {/* ✅ 햄버거 버튼 - 모바일만 표시 */}
+            {/* 햄버거 버튼 - 모바일만 */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden flex flex-col justify-center items-center w-9 h-9 rounded-xl bg-[#FFF4E6] border-2 border-[#FFD8A8] gap-1.5 transition-colors hover:bg-[#FFE8CC]">
-              <span className={`block w-4 h-0.5 bg-[#E67E22] transition-all duration-300 ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
+              className="lg:hidden flex flex-col justify-center items-center w-9 h-9 rounded-xl bg-[#FFF4E6] border-2 border-[#FFD8A8] gap-1.5 hover:bg-[#FFE8CC] transition-colors">
+              <span className={`block w-4 h-0.5 bg-[#E67E22] transition-all duration-300 origin-center ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
               <span className={`block w-4 h-0.5 bg-[#E67E22] transition-all duration-300 ${menuOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-4 h-0.5 bg-[#E67E22] transition-all duration-300 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+              <span className={`block w-4 h-0.5 bg-[#E67E22] transition-all duration-300 origin-center ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
             </button>
           </div>
         </div>
 
-        {/* ✅ 모바일 드롭다운 메뉴 */}
+        {/* 모바일 드롭다운 메뉴 */}
         {menuOpen && (
           <div className="lg:hidden mt-3 pb-2 border-t-2 border-[#FFE8CC] pt-3 flex flex-col gap-1">
             {menuItems.map((item) => (
@@ -115,7 +119,7 @@ export default function Navbar() {
                 className={`px-4 py-3 rounded-2xl font-bold text-sm transition-colors ${
                   item.highlight
                     ? "text-[#E67E22] bg-[#FFF4E6] border border-[#FFD8A8]"
-                    : "text-[#A64D13] hover:bg-[#FFF4E6]"
+                    : "text-[#A64D13] hover:bg-[#FFF4E6] active:bg-[#FFE8CC]"
                 }`}>
                 {item.label}
               </Link>
@@ -125,14 +129,14 @@ export default function Navbar() {
               <button
                 onClick={() => { signOut(auth); setMenuOpen(false) }}
                 className="px-4 py-3 rounded-2xl font-bold text-sm text-left text-red-400 hover:bg-red-50 transition-colors">
-                로그아웃
+                🚪 로그아웃
               </button>
             )}
           </div>
         )}
       </nav>
 
-      {/* ✅ 메뉴 열렸을 때 바깥 클릭하면 닫기 */}
+      {/* 메뉴 열렸을 때 바깥 클릭하면 닫기 */}
       {menuOpen && (
         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
       )}
