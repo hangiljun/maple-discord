@@ -4,10 +4,10 @@ import {
   collection, addDoc, serverTimestamp, Timestamp
 } from "firebase/firestore"
 
-// 관리자 여부 확인
+// 관리자 여부 확인 - "admin" 컬렉션 사용
 export async function isAdmin(uid: string): Promise<boolean> {
   try {
-    const snap = await getDoc(doc(db, "admins", uid))
+    const snap = await getDoc(doc(db, "admin", uid))
     return snap.exists()
   } catch {
     return false
@@ -72,7 +72,6 @@ export async function getMuteStatus(uid: string): Promise<{ muted: boolean; unti
     const data = snap.data()
     const until: Date = data.mutedUntil.toDate()
     if (until < new Date()) {
-      // 시간 지났으면 자동 삭제
       await deleteDoc(doc(db, "muted_users", uid))
       return { muted: false }
     }
@@ -82,7 +81,7 @@ export async function getMuteStatus(uid: string): Promise<{ muted: boolean; unti
   }
 }
 
-// 경고 메시지 전송 (chats에 시스템 메시지로 추가)
+// 경고 메시지 전송
 export async function sendWarning(
   targetUid: string,
   targetName: string,
@@ -97,7 +96,7 @@ export async function sendWarning(
     room,
     msgType: "일반",
     isGuest: false,
-    isSystem: true,                // 시스템 메시지 구분
+    isSystem: true,
     uid: adminUid,
     displayName: "🛡️ 관리자",
   })
