@@ -460,18 +460,26 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const adminUidCache = useRef<Map<string, boolean>>(new Map())
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const userScrolledUpRef = useRef(false)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isNearBottom = () => {
+  // 유저가 위로 스크롤했는지 추적
+  useEffect(() => {
     const el = scrollContainerRef.current
-    if (!el) return true
-    return el.scrollHeight - el.scrollTop - el.clientHeight < 120
-  }
+    if (!el) return
+    const onScroll = () => {
+      userScrolledUpRef.current = el.scrollHeight - el.scrollTop - el.clientHeight > 120
+    }
+    el.addEventListener("scroll", onScroll, { passive: true })
+    return () => el.removeEventListener("scroll", onScroll)
+  }, [])
 
   const scrollToBottom = (force = false) => {
-    if (force || isNearBottom()) {
-      requestAnimationFrame(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }))
-    }
+    if (!force && userScrolledUpRef.current) return
+    requestAnimationFrame(() => {
+      const el = scrollContainerRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    })
   }
 
   const handleLongPressEnd = useCallback(() => {
