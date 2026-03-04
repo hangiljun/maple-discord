@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, onSnapshot, collection, query, where, getDocs, getDoc } from 'firebase/firestore'
 import { getOrCreateDMRoom } from '@/lib/dm'
 import { useRouter } from 'next/navigation'
-import { LogOut, MessageSquare, MessageCircle, User } from 'lucide-react'
+import { LogOut, MessageCircle, User } from 'lucide-react'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
@@ -71,8 +71,6 @@ export default function Navbar() {
     { href: "/report",         label: "사기꾼 제보" },
   ]
 
-  const avatarLetter = (userData?.nickname || "모")[0]
-
   return (
     <>
       <nav className="sticky top-0 z-50 bg-[#1e1e2e] shadow-lg">
@@ -100,38 +98,31 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* 오른쪽 아이콘 영역 */}
-          <div className="flex items-center gap-3 ml-auto">
+          {/* 오른쪽 버튼 영역 */}
+          <div className="flex items-center ml-auto">
             {user ? (
               <>
+                {/* 마이페이지 */}
+                <Link href="/profile"
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium border-r border-gray-600">
+                  <User size={15} />
+                  마이페이지
+                </Link>
+
                 {/* 로그아웃 */}
                 <button onClick={() => signOut(auth)}
-                  className="hidden lg:flex text-gray-400 hover:text-orange-400 transition" title="로그아웃">
-                  <LogOut size={18} />
-                </button>
-
-                {/* 운영자 문의 */}
-                <button onClick={handleContactAdmin} disabled={contacting}
-                  className="hidden lg:flex text-gray-400 hover:text-orange-400 transition disabled:opacity-40" title="운영자 문의">
-                  <MessageSquare size={18} />
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium border-r border-gray-600">
+                  <LogOut size={15} />
+                  로그아웃
                 </button>
 
                 {/* 1:1 대화 */}
                 <Link href="/messages"
-                  className="relative flex text-gray-400 hover:text-orange-400 transition" title="1:1 대화">
-                  <MessageCircle size={18} />
+                  className="relative flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium">
+                  <MessageCircle size={15} />
+                  1:1 대화
                   {unreadTotal > 0 && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-                  )}
-                </Link>
-
-                {/* 프로필 아바타 */}
-                <Link href="/profile"
-                  className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 flex items-center justify-center text-white font-black text-xs transition shrink-0"
-                  title={userData?.nickname || "프로필"}>
-                  {avatarLetter}
-                  {userData?.verified && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-400 rounded-full border border-[#1e1e2e] text-[6px] flex items-center justify-center text-white">✓</span>
+                    <span className="absolute top-1 left-5 w-2 h-2 bg-red-500 rounded-full" />
                   )}
                 </Link>
               </>
