@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(firebase --version)",
+      "Bash(npx firebase-tools --version)"
+    ]
+  }
+}
