@@ -74,6 +74,10 @@ export default function VerifyRequestPage() {
   const [posting, setPosting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
+  // 페이지네이션
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 15
+
   // 관리자 DM
   const [dmChatId, setDmChatId] = useState<string | null>(null)
   const [dmOtherName, setDmOtherName] = useState("")
@@ -335,7 +339,7 @@ export default function VerifyRequestPage() {
           <div className="text-center py-20 text-[#5BA8D8] font-bold">신청 내역이 없어요</div>
         ) : (
           <div className="space-y-4">
-            {requests.map((req) => (
+            {requests.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((req) => (
               <div key={req.id} className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
 
                 {/* 카드 헤더 */}
@@ -363,26 +367,21 @@ export default function VerifyRequestPage() {
                   {/* 첨부 이미지 */}
                   {req.imageUrl && (
                     <div className="rounded-xl overflow-hidden border-2 border-[#90C4E8] bg-[#EBF7FF]">
-                      <img
-                        src={req.imageUrl}
-                        alt="첨부 이미지"
+                      <img src={req.imageUrl} alt="첨부 이미지"
                         className="w-full max-h-64 object-contain"
                         onError={(e) => {
                           const el = e.target as HTMLImageElement
                           if (el.parentElement) el.parentElement.style.display = "none"
-                        }}
-                      />
+                        }} />
                     </div>
                   )}
 
                   {/* 처리 버튼 */}
                   <div className="flex gap-2">
-                    {/* 1:1 대화 버튼 — 항상 표시 */}
                     <button onClick={() => handleOpenDM(req)}
                       className="px-3 py-2.5 bg-[#EBF7FF] hover:bg-[#D0E8FF] text-[#1877D4] rounded-xl font-black text-sm transition-colors border-2 border-[#90C4E8]">
                       💬 대화
                     </button>
-
                     {req.status === "대기중" && (
                       <>
                         <button onClick={() => handleApprove(req)}
@@ -411,6 +410,28 @@ export default function VerifyRequestPage() {
                 </div>
               </div>
             ))}
+
+            {/* 페이지네이션 */}
+            {Math.ceil(requests.length / PAGE_SIZE) > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-xl font-black text-sm bg-white border-2 border-[#5BA8D8] text-[#1877D4] disabled:opacity-40 hover:bg-[#EBF7FF] transition-colors">
+                  ← 이전
+                </button>
+                {Array.from({ length: Math.ceil(requests.length / PAGE_SIZE) }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setCurrentPage(p)}
+                    className={`w-9 h-9 rounded-xl font-black text-sm border-2 transition-colors ${p === currentPage ? "bg-[#1877D4] text-white border-[#1877D4]" : "bg-white text-[#1877D4] border-[#5BA8D8] hover:bg-[#EBF7FF]"}`}>
+                    {p}
+                  </button>
+                ))}
+                <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(requests.length / PAGE_SIZE), p + 1))}
+                  disabled={currentPage === Math.ceil(requests.length / PAGE_SIZE)}
+                  className="px-4 py-2 rounded-xl font-black text-sm bg-white border-2 border-[#5BA8D8] text-[#1877D4] disabled:opacity-40 hover:bg-[#EBF7FF] transition-colors">
+                  다음 →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

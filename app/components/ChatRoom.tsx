@@ -459,7 +459,20 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
   const adminUidCache = useRef<Map<string, boolean>>(new Map())
   const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const isNearBottom = () => {
+    const el = scrollContainerRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120
+  }
+
+  const scrollToBottom = (force = false) => {
+    if (force || isNearBottom()) {
+      requestAnimationFrame(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }))
+    }
+  }
 
   const handleLongPressEnd = useCallback(() => {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
@@ -510,7 +523,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         return { id: d.id, ...data, time: date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) } as Message
       })
       setMessages(msgs)
-      requestAnimationFrame(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }))
+      scrollToBottom()
     }, console.error)
     return () => unsub()
   }, [room])
@@ -538,6 +551,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         uid: user?.uid || getOrCreateGuestUid(),
         displayName: isAdminUser ? "🛡️ 운영자" : user ? (isVerified ? userNickname : "승인 대기중 유저") : guestName.trim(),
       })
+      scrollToBottom(true)
     } catch (err) { console.error("전송 실패:", err) }
   }
 
@@ -612,7 +626,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
       )}
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#ddeeff]">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#ddeeff]">
         {messages.length === 0 && (
           <div className="text-center py-20 text-[#90C4E8] font-bold">아직 메시지가 없어요!</div>
         )}
