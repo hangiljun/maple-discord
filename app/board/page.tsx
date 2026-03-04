@@ -30,6 +30,8 @@ export default function BoardPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: "", content: "" })
   const [posting, setPosting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 20
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -144,7 +146,7 @@ export default function BoardPage() {
           <div className="text-center py-20 text-[#5BA8D8] font-bold">아직 게시글이 없어요. 첫 글을 써보세요!</div>
         ) : (
           <div className="space-y-3">
-            {posts.map((post) => (
+            {posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((post) => (
               <div key={post.id} className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
                 <button onClick={() => setExpanded(expanded === post.id ? null : post.id)}
                   className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#EBF7FF] transition-colors">
@@ -167,6 +169,28 @@ export default function BoardPage() {
                 )}
               </div>
             ))}
+
+            {/* 페이지네이션 */}
+            {Math.ceil(posts.length / PAGE_SIZE) > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-xl font-black text-sm bg-white border-2 border-[#5BA8D8] text-[#1877D4] disabled:opacity-40 hover:bg-[#EBF7FF] transition-colors">
+                  ← 이전
+                </button>
+                {Array.from({ length: Math.ceil(posts.length / PAGE_SIZE) }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => setCurrentPage(p)}
+                    className={`w-9 h-9 rounded-xl font-black text-sm border-2 transition-colors ${p === currentPage ? "bg-[#1877D4] text-white border-[#1877D4]" : "bg-white text-[#1877D4] border-[#5BA8D8] hover:bg-[#EBF7FF]"}`}>
+                    {p}
+                  </button>
+                ))}
+                <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(posts.length / PAGE_SIZE), p + 1))}
+                  disabled={currentPage === Math.ceil(posts.length / PAGE_SIZE)}
+                  className="px-4 py-2 rounded-xl font-black text-sm bg-white border-2 border-[#5BA8D8] text-[#1877D4] disabled:opacity-40 hover:bg-[#EBF7FF] transition-colors">
+                  다음 →
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
