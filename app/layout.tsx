@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import Navbar from "./components/Navbar"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://maple-discord.vercel.app"
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -11,27 +9,50 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
-  title: "메이플 디스코드",
-  description: "메이플랜드 실시간 거래 커뮤니티 — 아이템 구매·판매·교환을 실시간 채팅으로! 인증 유저와 안전하게 거래하세요.",
+  metadataBase: new URL("https://메이플디스코드.com"),
+
+  title: {
+    default: "메이플랜드 거래방 | 메랜 메소·아이템 안전거래 디스코드",
+    template: "%s | 메이플랜드 거래방",
+  },
+
+  description:
+    "메이플랜드 메소 거래, 메랜 아이템 안전거래, 아이템 교환 전문 거래방. " +
+    "메랜 메소 시세 확인 및 안전한 직거래. 메이플랜드 디스코드 커뮤니티.",
+
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: BASE_URL,
-    siteName: "메이플 디스코드",
-    description: "메이플랜드 실시간 거래 커뮤니티 — 아이템 구매·판매·교환을 실시간 채팅으로! 인증 유저와 안전하게 거래하세요.",
+    url: "https://메이플디스코드.com",
+    siteName: "메이플랜드 거래방",
+    title: "메이플랜드 거래방 | 메랜 메소·아이템 안전거래 디스코드",
+    description:
+      "메이플랜드 메소 거래, 아이템 안전거래, 교환 전문 디스코드 거래방. 메랜 유저라면 여기로!",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "메이플랜드 거래방 - 메소·아이템 안전거래 디스코드",
+      },
+    ],
   },
+
   twitter: {
-    card: "summary",
-    description: "메이플랜드 실시간 거래 커뮤니티",
+    card: "summary_large_image",
+    title: "메이플랜드 거래방 | 메랜 메소·아이템 안전거래 디스코드",
+    description: "메이플랜드 메소 거래, 아이템 안전거래, 교환 전문 디스코드 거래방.",
+    images: ["/og-image.png"],
   },
+
   robots: {
     index: true,
     follow: true,
     googleBot: { index: true, follow: true },
   },
+
   alternates: {
-    canonical: BASE_URL,
+    canonical: "https://메이플디스코드.com",
   },
 }
 

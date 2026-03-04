@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://maple-discord.vercel.app"
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://메이플디스코드.com"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
