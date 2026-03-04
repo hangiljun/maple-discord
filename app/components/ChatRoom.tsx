@@ -169,7 +169,7 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
 
   return (
     <div ref={popupRef} style={{ position: "fixed", left, top, zIndex: 9999 }}
-      className="w-60 bg-white border-2 border-[#5BA8D8] rounded-2xl shadow-2xl overflow-hidden"
+      className="w-60 bg-white border-2 border-[#5BA8D8] rounded-2xl shadow-2xl overflow-y-auto max-h-[85vh]"
       onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
       <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-3 flex justify-between items-center">
         <span className="font-black text-white text-sm">유저 정보</span>

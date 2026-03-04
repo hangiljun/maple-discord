@@ -107,6 +107,19 @@ export default function DMChatWindow({ chatId, myUid, myName, otherName, onBack 
           </div>
         )}
         {messages.map((msg) => {
+          const isSystem = (msg as any).isSystem || msg.senderUid === "system"
+          if (isSystem) {
+            return (
+              <div key={msg.id} className="flex justify-center my-1">
+                <div className="bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-2.5 max-w-[90%] text-center">
+                  <p className="text-[11px] font-black text-yellow-700 mb-1">📢 공지</p>
+                  {msg.text.split("\n").map((line, i) => (
+                    <p key={i} className="text-[11px] text-yellow-800 font-bold leading-relaxed">{line}</p>
+                  ))}
+                </div>
+              </div>
+            )
+          }
           const isMine = msg.senderUid === myUid
           return (
             <div key={msg.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
