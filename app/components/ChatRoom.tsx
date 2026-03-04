@@ -5,7 +5,7 @@ import { db, auth } from "@/lib/firebase"
 import {
   collection, addDoc, query, orderBy, onSnapshot,
   serverTimestamp, where, limit, doc, getDoc, getDocs,
-  updateDoc, arrayUnion, increment, deleteDoc
+  updateDoc, arrayUnion, increment
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { getOrCreateDMRoom, getOrCreateGuestUid } from "@/lib/dm"
@@ -528,7 +528,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
       await addDoc(collection(db, "chats"), {
         text: textValue, createdAt: serverTimestamp(), clientTime: Date.now(),
         room, msgType: sendType, isGuest: !user, isAdminMessage: isAdminUser,
-        uid: user?.uid || "guest_" + Math.random().toString(36).substring(7),
+        uid: user?.uid || getOrCreateGuestUid(),
         displayName: isAdminUser ? "🛡️ 운영자" : user ? (isVerified ? userNickname : "승인 대기중 유저") : guestName.trim(),
       })
     } catch (err) { console.error("전송 실패:", err) }

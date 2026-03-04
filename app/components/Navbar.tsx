@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
@@ -17,29 +17,33 @@ export default function Navbar() {
   const [contacting, setContacting] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const innerUnsubs = useRef<Array<() => void>>([])
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
+      innerUnsubs.current.forEach(u => u())
+      innerUnsubs.current = []
       setUser(currentUser)
       if (currentUser) {
-        onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+        const unsubUser = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
           if (docSnap.exists()) setUserData(docSnap.data())
         })
         const dmQuery = query(
           collection(db, "dm_rooms"),
           where("participants", "array-contains", currentUser.uid)
         )
-        onSnapshot(dmQuery, (snap) => {
+        const unsubDM = onSnapshot(dmQuery, (snap) => {
           let total = 0
           snap.docs.forEach(d => { total += d.data().unread?.[currentUser.uid] || 0 })
           setUnreadTotal(total)
         })
+        innerUnsubs.current = [unsubUser, unsubDM]
       } else {
         setUserData(null)
         setUnreadTotal(0)
       }
     })
-    return () => unsubAuth()
+    return () => { unsubAuth(); innerUnsubs.current.forEach(u => u()) }
   }, [])
 
   const handleContactAdmin = async () => {

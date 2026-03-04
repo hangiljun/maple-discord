@@ -1,12 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { db, auth, storage } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
   deleteDoc, doc, serverTimestamp, updateDoc
 } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { uploadImageFile } from "@/lib/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
@@ -87,9 +87,7 @@ export default function NoticePage() {
     try {
       let imageUrl: string | null = existingImageUrl || null
       if (imageFile) {
-        const storageRef = ref(storage, `notices/${Date.now()}_${imageFile.name}`)
-        const snapshot = await uploadBytes(storageRef, imageFile)
-        imageUrl = await getDownloadURL(snapshot.ref)
+        imageUrl = await uploadImageFile(imageFile, `notices/${Date.now()}_${imageFile.name}`)
       }
       if (editingId) {
         await updateDoc(doc(db, "notices", editingId), {

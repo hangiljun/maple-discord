@@ -1,11 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db, auth, storage } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
 import {
   collection, addDoc, deleteDoc, doc,
   onSnapshot, serverTimestamp, query, orderBy, updateDoc
 } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { uploadImageFile } from "@/lib/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
@@ -49,12 +49,6 @@ export default function AdminPage() {
 
   const activeBanners = banners.filter(b => b.active)
 
-  const uploadImage = async (file: File, path: string) => {
-    const storageRef = ref(storage, path)
-    const snapshot = await uploadBytes(storageRef, file)
-    return getDownloadURL(snapshot.ref)
-  }
-
   const handleAdd = async () => {
     if (!form.description.trim() || !form.link.trim()) {
       alert("설명과 링크를 입력해주세요"); return
@@ -66,7 +60,7 @@ export default function AdminPage() {
     try {
       let imageUrl = ""
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile, `banners/${Date.now()}_${imageFile.name}`)
+        imageUrl = await uploadImageFile(imageFile, `banners/${Date.now()}_${imageFile.name}`)
       }
       await addDoc(collection(db, "banners"), {
         imageUrl,
@@ -123,7 +117,7 @@ export default function AdminPage() {
     try {
       let imageUrl = editExistingUrl
       if (editImageFile) {
-        imageUrl = await uploadImage(editImageFile, `banners/${Date.now()}_${editImageFile.name}`)
+        imageUrl = await uploadImageFile(editImageFile, `banners/${Date.now()}_${editImageFile.name}`)
       }
       await updateDoc(doc(db, "banners", editingId!), {
         imageUrl,

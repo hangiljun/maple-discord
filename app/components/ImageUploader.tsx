@@ -8,6 +8,7 @@ interface Props {
 
 export default function ImageUploader({ onFile, initialPreview }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const blobUrlRef = useRef<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<string>(initialPreview || "")
 
@@ -15,13 +16,16 @@ export default function ImageUploader({ onFile, initialPreview }: Props) {
     setPreview(initialPreview || "")
   }, [initialPreview])
 
+  // blob URL 메모리 누수 방지
+  useEffect(() => {
+    return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current) }
+  }, [])
+
   const handleFile = (file: File | null) => {
-    if (!file) {
-      setPreview("")
-      onFile(null)
-      return
-    }
+    if (blobUrlRef.current) { URL.revokeObjectURL(blobUrlRef.current); blobUrlRef.current = null }
+    if (!file) { setPreview(""); onFile(null); return }
     const url = URL.createObjectURL(file)
+    blobUrlRef.current = url
     setPreview(url)
     onFile(file)
   }

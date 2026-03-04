@@ -1,11 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db, auth, storage } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
 import {
   collection, addDoc, serverTimestamp,
   query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc
 } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { uploadImageFile } from "@/lib/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
@@ -118,9 +118,7 @@ export default function VerifyRequestPage() {
     try {
       let imageUrl: string | null = null
       if (imageFile) {
-        const storageRef = ref(storage, `verify_requests/${user.uid}_${Date.now()}_${imageFile.name}`)
-        const snapshot = await uploadBytes(storageRef, imageFile)
-        imageUrl = await getDownloadURL(snapshot.ref)
+        imageUrl = await uploadImageFile(imageFile, `verify_requests/${user.uid}_${Date.now()}_${imageFile.name}`)
       }
       await addDoc(collection(db, "verify_requests"), {
         authorUid: user.uid,
