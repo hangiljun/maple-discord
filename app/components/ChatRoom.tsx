@@ -574,23 +574,23 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   }, [user, userNickname, guestName, router])
 
   const typeStyle = {
-    일반: "bg-[#EBF7FF] text-[#0A3D6B] border-[#90C4E8]",
+    일반: "bg-gray-100 text-gray-700 border-gray-300",
     삽니다: "bg-blue-50 text-blue-700 border-blue-300",
     팝니다: "bg-orange-50 text-orange-700 border-orange-300",
   }
 
   return (
-    <div className="flex flex-col h-[650px] bg-white border-4 border-[#5BA8D8] rounded-[28px] overflow-hidden shadow-xl"
+    <div className="flex flex-col h-[650px] bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-md"
       onClick={() => { setProfilePopup(null); setContextMenu(null) }}>
 
       {/* 채팅 헤더 */}
-      <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-5 py-3 flex items-center gap-2">
+      <div className="bg-[#1e3a5f] px-5 py-3 flex items-center gap-2 rounded-t-2xl">
         <span className="text-lg">🍁</span>
         <span className="font-black text-white text-sm">메이플랜드 거래 채팅</span>
         {isAdminUser && (
           <span className="text-[10px] bg-red-500 text-white font-black px-2 py-0.5 rounded-full">🛡️ 관리자</span>
         )}
-        <span className="ml-auto text-[11px] text-sky-300 font-bold">{messages.length}개</span>
+        <span className="ml-auto text-[11px] text-blue-300 font-bold">{messages.length}개</span>
       </div>
 
       {blocked?.banned && (
@@ -605,7 +605,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
       )}
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F0F8FF]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#ddeeff]">
         {messages.length === 0 && (
           <div className="text-center py-20 text-[#90C4E8] font-bold">아직 메시지가 없어요!</div>
         )}
@@ -621,29 +621,30 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
               onTouchEnd={isInteractable ? handleLongPressEnd : undefined}
               onTouchMove={isInteractable ? handleLongPressEnd : undefined}>
               {msg.isSystem ? (
-                <div className="px-4 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold text-yellow-800 max-w-[90%] text-center">
+                <div className="mx-auto px-4 py-1.5 bg-yellow-100 border border-yellow-400 rounded-full text-xs font-bold text-yellow-800 max-w-[90%] text-center">
                   {msg.text}
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#0A3D6B]">
+                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-gray-600">
                     <span
                       className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:underline active:opacity-60" : ""}`}
                       onClick={(e) => handleNameClick(e, msg)}>
                       {isMsgFromAdmin ? msg.displayName : msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
                     </span>
                     {!msg.isGuest && !isMsgFromAdmin && profileCache.has(msg.uid) && <StarBadge profile={profileCache.get(msg.uid)!} />}
-                    <span className="text-[#7BBDE8] font-normal">{msg.time}</span>
+                    <span className="text-gray-400 font-normal">{msg.time}</span>
                     {(isAdminUser || msg.uid === user?.uid) && !msg.isSystem && (
                       <button onClick={() => deleteMessage(msg.id)}
                         className="ml-1 text-red-300 hover:text-red-500 text-[10px]" title="삭제">✕</button>
                     )}
                   </div>
-                  <div className={`p-3 rounded-2xl text-sm font-bold border-2 max-w-[80%] break-words ${
+                  <div className={`p-3 rounded-2xl text-sm font-bold border max-w-[80%] break-words ${
                     isMsgFromAdmin ? "border-red-200 bg-red-50 text-red-800" :
-                    msg.msgType === "삽니다" ? "border-blue-300 bg-blue-50 text-blue-700" :
-                    msg.msgType === "팝니다" ? "border-orange-300 bg-orange-50 text-orange-700" :
-                    "border-[#90C4E8] bg-white text-[#0A3D6B]"}`}>
+                    msg.msgType === "삽니다" ? "border-blue-200 bg-blue-50 text-blue-700" :
+                    msg.msgType === "팝니다" ? "border-orange-200 bg-orange-50 text-orange-700" :
+                    msg.uid === user?.uid ? "border-orange-200 bg-orange-100 text-gray-800" :
+                    "border-gray-200 bg-white text-gray-800"}`}>
                     {msg.msgType !== "일반" && !isMsgFromAdmin && (
                       <span className={`mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black ${msg.msgType === "삽니다" ? "bg-blue-200 text-blue-800" : "bg-orange-200 text-orange-800"}`}>
                         [{msg.msgType}]
@@ -661,10 +662,10 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
       {/* 입력 폼 */}
       <form onSubmit={sendMessage}
-        className="p-3 bg-[#EBF7FF] border-t-4 border-[#5BA8D8] flex flex-col gap-2"
+        className="p-3 bg-white border-t border-gray-200 flex flex-col gap-2"
         onClick={(e) => e.stopPropagation()}>
         {!user && (
-          <input className="w-full p-2.5 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] bg-white"
+          <input className="w-full p-2.5 rounded-xl border border-gray-300 font-bold text-sm outline-none focus:border-orange-400 bg-white"
             placeholder="닉네임 입력 (비회원)" value={guestName}
             onChange={(e) => setGuestName(e.target.value)} maxLength={20} />
         )}
@@ -685,12 +686,12 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
             <option value="삽니다">🔵 삽니다</option>
             <option value="팝니다">🟠 팝니다</option>
           </select>
-          <input className="flex-1 p-2.5 rounded-2xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] min-w-0 bg-white"
+          <input className="flex-1 p-2.5 rounded-2xl border border-gray-300 font-bold text-sm outline-none focus:border-orange-400 min-w-0 bg-white"
             placeholder={blocked?.banned ? "채팅 차단됨" : blocked?.muted ? "채팅 금지됨" : "거래 내용 입력"}
             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
             disabled={!!blocked?.banned || !!blocked?.muted} />
           <button disabled={!!blocked?.banned || !!blocked?.muted}
-            className="bg-[#1877D4] hover:bg-[#0D47A1] disabled:bg-gray-300 text-white px-4 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap flex-shrink-0 transition-colors">
+            className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap flex-shrink-0 transition-colors">
             전송
           </button>
         </div>
@@ -698,9 +699,9 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
       {dmLoading && (
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[28px] z-50">
-          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border-2 border-[#5BA8D8]">
-            <div className="w-5 h-5 border-2 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
-            <span className="font-black text-sm text-[#0A3D6B]">대화방 연결 중...</span>
+          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border border-gray-200">
+            <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <span className="font-black text-sm text-gray-700">대화방 연결 중...</span>
           </div>
         </div>
       )}
