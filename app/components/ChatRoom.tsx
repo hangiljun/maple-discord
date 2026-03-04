@@ -250,15 +250,15 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
               {alreadyVoted && <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>}
               {voteMsg && <p className="text-[11px] font-bold text-center text-[#1877D4]">{voteMsg}</p>}
             </div>
-            {currentUser && currentUser.uid !== uid && onStartDM && (
-              <button onClick={() => { onStartDM(); onClose() }}
-                className="w-full py-2.5 rounded-xl text-xs font-black bg-[#1e3a5f] text-white hover:bg-[#16304f] active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                💬 1:1 대화하기
-              </button>
-            )}
           </div>
         ) : (
           <p className="text-xs text-center text-gray-400 py-4">정보를 찾을 수 없어요</p>
+        )}
+        {onStartDM && uid !== currentUser?.uid && (
+          <button onClick={() => { onStartDM(); onClose() }}
+            className="w-full mt-3 py-2.5 rounded-xl text-xs font-black bg-[#1e3a5f] text-white hover:bg-[#16304f] active:scale-95 transition-all flex items-center justify-center gap-1.5">
+            💬 1:1 대화하기
+          </button>
         )}
       </div>
     </div>
