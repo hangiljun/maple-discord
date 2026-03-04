@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── users 컬렉션 ──────────────────────────────────────
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && (request.auth.uid == userId
+            || exists(/databases/$(database)/documents/admin/$(request.auth.uid)));
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['mannerScore', 'mannerVoters']);
+    }
+
+    // ── chats 컬렉션 (공개 거래 채팅) ────────────────────
+    match /chats/{chatId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if request.auth != null
+        && (
+          request.auth.uid == resource.data.uid
+          || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
+        );
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.uid;
+    }
+
+    // ── dm_rooms 컬렉션 (1:1 대화) ───────────────────────
+    match /dm_rooms/{chatId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false;
+      }
+    }
+
+    // ── reports 컬렉션 (사기꾼 제보) ─────────────────────
+    match /reports/{reportId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.uid;
+    }
+
+    // ── admin 컬렉션 ──────────────────────────────────────
+    match /admin/{uid} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── banned_users 컬렉션 (영구 차단) ──────────────────
+    match /banned_users/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+    }
+
+    // ── muted_users 컬렉션 (일시 추방) ───────────────────
+    match /muted_users/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+    }
+
+    // ── notices 컬렉션 (공지사항) ─────────────────────────
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+    }
+
+    // ── board_posts 컬렉션 (자유게시판) ──────────────────
+    match /board_posts/{postId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if request.auth != null
+        && (
+          request.auth.uid == resource.data.authorUid
+          || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
+        );
+      allow update: if false;
+    }
+
+    // ── banners 컬렉션 (홈 배너) ─────────────────────────
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+    }
+
+    // ── verify_requests 컬렉션 (인증 신청) ───────────────
+    match /verify_requests/{reqId} {
+      allow read: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+      allow create: if request.auth != null;
+      allow update: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
+      allow delete: if false;
+    }
+
+  }
+}

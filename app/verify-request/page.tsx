@@ -1,22 +1,63 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db, auth } from "@/lib/firebase"
+import { db, auth, storage } from "@/lib/firebase"
 import {
   collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, doc, getDoc, updateDoc
+  query, orderBy, onSnapshot, doc, getDoc, updateDoc, setDoc
 } from "firebase/firestore"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
+import ImageUploader from "@/app/components/ImageUploader"
+
+type CertType = "이메일" | "전화번호" | "게임 인증"
 
 interface VerifyRequest {
   id: string
   authorUid: string
   authorName: string
-  type: "이메일" | "전화번호" | "손인증"
+  type: CertType | "손인증"  // "손인증" kept for backwards compatibility
   description: string
+  imageUrl?: string
   status: "대기중" | "승인" | "거절"
   createdAt?: any
   date: string
+}
+
+const CERT_TYPES: { type: CertType; icon: string; label: string; placeholder: string; hint: string }[] = [
+  {
+    type: "이메일",
+    icon: "📧",
+    label: "이메일 인증",
+    placeholder: "이메일 인증 관련 내용을 입력해주세요",
+    hint: "네이버 이메일 창 캡쳐",
+  },
+  {
+    type: "전화번호",
+    icon: "📱",
+    label: "전화번호 인증",
+    placeholder: "전화번호를 남겨주세요",
+    hint: "번호 남겨주시면 연락 드려요",
+  },
+  {
+    type: "게임 인증",
+    icon: "🎮",
+    label: "게임 인증",
+    placeholder: "인게임 닉네임 등을 입력해주세요",
+    hint: "게임 내 스크린샷을 보내주세요",
+  },
+]
+
+const statusStyle: Record<string, string> = {
+  대기중: "bg-yellow-100 text-yellow-700 border-yellow-300",
+  승인: "bg-green-100 text-green-700 border-green-300",
+  거절: "bg-red-100 text-red-600 border-red-300",
+}
+
+function getVerifiedField(type: string) {
+  if (type === "이메일") return "emailVerified"
+  if (type === "전화번호") return "phoneVerified"
+  return "handsVerified" // "게임 인증" and legacy "손인증"
 }
 
 export default function VerifyRequestPage() {
@@ -25,9 +66,13 @@ export default function VerifyRequestPage() {
   const [adminUser, setAdminUser] = useState(false)
   const [requests, setRequests] = useState<VerifyRequest[]>([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ type: "이메일" as VerifyRequest["type"], description: "" })
+  const [selectedType, setSelectedType] = useState<CertType>("이메일")
+  const [form, setForm] = useState({ description: "" })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [posting, setPosting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  const activeCert = CERT_TYPES.find(c => c.type === selectedType)!
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -60,64 +105,106 @@ export default function VerifyRequestPage() {
     if (!form.description.trim()) { alert("내용을 입력해주세요"); return }
     setPosting(true)
     try {
+      let imageUrl: string | null = null
+      if (imageFile) {
+        const storageRef = ref(storage, `verify_requests/${user.uid}_${Date.now()}_${imageFile.name}`)
+        const snapshot = await uploadBytes(storageRef, imageFile)
+        imageUrl = await getDownloadURL(snapshot.ref)
+      }
       await addDoc(collection(db, "verify_requests"), {
         authorUid: user.uid,
         authorName: userNickname,
-        type: form.type,
+        type: selectedType,
         description: form.description,
+        imageUrl,
         status: "대기중",
         createdAt: serverTimestamp(),
       })
       setSubmitted(true)
       setShowForm(false)
-    } catch (e) { console.error(e) }
+      setForm({ description: "" })
+      setImageFile(null)
+      setTimeout(() => setSubmitted(false), 4000)
+    } catch (e: any) {
+      console.error(e)
+      alert("오류: " + (e?.message || String(e)))
+    }
     finally { setPosting(false) }
   }
 
-  // ✅ 5. 승인 시 users 컬렉션에 verified: true 저장 → 닉네임 변경 권한 부여
   const handleStatus = async (req: VerifyRequest, status: "승인" | "거절") => {
-    await updateDoc(doc(db, "verify_requests", req.id), { status })
-    if (status === "승인") {
-      await updateDoc(doc(db, "users", req.authorUid), {
-        verified: true,
-        [`${req.type === "이메일" ? "emailVerified" : req.type === "전화번호" ? "phoneVerified" : "handsVerified"}`]: true
-      })
+    try {
+      await updateDoc(doc(db, "verify_requests", req.id), { status })
+      if (status === "승인") {
+        await setDoc(doc(db, "users", req.authorUid), {
+          verified: true,
+          [getVerifiedField(req.type)]: true,
+        }, { merge: true })
+      }
+    } catch (e) {
+      console.error("인증 처리 실패:", e)
+      alert("처리 중 오류가 발생했어요")
     }
   }
 
-  const statusStyle: Record<string, string> = {
-    대기중: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    승인: "bg-green-100 text-green-700 border-green-300",
-    거절: "bg-red-100 text-red-600 border-red-300",
+  const handleRevoke = async (req: VerifyRequest) => {
+    if (!confirm(`${req.authorName}님의 ${req.type} 인증을 취소할까요?`)) return
+    try {
+      await updateDoc(doc(db, "verify_requests", req.id), { status: "대기중" })
+      const verifiedField = getVerifiedField(req.type)
+      const userSnap = await getDoc(doc(db, "users", req.authorUid))
+      if (userSnap.exists()) {
+        const data = userSnap.data()
+        const updates: Record<string, any> = { [verifiedField]: false }
+        const hasOtherCert = ["emailVerified", "phoneVerified", "handsVerified"]
+          .filter(f => f !== verifiedField)
+          .some(f => !!data[f])
+        if (!hasOtherCert) updates.verified = false
+        await updateDoc(doc(db, "users", req.authorUid), updates)
+      }
+    } catch (e) {
+      console.error("승인 취소 실패:", e)
+      alert("취소 중 오류가 발생했어요")
+    }
   }
 
+  // ── 일반 유저 화면 ─────────────────────────────────────
   if (!adminUser) {
     return (
-      <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10 flex items-center justify-center">
-        <div className="max-w-md w-full space-y-6">
-          <div className="text-center">
-            <div className="text-5xl mb-3">🔐</div>
-            <h1 className="text-2xl font-black text-[#E67E22]">인증 신청</h1>
-            <p className="text-sm text-[#A64D13] font-bold mt-2">인증을 신청하면 관리자가 검토 후 처리해요</p>
+      <div className="min-h-screen bg-[#D6EEFF] p-4 md:p-10">
+        <div className="max-w-md mx-auto space-y-5">
+
+          {/* 헤더 */}
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 text-center shadow-lg">
+            <div className="text-4xl mb-2">🔐</div>
+            <h1 className="text-2xl font-black text-white">인증 신청</h1>
+            <p className="text-sm text-sky-200 font-bold mt-1">인증을 받으면 닉네임 변경 + 인증 뱃지가 생겨요!</p>
           </div>
 
-          <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
-            <p className="font-black text-[#A64D13] text-sm mb-3">📋 인증 종류</p>
-            {[
-              { icon: "📧", label: "이메일 인증", desc: "이메일 주소를 통한 본인 확인" },
-              { icon: "📱", label: "전화번호 인증", desc: "전화번호를 통한 본인 확인" },
-              { icon: "🤝", label: "손 인증", desc: "실제 손 사진을 통한 본인 확인" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-3 p-3 bg-[#FFF9F2] rounded-2xl">
-                <span className="text-xl">{item.icon}</span>
-                <div>
-                  <p className="font-black text-sm text-[#5D4037]">{item.label}</p>
-                  <p className="text-[10px] text-gray-400 font-bold">{item.desc}</p>
+          {/* 인증 종류 선택 카드 */}
+          <div className="space-y-2">
+            {CERT_TYPES.map((cert) => (
+              <button key={cert.type}
+                onClick={() => { setSelectedType(cert.type); setShowForm(false); setForm({ description: "" }); setImageFile(null) }}
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all shadow-sm
+                  ${selectedType === cert.type
+                    ? "border-[#1877D4] bg-white shadow-md ring-2 ring-[#1877D4]/20"
+                    : "border-[#5BA8D8] bg-white hover:bg-[#EBF7FF]"}`}>
+                <div className={`w-12 h-12 flex items-center justify-center rounded-xl text-2xl flex-shrink-0 ${selectedType === cert.type ? "bg-[#1877D4]" : "bg-[#EBF7FF]"}`}>
+                  {cert.icon}
                 </div>
-              </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-[#0A3D6B] text-sm">{cert.label}</p>
+                  <p className="text-xs text-[#1877D4] font-bold mt-0.5">{cert.hint}</p>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${selectedType === cert.type ? "border-[#1877D4] bg-[#1877D4]" : "border-gray-300"}`}>
+                  {selectedType === cert.type && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+              </button>
             ))}
           </div>
 
+          {/* 신청 완료 메시지 */}
           {submitted && (
             <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-4 text-center">
               <p className="font-black text-green-700 text-sm">✅ 신청이 완료됐어요!</p>
@@ -125,6 +212,7 @@ export default function VerifyRequestPage() {
             </div>
           )}
 
+          {/* 로그인 필요 */}
           {!user && (
             <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-center">
               <p className="font-black text-amber-700 text-sm">⚠️ 로그인이 필요해요</p>
@@ -132,30 +220,48 @@ export default function VerifyRequestPage() {
             </div>
           )}
 
+          {/* 신청 버튼 & 폼 */}
           {user && !submitted && (
             <>
               <button onClick={() => setShowForm(!showForm)}
-                className="w-full py-3.5 bg-[#E67E22] text-white rounded-2xl font-black shadow-md active:scale-95">
-                {showForm ? "취소" : "✏️ 인증 신청하기"}
+                className="w-full py-3.5 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-2xl font-black shadow-md active:scale-95 transition-colors">
+                {showForm ? "✕ 취소" : `✏️ ${activeCert.label} 신청하기`}
               </button>
+
               {showForm && (
-                <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3">
-                  <p className="font-black text-[#A64D13] text-sm">🍁 {userNickname} 님의 신청</p>
-                  <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as VerifyRequest["type"] })}
-                    className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none bg-[#FFF9F2]">
-                    <option value="이메일">📧 이메일 인증</option>
-                    <option value="전화번호">📱 전화번호 인증</option>
-                    <option value="손인증">🤝 손 인증</option>
-                  </select>
-                  <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="인증 관련 내용을 입력해주세요" rows={4}
-                    className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] resize-none" />
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                    <span className="text-sm mt-0.5">🔒</span>
-                    <p className="text-xs text-blue-700 font-bold">신청 내용은 관리자만 볼 수 있습니다</p>
+                <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-5 space-y-4 shadow-md">
+                  {/* 선택된 인증 타입 표시 */}
+                  <div className="flex items-center gap-3 p-3 bg-[#EBF7FF] rounded-xl border border-[#90C4E8]">
+                    <span className="text-2xl">{activeCert.icon}</span>
+                    <div>
+                      <p className="font-black text-[#0A3D6B] text-sm">{activeCert.label}</p>
+                      <p className="text-[11px] text-[#1877D4] font-bold">{activeCert.hint}</p>
+                    </div>
                   </div>
+
+                  <p className="font-black text-[#0A3D6B] text-xs">🍁 {userNickname} 님의 신청</p>
+
+                  {/* 내용 입력 */}
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder={activeCert.placeholder}
+                    rows={4}
+                    className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] resize-none" />
+
+                  {/* 이미지 업로드 */}
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-black text-[#0A3D6B]">📸 사진 첨부 (선택)</p>
+                    <ImageUploader onFile={setImageFile} />
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 bg-sky-50 border-2 border-sky-200 rounded-xl">
+                    <span className="text-sm mt-0.5">🔒</span>
+                    <p className="text-xs text-sky-700 font-bold">신청 내용은 관리자만 볼 수 있습니다</p>
+                  </div>
+
                   <button onClick={handleSubmit} disabled={posting}
-                    className="w-full py-3 bg-[#E67E22] disabled:bg-gray-300 text-white rounded-2xl font-black text-sm">
+                    className="w-full py-3 bg-[#1877D4] disabled:bg-gray-300 hover:bg-[#0D47A1] text-white rounded-2xl font-black text-sm transition-colors">
                     {posting ? "신청 중..." : "신청하기"}
                   </button>
                 </div>
@@ -167,52 +273,86 @@ export default function VerifyRequestPage() {
     )
   }
 
+  // ── 관리자 화면 ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10">
+    <div className="min-h-screen bg-[#D6EEFF] p-4 md:p-10">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🛡️</span>
-          <div>
-            <h1 className="text-2xl font-black text-[#E67E22]">인증 신청 관리</h1>
-            <p className="text-sm text-[#A64D13] font-bold">총 {requests.length}건</p>
-          </div>
+
+        <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
+          <h1 className="text-2xl font-black text-white">🛡️ 인증 신청 관리</h1>
+          <p className="text-sm text-sky-200 font-bold mt-1">총 {requests.length}건</p>
         </div>
 
         {requests.length === 0 ? (
-          <div className="text-center py-20 text-[#FFD8A8] font-bold">신청 내역이 없어요</div>
+          <div className="text-center py-20 text-[#5BA8D8] font-bold">신청 내역이 없어요</div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {requests.map((req) => (
-              <div key={req.id} className="bg-white border-2 border-[#FFD8A8] rounded-2xl p-4 space-y-3 shadow-sm">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+              <div key={req.id} className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
+
+                {/* 카드 헤더 */}
+                <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-black text-sm text-[#5D4037]">🍁 {req.authorName}</span>
-                    <span className="text-[10px] bg-[#FFF4E6] text-[#E67E22] font-black px-2 py-0.5 rounded-full border border-[#FFD8A8]">
-                      {req.type} 인증
+                    <span className="font-black text-white text-sm">🍁 {req.authorName}</span>
+                    <span className="text-[10px] bg-white/20 text-white font-black px-2 py-0.5 rounded-full">
+                      {req.type}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border-2 ${statusStyle[req.status]}`}>
                       {req.status}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-bold">{req.date}</span>
+                    <span className="text-[10px] text-sky-200 font-bold">{req.date}</span>
                   </div>
                 </div>
-                <p className="text-sm text-[#5D4037] font-bold bg-[#FFF9F2] p-3 rounded-xl whitespace-pre-wrap">
-                  {req.description}
-                </p>
-                {req.status === "대기중" && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleStatus(req, "승인")}
-                      className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
-                      ✅ 승인 (닉네임 변경 권한 부여)
-                    </button>
-                    <button onClick={() => handleStatus(req, "거절")}
-                      className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
-                      ❌ 거절
-                    </button>
-                  </div>
-                )}
+
+                {/* 신청 내용 */}
+                <div className="p-4 space-y-3">
+                  <p className="text-sm text-[#0A3D6B] font-bold bg-[#EBF7FF] p-3 rounded-xl whitespace-pre-wrap">
+                    {req.description}
+                  </p>
+
+                  {/* 첨부 이미지 */}
+                  {req.imageUrl && (
+                    <div className="rounded-xl overflow-hidden border-2 border-[#90C4E8] bg-[#EBF7FF]">
+                      <img
+                        src={req.imageUrl}
+                        alt="첨부 이미지"
+                        className="w-full max-h-64 object-contain"
+                        onError={(e) => {
+                          const el = e.target as HTMLImageElement
+                          if (el.parentElement) el.parentElement.style.display = "none"
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* 처리 버튼 */}
+                  {req.status === "대기중" && (
+                    <div className="flex gap-2">
+                      <button onClick={() => handleStatus(req, "승인")}
+                        className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
+                        ✅ 승인
+                      </button>
+                      <button onClick={() => handleStatus(req, "거절")}
+                        className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
+                        ❌ 거절
+                      </button>
+                    </div>
+                  )}
+                  {req.status === "승인" && (
+                    <div className="flex gap-2">
+                      <button onClick={() => handleStatus(req, "승인")}
+                        className="flex-1 py-2.5 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
+                        🔄 재처리
+                      </button>
+                      <button onClick={() => handleRevoke(req)}
+                        className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors">
+                        ❌ 승인 취소
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

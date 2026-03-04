@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, addDoc, query, orderBy, onSnapshot,
-  serverTimestamp, where, limit, doc, getDoc,
+  serverTimestamp, where, limit, doc, getDoc, getDocs,
   updateDoc, arrayUnion, increment, deleteDoc
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
@@ -25,6 +25,7 @@ interface Message {
   displayName: string
   isGuest: boolean
   isSystem?: boolean
+  isAdminMessage?: boolean
   room: string
 }
 
@@ -62,10 +63,10 @@ function getSafePos(x: number, y: number, w = 240, h = 320) {
 }
 
 // ── 프로필 팝업 ──────────────────────────────────────────
-function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUser, isTargetAdmin }: {
+function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUser, isTargetAdmin, isCurrentUserAdmin }: {
   uid: string; displayName: string; isGuest: boolean
   anchorPos: { x: number; y: number }; onClose: () => void
-  currentUser: any; isTargetAdmin?: boolean  // ✅ 운영자 여부 추가
+  currentUser: any; isTargetAdmin?: boolean; isCurrentUserAdmin?: boolean
 }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(!isGuest)
@@ -75,21 +76,19 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
 
   useEffect(() => {
     if (isGuest) return
-    if (profileCache.has(uid)) {
-      setProfile(profileCache.get(uid)!)
+    setLoading(true)
+    const unsub = onSnapshot(doc(db, "users", uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as UserProfile
+        profileCache.set(uid, data)
+        setProfile(data)
+      }
       setLoading(false)
-      return
-    }
-    getDoc(doc(db, "users", uid))
-      .then(snap => {
-        if (snap.exists()) {
-          const data = snap.data() as UserProfile
-          profileCache.set(uid, data)
-          setProfile(data)
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    }, (err) => {
+      console.error(err)
+      setLoading(false)
+    })
+    return () => unsub()
   }, [uid, isGuest])
 
   useEffect(() => {
@@ -112,54 +111,84 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
         mannerScore: increment(type === "manner" ? 1 : -1),
         mannerVoters: arrayUnion(currentUser.uid)
       })
-      const updated = {
-        ...profile,
-        mannerScore: (profile?.mannerScore || 0) + (type === "manner" ? 1 : -1),
-        mannerVoters: [...(profile?.mannerVoters || []), currentUser.uid]
-      }
-      setProfile(updated); profileCache.set(uid, updated)
       setVoteMsg(type === "manner" ? "👍 매너 투표 완료!" : "👎 비매너 투표 완료!")
       setTimeout(() => setVoteMsg(""), 2000)
     } catch (e) { console.error(e); setVoteMsg("오류가 발생했어요") }
     finally { setVoteLoading(false) }
   }
 
-  const { left, top } = getSafePos(anchorPos.x, anchorPos.y, 240, 340)
+  const handleRevokeCert = async (certField: "emailVerified" | "phoneVerified" | "handsVerified") => {
+    if (!isCurrentUserAdmin) return
+    // Map certField → possible type names (including legacy "손인증")
+    const typeNames: Record<string, string[]> = {
+      emailVerified: ["이메일"],
+      phoneVerified: ["전화번호"],
+      handsVerified: ["손인증", "게임 인증"],
+    }
+    if (!confirm("이 인증을 취소할까요?")) return
+    try {
+      const userSnap = await getDoc(doc(db, "users", uid))
+      if (userSnap.exists()) {
+        const data = userSnap.data()
+        const updates: Record<string, any> = { [certField]: false }
+        const hasOtherCert = ["emailVerified", "phoneVerified", "handsVerified"]
+          .filter(f => f !== certField)
+          .some(f => !!data[f])
+        if (!hasOtherCert) updates.verified = false
+        await updateDoc(doc(db, "users", uid), updates)
+      }
+      await Promise.all(
+        typeNames[certField].map(async (typeName) => {
+          const q = query(
+            collection(db, "verify_requests"),
+            where("authorUid", "==", uid),
+            where("type", "==", typeName),
+            where("status", "==", "승인")
+          )
+          const snap = await getDocs(q)
+          await Promise.all(snap.docs.map(d => updateDoc(d.ref, { status: "대기중" })))
+        })
+      )
+    } catch (e) {
+      console.error(e)
+      alert("취소 중 오류가 발생했어요")
+    }
+  }
+
+  const { left, top } = getSafePos(anchorPos.x, anchorPos.y, 240, 360)
   const alreadyVoted = currentUser && profile?.mannerVoters?.includes(currentUser.uid)
   const score = profile?.mannerScore || 0
   const scoreColor = score > 0 ? "text-green-600" : score < 0 ? "text-red-500" : "text-gray-400"
   const certCount = profile ? [profile.emailVerified, profile.phoneVerified, profile.handsVerified].filter(Boolean).length : 0
-
-  const Badge = ({ ok, label, icon }: { ok?: boolean; label: string; icon: string }) => (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold ${ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
-      <span className="text-sm">{icon}</span>
-      <span className="flex-1">{label}</span>
-      <span className={`font-black ${ok ? "text-green-600" : "text-gray-300"}`}>{ok ? "✓ 완료" : "미인증"}</span>
-    </div>
-  )
+  const certItems = [
+    { field: "emailVerified" as const, label: "이메일", icon: "📧", ok: profile?.emailVerified },
+    { field: "phoneVerified" as const, label: "전화번호", icon: "📱", ok: profile?.phoneVerified },
+    { field: "handsVerified" as const, label: "게임 인증", icon: "🎮", ok: profile?.handsVerified },
+  ]
 
   return (
     <div ref={popupRef} style={{ position: "fixed", left, top, zIndex: 9999 }}
-      className="w-60 bg-white border-2 border-[#FFD8A8] rounded-2xl shadow-2xl overflow-hidden"
+      className="w-60 bg-white border-2 border-[#5BA8D8] rounded-2xl shadow-2xl overflow-hidden"
       onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-      <div className="bg-[#FFF4E6] px-4 py-3 flex justify-between items-center border-b-2 border-[#FFD8A8]">
-        <span className="font-black text-[#A64D13] text-sm">유저 정보</span>
-        <button onClick={onClose} className="w-5 h-5 flex items-center justify-center rounded-full bg-[#FFD8A8] hover:bg-[#FFB347] text-[#A64D13] text-xs font-black">✕</button>
+      <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-3 flex justify-between items-center">
+        <span className="font-black text-white text-sm">유저 정보</span>
+        <button onClick={onClose}
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 text-white text-xs font-black">✕</button>
       </div>
       <div className="p-4">
         {loading ? (
-          <div className="flex justify-center py-6"><div className="w-6 h-6 border-2 border-[#E67E22] border-t-transparent rounded-full animate-spin" /></div>
+          <div className="flex justify-center py-6">
+            <div className="w-6 h-6 border-2 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : isGuest ? (
           <div className="text-center py-3">
             <div className="text-4xl mb-2">👤</div>
-            <p className="font-black text-sm text-[#5D4037]">{displayName}</p>
+            <p className="font-black text-sm text-[#0A3D6B]">{displayName}</p>
             <div className="mt-2 px-3 py-1 bg-gray-100 rounded-full inline-block">
               <span className="text-xs text-gray-500 font-bold">비회원</span>
             </div>
             <p className="text-[10px] text-gray-400 mt-2">인증 정보가 없어요</p>
           </div>
-
-        // ✅ 운영자 프로필 - 1:1 대화만 표시
         ) : isTargetAdmin ? (
           <div className="text-center py-3 space-y-3">
             <div className="text-4xl mb-1">🛡️</div>
@@ -169,30 +198,39 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
             </div>
             <p className="text-[10px] text-gray-400">매너 투표 대상이 아니에요</p>
           </div>
-
         ) : profile ? (
           <div className="space-y-3">
-            <div className="text-center pb-3 border-b border-[#FFE8CC]">
+            <div className="text-center pb-3 border-b border-[#D0E8FF]">
               <div className="text-3xl mb-1">🍁</div>
-              <p className="font-black text-sm text-[#5D4037]">{profile.nickname || displayName}</p>
+              <p className="font-black text-sm text-[#0A3D6B]">{profile.nickname || displayName}</p>
               {certCount > 0 && (
                 <div className="flex justify-center gap-0.5 mt-1">
                   {Array.from({ length: certCount }).map((_, i) => <span key={i} className="text-base">⭐</span>)}
                 </div>
               )}
               {profile.server && (
-                <span className="text-[11px] text-[#E67E22] font-bold bg-[#FFF4E6] px-2 py-0.5 rounded-full mt-1.5 inline-block">
+                <span className="text-[11px] text-[#1877D4] font-bold bg-[#EBF7FF] px-2 py-0.5 rounded-full mt-1.5 inline-block">
                   🗺 {profile.server} 서버
                 </span>
               )}
             </div>
             <div className="space-y-1.5">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">인증 내역</p>
-              <Badge ok={profile.emailVerified} label="이메일" icon="📧" />
-              <Badge ok={profile.phoneVerified} label="전화번호" icon="📱" />
-              <Badge ok={profile.handsVerified} label="손 인증" icon="🤝" />
+              {certItems.map(({ field, label, icon, ok }) => (
+                <div key={field}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold ${ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
+                  <span className="text-sm">{icon}</span>
+                  <span className="flex-1">{label}</span>
+                  <span className={`font-black ${ok ? "text-green-600" : "text-gray-300"}`}>{ok ? "✓ 완료" : "미인증"}</span>
+                  {ok && isCurrentUserAdmin && (
+                    <button onClick={() => handleRevokeCert(field)}
+                      className="w-4 h-4 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-red-500 text-[10px] font-black ml-1"
+                      title="인증 취소">✕</button>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="border-t border-[#FFE8CC] pt-3 space-y-2">
+            <div className="border-t border-[#D0E8FF] pt-3 space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-black text-gray-400 uppercase">매너 점수</p>
                 <span className={`text-lg font-black ${scoreColor}`}>{score > 0 ? `+${score}` : score}점</span>
@@ -209,7 +247,7 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
               </div>
               {!currentUser && <p className="text-[10px] text-gray-400 text-center">로그인 후 투표할 수 있어요</p>}
               {alreadyVoted && <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>}
-              {voteMsg && <p className="text-[11px] font-bold text-center text-[#E67E22]">{voteMsg}</p>}
+              {voteMsg && <p className="text-[11px] font-bold text-center text-[#1877D4]">{voteMsg}</p>}
             </div>
           </div>
         ) : (
@@ -314,8 +352,8 @@ function AdminModal({ targetMsg, adminUid, room, onClose }: {
 }
 
 // ── 액션 시트 (모바일) ────────────────────────────────────
-function ActionSheet({ targetMsg, currentUid, isAdminUser, isTargetAdmin, onClose, onViewProfile, onStartDM, onAdminAction }: {
-  targetMsg: Message; currentUid: string | null; isAdminUser: boolean; isTargetAdmin: boolean
+function ActionSheet({ targetMsg, isAdminUser, isTargetAdmin, onClose, onViewProfile, onStartDM, onAdminAction }: {
+  targetMsg: Message; isAdminUser: boolean; isTargetAdmin: boolean
   onClose: () => void; onViewProfile: () => void; onStartDM: () => void; onAdminAction: () => void
 }) {
   return (
@@ -331,14 +369,13 @@ function ActionSheet({ targetMsg, currentUid, isAdminUser, isTargetAdmin, onClos
         </div>
         <div className="p-3 space-y-1 pb-8">
           <button onClick={() => { onViewProfile(); onClose() }}
-            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] active:bg-[#FFE8CC] transition-colors flex items-center gap-3">
+            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] active:bg-[#D0E8FF] transition-colors flex items-center gap-3">
             <span className="text-xl">🔍</span> 정보 보기
           </button>
           <button onClick={() => { onStartDM(); onClose() }}
-            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] active:bg-[#FFE8CC] transition-colors flex items-center gap-3">
+            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] active:bg-[#D0E8FF] transition-colors flex items-center gap-3">
             <span className="text-xl">💬</span> 1:1 대화하기
           </button>
-          {/* ✅ 운영자 메시지엔 관리자 메뉴 숨김 */}
           {isAdminUser && !targetMsg.isSystem && !isTargetAdmin && (
             <button onClick={() => { onAdminAction(); onClose() }}
               className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors flex items-center gap-3">
@@ -372,17 +409,16 @@ function ContextMenu({ pos, targetMsg, currentUid, isAdminUser, isTargetAdmin, o
 
   return (
     <div ref={menuRef} style={{ position: "fixed", left, top, zIndex: 9999 }}
-      className="w-48 bg-white border-2 border-[#FFD8A8] rounded-xl shadow-2xl overflow-hidden"
+      className="w-48 bg-white border-2 border-[#5BA8D8] rounded-xl shadow-2xl overflow-hidden"
       onMouseDown={(e) => e.stopPropagation()}>
       <button onClick={() => { onViewProfile(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors flex items-center gap-2">
+        className="w-full text-left px-4 py-3 text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] transition-colors flex items-center gap-2">
         🔍 정보 보기
       </button>
       <button onClick={() => { onStartDM(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#5D4037] hover:bg-[#FFF4E6] transition-colors border-t border-[#FFD8A8] flex items-center gap-2">
+        className="w-full text-left px-4 py-3 text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] transition-colors border-t border-[#D0E8FF] flex items-center gap-2">
         💬 1:1 대화하기
       </button>
-      {/* ✅ 운영자 메시지엔 관리자 메뉴 숨김 */}
       {isAdminUser && !targetMsg.isSystem && !isTargetAdmin && (
         <button onClick={() => { onAdminAction(); onClose() }}
           className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors border-t-2 border-red-100 flex items-center gap-2">
@@ -403,6 +439,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const [userNickname, setUserNickname] = useState<string>("")
   const [guestName, setGuestName] = useState("")
   const [isAdminUser, setIsAdminUser] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
   const [blocked, setBlocked] = useState<{ banned: boolean; muted: boolean; until?: Date } | null>(null)
   const [dmLoading, setDmLoading] = useState(false)
   const [profilePopup, setProfilePopup] = useState<{
@@ -413,34 +450,37 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const [actionSheet, setActionSheet] = useState<Message | null>(null)
   const [adminModal, setAdminModal] = useState<Message | null>(null)
 
-  // ✅ 운영자 uid 캐시
-  const adminUidCache = useRef<Set<string>>(new Set())
+  const adminUidCache = useRef<Map<string, boolean>>(new Map())
   const scrollRef = useRef<HTMLDivElement>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
+  }, [])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       if (u) {
-        try {
-          const snap = await getDoc(doc(db, "users", u.uid))
-          if (snap.exists()) {
-            // ✅ 1. 운영자면 닉네임을 "운영자"로 고정
-            const adminCheck = await isAdmin(u.uid)
-            setIsAdminUser(adminCheck)
-            if (adminCheck) {
-              setUserNickname("운영자")
-            } else {
-              setUserNickname(snap.data().nickname || u.email?.split("@")[0] || "모험가")
-            }
-          }
-        } catch {
-          const adminCheck = await isAdmin(u.uid)
-          setIsAdminUser(adminCheck)
-          setUserNickname(adminCheck ? "운영자" : u.email?.split("@")[0] || "모험가")
+        const [snap, adminCheck, banned, muteStatus] = await Promise.all([
+          getDoc(doc(db, "users", u.uid)),
+          isAdmin(u.uid),
+          isBanned(u.uid),
+          getMuteStatus(u.uid),
+        ])
+        setIsAdminUser(adminCheck)
+        if (adminCheck) {
+          setUserNickname("운영자")
+          setIsVerified(true)
+        } else if (snap.exists()) {
+          const data = snap.data()
+          setUserNickname(data.nickname || "모험가")
+          setIsVerified(!!data.verified)
+        } else {
+          setUserNickname("모험가")
+          setIsVerified(false)
         }
-        const banned = await isBanned(u.uid)
         if (banned) { setBlocked({ banned: true, muted: false }); return }
-        const muteStatus = await getMuteStatus(u.uid)
         if (muteStatus.muted) setBlocked({ banned: false, muted: true, until: muteStatus.until })
       } else {
         setUserNickname(""); setIsAdminUser(false)
@@ -463,16 +503,15 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         return { id: d.id, ...data, time: date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) } as Message
       })
       setMessages(msgs)
-      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
+      requestAnimationFrame(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }))
     }, console.error)
     return () => unsub()
   }, [room])
 
-  // ✅ 메시지 uid가 운영자인지 확인 (캐시 사용)
   const checkIsAdminUid = useCallback(async (uid: string): Promise<boolean> => {
-    if (adminUidCache.current.has(uid)) return true
+    if (adminUidCache.current.has(uid)) return adminUidCache.current.get(uid)!
     const result = await isAdmin(uid)
-    if (result) adminUidCache.current.add(uid)
+    adminUidCache.current.set(uid, result)
     return result
   }, [])
 
@@ -488,10 +527,9 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
     try {
       await addDoc(collection(db, "chats"), {
         text: textValue, createdAt: serverTimestamp(), clientTime: Date.now(),
-        room, msgType: sendType, isGuest: !user,
+        room, msgType: sendType, isGuest: !user, isAdminMessage: isAdminUser,
         uid: user?.uid || "guest_" + Math.random().toString(36).substring(7),
-        // ✅ 운영자면 "🛡️ 운영자"로 고정
-        displayName: isAdminUser ? "🛡️ 운영자" : user ? userNickname : guestName.trim(),
+        displayName: isAdminUser ? "🛡️ 운영자" : user ? (isVerified ? userNickname : "승인 대기중 유저") : guestName.trim(),
       })
     } catch (err) { console.error("전송 실패:", err) }
   }
@@ -533,25 +571,26 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
       router.push("/messages")
     } catch (err) { console.error("DM 시작 실패:", err); alert("DM 시작에 실패했어요.") }
     finally { setDmLoading(false) }
-  }, [user, userNickname, guestName, dmLoading, router])
+  }, [user, userNickname, guestName, router])
 
   const typeStyle = {
-    일반: "bg-[#FFF4E6] text-[#A64D13] border-[#FFD8A8]",
+    일반: "bg-[#EBF7FF] text-[#0A3D6B] border-[#90C4E8]",
     삽니다: "bg-blue-50 text-blue-700 border-blue-300",
     팝니다: "bg-orange-50 text-orange-700 border-orange-300",
   }
 
   return (
-    <div className="flex flex-col h-[650px] bg-white border-4 border-[#FFD8A8] rounded-[35px] overflow-hidden shadow-xl"
+    <div className="flex flex-col h-[650px] bg-white border-4 border-[#5BA8D8] rounded-[28px] overflow-hidden shadow-xl"
       onClick={() => { setProfilePopup(null); setContextMenu(null) }}>
 
-      <div className="bg-[#FFF4E6] border-b-4 border-[#FFD8A8] px-5 py-3 flex items-center gap-2">
+      {/* 채팅 헤더 */}
+      <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-5 py-3 flex items-center gap-2">
         <span className="text-lg">🍁</span>
-        <span className="font-black text-[#A64D13] text-sm">메이플랜드 거래 채팅</span>
+        <span className="font-black text-white text-sm">메이플랜드 거래 채팅</span>
         {isAdminUser && (
-          <span className="text-[10px] bg-red-100 text-red-600 font-black px-2 py-0.5 rounded-full border border-red-200">🛡️ 관리자</span>
+          <span className="text-[10px] bg-red-500 text-white font-black px-2 py-0.5 rounded-full">🛡️ 관리자</span>
         )}
-        <span className="ml-auto text-[11px] text-[#FFB347] font-bold">{messages.length}개</span>
+        <span className="ml-auto text-[11px] text-sky-300 font-bold">{messages.length}개</span>
       </div>
 
       {blocked?.banned && (
@@ -565,44 +604,36 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FFFEFA]">
+      {/* 메시지 영역 */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F0F8FF]">
         {messages.length === 0 && (
-          <div className="text-center py-20 text-[#FFD8A8] font-bold">아직 메시지가 없어요!</div>
+          <div className="text-center py-20 text-[#90C4E8] font-bold">아직 메시지가 없어요!</div>
         )}
         {messages.map((msg) => {
-          const longPress = (msg.uid !== user?.uid && !msg.isSystem)
-            ? { onTouchStart: (e: React.TouchEvent) => {
-                const timer = setTimeout(() => setActionSheet(msg), 500)
-                const cancel = () => clearTimeout(timer)
-                e.currentTarget.addEventListener("touchend", cancel, { once: true })
-                e.currentTarget.addEventListener("touchmove", cancel, { once: true })
-              }}
-            : {}
-
-          // ✅ 운영자 메시지 여부
-          const isMsgFromAdmin = msg.displayName === "🛡️ 운영자"
+          const isMsgFromAdmin = !!msg.isAdminMessage
+          const isInteractable = msg.uid !== user?.uid && !msg.isSystem
 
           return (
             <div key={msg.id}
               className={`flex flex-col ${msg.isSystem ? "items-center" : msg.uid === user?.uid ? "items-end" : "items-start"}`}
               onContextMenu={(e) => handleContextMenu(e, msg)}
-              {...longPress}>
+              onTouchStart={isInteractable ? () => { longPressTimer.current = setTimeout(() => setActionSheet(msg), 500) } : undefined}
+              onTouchEnd={isInteractable ? handleLongPressEnd : undefined}
+              onTouchMove={isInteractable ? handleLongPressEnd : undefined}>
               {msg.isSystem ? (
                 <div className="px-4 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold text-yellow-800 max-w-[90%] text-center">
                   {msg.text}
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#A64D13]">
+                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-[#0A3D6B]">
                     <span
                       className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:underline active:opacity-60" : ""}`}
                       onClick={(e) => handleNameClick(e, msg)}>
-                      {/* ✅ 운영자 메시지엔 🛡️ 표시 */}
                       {isMsgFromAdmin ? msg.displayName : msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
                     </span>
                     {!msg.isGuest && !isMsgFromAdmin && profileCache.has(msg.uid) && <StarBadge profile={profileCache.get(msg.uid)!} />}
-                    <span className="text-[#FFB347] font-normal">{msg.time}</span>
-                    {/* ✅ 3. 본인 메시지 삭제 버튼 (운영자 or 본인) */}
+                    <span className="text-[#7BBDE8] font-normal">{msg.time}</span>
                     {(isAdminUser || msg.uid === user?.uid) && !msg.isSystem && (
                       <button onClick={() => deleteMessage(msg.id)}
                         className="ml-1 text-red-300 hover:text-red-500 text-[10px]" title="삭제">✕</button>
@@ -612,7 +643,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
                     isMsgFromAdmin ? "border-red-200 bg-red-50 text-red-800" :
                     msg.msgType === "삽니다" ? "border-blue-300 bg-blue-50 text-blue-700" :
                     msg.msgType === "팝니다" ? "border-orange-300 bg-orange-50 text-orange-700" :
-                    "border-[#FFD8A8] bg-white text-[#5D4037]"}`}>
+                    "border-[#90C4E8] bg-white text-[#0A3D6B]"}`}>
                     {msg.msgType !== "일반" && !isMsgFromAdmin && (
                       <span className={`mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black ${msg.msgType === "삽니다" ? "bg-blue-200 text-blue-800" : "bg-orange-200 text-orange-800"}`}>
                         [{msg.msgType}]
@@ -628,20 +659,22 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         <div ref={scrollRef} />
       </div>
 
+      {/* 입력 폼 */}
       <form onSubmit={sendMessage}
-        className="p-3 bg-[#FFF4E6] border-t-4 border-[#FFD8A8] flex flex-col gap-2"
+        className="p-3 bg-[#EBF7FF] border-t-4 border-[#5BA8D8] flex flex-col gap-2"
         onClick={(e) => e.stopPropagation()}>
         {!user && (
-          <input className="w-full p-2.5 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] bg-white"
+          <input className="w-full p-2.5 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] bg-white"
             placeholder="닉네임 입력 (비회원)" value={guestName}
             onChange={(e) => setGuestName(e.target.value)} maxLength={20} />
         )}
-        {/* ✅ 운영자면 "운영자"로 표시 */}
         {user && (
           <div className="text-xs font-bold px-1 flex items-center gap-1">
             {isAdminUser
               ? <><span className="text-red-500">🛡️ 운영자</span><span className="text-gray-400">로 채팅 중</span></>
-              : <><span className="text-[#A64D13]">🍁 {userNickname}</span><span className="text-gray-400"> 으로 채팅 중</span></>
+              : !isVerified
+              ? <><span className="text-yellow-600">⏳ 승인 대기중 유저</span><span className="text-gray-400">로 채팅 중</span></>
+              : <><span className="text-[#0A3D6B] font-black">🍁 {userNickname}</span><span className="text-gray-400"> 으로 채팅 중</span></>
             }
           </div>
         )}
@@ -652,22 +685,22 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
             <option value="삽니다">🔵 삽니다</option>
             <option value="팝니다">🟠 팝니다</option>
           </select>
-          <input className="flex-1 p-2.5 rounded-2xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] min-w-0"
+          <input className="flex-1 p-2.5 rounded-2xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] min-w-0 bg-white"
             placeholder={blocked?.banned ? "채팅 차단됨" : blocked?.muted ? "채팅 금지됨" : "거래 내용 입력"}
             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
             disabled={!!blocked?.banned || !!blocked?.muted} />
           <button disabled={!!blocked?.banned || !!blocked?.muted}
-            className="bg-[#E67E22] disabled:bg-gray-300 text-white px-4 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap flex-shrink-0">
+            className="bg-[#1877D4] hover:bg-[#0D47A1] disabled:bg-gray-300 text-white px-4 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap flex-shrink-0 transition-colors">
             전송
           </button>
         </div>
       </form>
 
       {dmLoading && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[35px] z-50">
-          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border-2 border-[#FFD8A8]">
-            <div className="w-5 h-5 border-2 border-[#E67E22] border-t-transparent rounded-full animate-spin" />
-            <span className="font-black text-sm text-[#A64D13]">대화방 연결 중...</span>
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[28px] z-50">
+          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border-2 border-[#5BA8D8]">
+            <div className="w-5 h-5 border-2 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
+            <span className="font-black text-sm text-[#0A3D6B]">대화방 연결 중...</span>
           </div>
         </div>
       )}
@@ -676,13 +709,13 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         <ProfilePopup uid={profilePopup.uid} displayName={profilePopup.displayName}
           isGuest={profilePopup.isGuest} anchorPos={profilePopup.pos}
           onClose={() => setProfilePopup(null)} currentUser={user}
-          isTargetAdmin={profilePopup.isTargetAdmin} />
+          isTargetAdmin={profilePopup.isTargetAdmin} isCurrentUserAdmin={isAdminUser} />
       )}
 
       {contextMenu && (
         <ContextMenu pos={contextMenu.pos} targetMsg={contextMenu.msg}
           currentUid={user?.uid || null} isAdminUser={isAdminUser}
-          isTargetAdmin={adminUidCache.current.has(contextMenu.msg.uid)}
+          isTargetAdmin={adminUidCache.current.get(contextMenu.msg.uid) === true}
           onClose={() => setContextMenu(null)}
           onViewProfile={() => handleViewProfile(contextMenu.msg, contextMenu.pos)}
           onStartDM={() => handleStartDM(contextMenu.msg)}
@@ -691,8 +724,8 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
       {actionSheet && (
         <ActionSheet targetMsg={actionSheet}
-          currentUid={user?.uid || null} isAdminUser={isAdminUser}
-          isTargetAdmin={adminUidCache.current.has(actionSheet.uid)}
+          isAdminUser={isAdminUser}
+          isTargetAdmin={adminUidCache.current.get(actionSheet.uid) === true}
           onClose={() => setActionSheet(null)}
           onViewProfile={() => handleViewProfile(actionSheet)}
           onStartDM={() => handleStartDM(actionSheet)}

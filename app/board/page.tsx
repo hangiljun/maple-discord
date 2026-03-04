@@ -15,6 +15,7 @@ interface Post {
   authorUid: string
   authorName: string
   isGuest: boolean
+  isAdminPost?: boolean
   createdAt?: any
   date: string
 }
@@ -34,11 +35,13 @@ export default function BoardPage() {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       if (u) {
-        setAdminUser(await isAdmin(u.uid))
-        try {
-          const snap = await getDoc(doc(db, "users", u.uid))
-          if (snap.exists()) setUserNickname(snap.data().nickname || u.email?.split("@")[0] || "모험가")
-        } catch { setUserNickname(u.email?.split("@")[0] || "모험가") }
+        const [adminCheck, snap] = await Promise.all([isAdmin(u.uid), getDoc(doc(db, "users", u.uid))])
+        setAdminUser(adminCheck)
+        if (adminCheck) {
+          setUserNickname("운영자")
+        } else {
+          setUserNickname(snap.exists() ? snap.data().nickname || u.email?.split("@")[0] || "모험가" : u.email?.split("@")[0] || "모험가")
+        }
       }
     })
     return () => unsub()
@@ -70,8 +73,9 @@ export default function BoardPage() {
         title: form.title,
         content: form.content,
         authorUid: user?.uid || "guest_" + Math.random().toString(36).substring(7),
-        authorName: user ? userNickname : guestName.trim(),
+        authorName: adminUser ? "🛡️ 운영자" : user ? userNickname : guestName.trim(),
         isGuest: !user,
+        isAdminPost: adminUser,
         createdAt: serverTimestamp(),
       })
       setForm({ title: "", content: "" })
@@ -89,40 +93,46 @@ export default function BoardPage() {
     adminUser || (user && user.uid === post.authorUid)
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2] p-4 md:p-10">
+    <div className="min-h-screen bg-[#D6EEFF] p-4 md:p-10">
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* 헤더 */}
-        <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 flex items-center justify-between shadow-lg">
           <div>
-            <h1 className="text-2xl font-black text-[#E67E22]">💬 자유게시판</h1>
-            <p className="text-sm text-[#A64D13] font-bold mt-1">자유롭게 글을 써보세요!</p>
+            <h1 className="text-2xl font-black text-white">💬 자유게시판</h1>
+            <p className="text-sm text-sky-200 font-bold mt-1">자유롭게 글을 써보세요!</p>
           </div>
           <button onClick={() => setShowForm(!showForm)}
-            className="bg-[#E67E22] text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95">
-            {showForm ? "취소" : "✏️ 글쓰기"}
+            className="bg-white text-[#1877D4] px-5 py-2.5 rounded-xl font-black text-sm shadow-md active:scale-95 hover:bg-sky-50 transition-colors">
+            {showForm ? "✕ 취소" : "✏️ 글쓰기"}
           </button>
         </div>
 
         {/* 글쓰기 폼 */}
         {showForm && (
-          <div className="bg-white border-2 border-[#FFD8A8] rounded-3xl p-5 space-y-3 shadow-sm">
+          <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-5 space-y-3 shadow-md">
             {!user && (
               <input value={guestName} onChange={(e) => setGuestName(e.target.value)}
                 placeholder="닉네임 (비회원)" maxLength={20}
-                className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22]" />
+                className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4]" />
             )}
-            {user && <p className="text-xs font-black text-[#A64D13] px-1">🍁 {userNickname} 으로 작성</p>}
+            {user && (
+              <p className="text-xs font-black px-1">
+                {adminUser
+                  ? <span className="text-red-500">🛡️ 운영자 로 작성</span>
+                  : <span className="text-[#0A3D6B]">🍁 {userNickname} 으로 작성</span>}
+              </p>
+            )}
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="제목" maxLength={50}
-              className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22]" />
+              className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4]" />
             <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="내용을 입력하세요" rows={5} maxLength={1000}
-              className="w-full p-3 rounded-xl border-2 border-[#FFD8A8] font-bold text-sm outline-none focus:border-[#E67E22] resize-none" />
+              className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] resize-none" />
             <div className="flex justify-between items-center">
               <span className="text-[10px] text-gray-400 font-bold">{form.content.length}/1000</span>
               <button onClick={handlePost} disabled={posting}
-                className="px-6 py-2.5 bg-[#E67E22] disabled:bg-gray-300 text-white rounded-2xl font-black text-sm">
+                className="px-6 py-2.5 bg-[#1877D4] disabled:bg-gray-300 hover:bg-[#0D47A1] text-white rounded-2xl font-black text-sm transition-colors">
                 {posting ? "등록 중..." : "등록하기"}
               </button>
             </div>
@@ -131,17 +141,17 @@ export default function BoardPage() {
 
         {/* 게시글 목록 */}
         {posts.length === 0 ? (
-          <div className="text-center py-20 text-[#FFD8A8] font-bold">아직 게시글이 없어요. 첫 글을 써보세요!</div>
+          <div className="text-center py-20 text-[#5BA8D8] font-bold">아직 게시글이 없어요. 첫 글을 써보세요!</div>
         ) : (
           <div className="space-y-3">
             {posts.map((post) => (
-              <div key={post.id} className="bg-white border-2 border-[#FFD8A8] rounded-2xl overflow-hidden shadow-sm">
+              <div key={post.id} className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
                 <button onClick={() => setExpanded(expanded === post.id ? null : post.id)}
-                  className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#FFF9F2] transition-colors">
+                  className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#EBF7FF] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="font-black text-sm text-[#5D4037] truncate">{post.title}</p>
+                    <p className="font-black text-sm text-[#0A3D6B] truncate">{post.title}</p>
                     <p className="text-[10px] text-gray-400 font-bold mt-0.5">
-                      {post.isGuest ? `👤 ${post.authorName}` : `🍁 ${post.authorName}`} · {post.date}
+                      {post.isAdminPost ? `🛡️ ${post.authorName}` : post.isGuest ? `👤 ${post.authorName}` : `🍁 ${post.authorName}`} · {post.date}
                     </p>
                   </div>
                   <span className={`text-gray-400 text-xs transition-transform flex-shrink-0 ${expanded === post.id ? "rotate-180" : ""}`}>▼</span>
@@ -151,7 +161,7 @@ export default function BoardPage() {
                   )}
                 </button>
                 {expanded === post.id && (
-                  <div className="px-5 pb-5 pt-3 border-t-2 border-[#FFE8CC]">
+                  <div className="px-5 pb-5 pt-3 border-t-2 border-[#D0E8FF]">
                     <p className="text-sm text-[#5D4037] font-bold whitespace-pre-wrap leading-relaxed">{post.content}</p>
                   </div>
                 )}

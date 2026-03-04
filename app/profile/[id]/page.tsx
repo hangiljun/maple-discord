@@ -1,22 +1,27 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation" // ✨ URL에서 ID를 가져오기 위해 필요
+import { useParams } from "next/navigation"
 import { db } from "@/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
+import { isAdmin } from "@/lib/admin"
 import Navbar from "../../components/Navbar"
 
 export default function UserProfilePage() {
   const params = useParams()
   const id = params?.id as string
   const [targetUser, setTargetUser] = useState<any>(null)
+  const [targetIsAdmin, setTargetIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!id) return
     async function fetchUser() {
-      const docRef = doc(db, "users", id)
-      const docSnap = await getDoc(docRef)
+      const [docSnap, adminCheck] = await Promise.all([
+        getDoc(doc(db, "users", id)),
+        isAdmin(id),
+      ])
       if (docSnap.exists()) setTargetUser(docSnap.data())
+      setTargetIsAdmin(adminCheck)
       setLoading(false)
     }
     fetchUser()
@@ -30,22 +35,30 @@ export default function UserProfilePage() {
       <main className="max-w-xl mx-auto mt-20 p-8 bg-[#1e1e1e] rounded-3xl border border-gray-800 text-white">
         <div className="flex flex-col items-center mb-10">
           <div className="w-20 h-20 bg-gray-800 rounded-full mb-4 flex items-center justify-center text-2xl font-bold text-orange-500 border border-orange-500/30">
-            {targetUser?.badge || "B"}
+            {targetIsAdmin ? "🛡️" : (targetUser?.badge || "B")}
           </div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            {targetUser?.nickname || "익명"} 
-            {targetUser?.verified && <span className="text-blue-400">✓</span>}
+            {targetIsAdmin ? "운영자" : (targetUser?.nickname || "익명")}
+            {!targetIsAdmin && targetUser?.verified && <span className="text-blue-400">✓</span>}
           </h1>
-          <p className="text-gray-500 text-xs mt-1">{targetUser?.server || "일반"} 서버 유저</p>
+          <p className="text-gray-500 text-xs mt-1">
+            {targetIsAdmin ? "서버 관리자" : `${targetUser?.server || "일반"} 서버 유저`}
+          </p>
         </div>
 
-        {/* 🛡️ 인증 상태 UI (사진 참고 디자인) */}
-        <div className="grid grid-cols-2 gap-4 bg-black/40 p-6 rounded-2xl border border-gray-800">
-          <BadgeItem label="핸즈 인증" active={targetUser?.handsVerified} />
-          <BadgeItem label="이메일 인증" active={targetUser?.emailVerified} />
-          <BadgeItem label="휴대폰 인증" active={targetUser?.phoneVerified} />
-          <BadgeItem label="우수 인증" active={targetUser?.excellent} />
-        </div>
+        {targetIsAdmin ? (
+          <div className="bg-black/40 p-6 rounded-2xl border border-orange-500/30 text-center">
+            <p className="text-orange-500 font-bold text-sm">🛡️ 서버 운영자</p>
+            <p className="text-gray-500 text-xs mt-2">운영자의 상세 정보는 공개되지 않아요</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 bg-black/40 p-6 rounded-2xl border border-gray-800">
+            <BadgeItem label="핸즈 인증" active={targetUser?.handsVerified} />
+            <BadgeItem label="이메일 인증" active={targetUser?.emailVerified} />
+            <BadgeItem label="휴대폰 인증" active={targetUser?.phoneVerified} />
+            <BadgeItem label="우수 인증" active={targetUser?.excellent} />
+          </div>
+        )}
       </main>
     </div>
   )

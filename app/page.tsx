@@ -1,36 +1,102 @@
 "use client"
+import { useEffect, useState } from "react"
 import ChatRoom from "./components/ChatRoom"
+import { db } from "@/lib/firebase"
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
+
+interface Banner {
+  id: string
+  imageUrl: string
+  description: string
+  link: string
+  order: number
+  active: boolean
+}
 
 export default function Home() {
+  const [banners, setBanners] = useState<Banner[]>([])
+
+  useEffect(() => {
+    const q = query(collection(db, "banners"), orderBy("order"))
+    return onSnapshot(q, (snap) => {
+      setBanners(
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Banner))
+          .filter(b => b.active)
+          .slice(0, 4)
+      )
+    })
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#FFF9F2] p-6 md:p-12">
-      <div className="max-w-5xl mx-auto space-y-10">
-        
-        {/* 디스코드 섹션 */}
-        <div className="bg-white border-4 border-[#FFD8A8] p-8 rounded-[40px] shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 bg-[#5865F2] rounded-[20px] flex items-center justify-center text-white text-3xl shadow-lg">💬</div>
+    <div className="min-h-screen bg-[#D6EEFF]">
+      <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+
+        {/* 상단 안내 패널 */}
+        <div className="rounded-2xl overflow-hidden shadow-lg border-2 border-[#5BA8D8]">
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-5 py-3">
+            <span className="text-white font-black text-sm">🍁 메이플랜드 경매장에 오신 것을 환영합니다!</span>
+          </div>
+          <div className="bg-white px-5 py-4 space-y-3">
             <div>
-              <h3 className="font-black text-[#E67E22] text-xl">메이플 디스코드 공식 커뮤니티</h3>
-              <p className="text-[#A64D13] font-bold mt-1">가장 빠른 거래 정보와 유저 소통을 만나보세요!</p>
+              <p className="font-black text-[#0A3D6B] text-base mb-1">⚔️ 메이플랜드 전용 실시간 거래 채팅방</p>
+              <p className="text-[#1877D4] font-bold text-sm">아이템 구매・판매・교환을 실시간으로! 인증 유저와 안전하게 거래하세요.</p>
+            </div>
+            {/* 주의사항 */}
+            <div className="bg-[#FFF3CD] border-2 border-[#FBBF24] rounded-xl px-4 py-2.5 flex items-center gap-2">
+              <span className="text-base flex-shrink-0">⚠️</span>
+              <p className="text-sm font-black text-[#92400E]">거래 하실때 상대방 핸드폰 번호 꼭 받고 거래 해주세요</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-[#1877D4] text-white text-[10px] font-black px-3 py-1 rounded-full">🛡️ 인증 유저 거래</span>
+              <span className="bg-[#1877D4] text-white text-[10px] font-black px-3 py-1 rounded-full">💬 실시간 채팅</span>
+              <span className="bg-[#1877D4] text-white text-[10px] font-black px-3 py-1 rounded-full">📋 사기꾼 제보</span>
             </div>
           </div>
-          <button className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-10 py-4 rounded-full font-black text-lg shadow-lg transition-transform active:scale-95">
-            디스코드 입장하기
-          </button>
         </div>
 
-        {/* 채팅 섹션 */}
-        <div className="grid grid-cols-1 gap-6">
-          <div className="text-center">
-            <h2 className="bg-[#E67E22] text-white py-2 px-8 rounded-full inline-block font-black shadow-md mb-4 uppercase tracking-tighter">
-              Real-time Market
-            </h2>
-            <p className="text-[#A64D13] font-bold text-sm">원하는 거래 카테고리를 선택해 보세요.</p>
+        {/* 거래 채팅 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-0.5 flex-1 bg-[#5BA8D8]" />
+            <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-5 py-2 rounded-full shadow-md">
+              <span className="text-white font-black text-sm">🏪 실시간 경매장</span>
+            </div>
+            <div className="h-0.5 flex-1 bg-[#5BA8D8]" />
           </div>
-          {/* ✅ main_trade → mapleland_trade 로 변경 */}
           <ChatRoom room="mapleland_trade" />
         </div>
+
+        {/* 배너 섹션 */}
+        {banners.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-0.5 flex-1 bg-[#5BA8D8]" />
+              <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-5 py-2 rounded-full shadow-md">
+                <span className="text-white font-black text-sm">🛡️ 신용 인증</span>
+              </div>
+              <div className="h-0.5 flex-1 bg-[#5BA8D8]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {banners.map(banner => (
+                <a key={banner.id} href={banner.link} target="_blank" rel="noopener noreferrer"
+                  className="block border-2 border-[#5BA8D8] rounded-xl overflow-hidden hover:border-[#1877D4] hover:shadow-lg transition-all bg-white">
+                  <div className="aspect-[4/3] bg-[#EBF7FF] overflow-hidden">
+                    <img
+                      src={banner.imageUrl}
+                      alt={banner.description}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                    />
+                  </div>
+                  <div className="px-3 py-2.5 bg-white border-t border-[#E0F0FF]">
+                    <p className="text-xs font-bold text-[#0A3D6B] line-clamp-2 leading-relaxed">{banner.description}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

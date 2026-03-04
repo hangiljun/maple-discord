@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { db } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot,
-  limit, doc, onSnapshot as onDocSnapshot
+  limit, doc
 } from "firebase/firestore"
 import { sendDMMessage, markAsRead } from "@/lib/dm"
 
