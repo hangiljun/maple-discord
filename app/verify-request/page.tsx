@@ -9,6 +9,8 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
+import { getOrCreateDMRoom, sendDMMessage } from "@/lib/dm"
+import DMChatWindow from "@/app/components/DMChatWindow"
 
 type CertType = "이메일" | "전화번호" | "게임 인증"
 
@@ -16,7 +18,7 @@ interface VerifyRequest {
   id: string
   authorUid: string
   authorName: string
-  type: CertType | "손인증"  // "손인증" kept for backwards compatibility
+  type: CertType | "손인증"
   description: string
   imageUrl?: string
   status: "대기중" | "승인" | "거절"
@@ -57,7 +59,7 @@ const statusStyle: Record<string, string> = {
 function getVerifiedField(type: string) {
   if (type === "이메일") return "emailVerified"
   if (type === "전화번호") return "phoneVerified"
-  return "handsVerified" // "게임 인증" and legacy "손인증"
+  return "handsVerified"
 }
 
 export default function VerifyRequestPage() {
@@ -71,6 +73,15 @@ export default function VerifyRequestPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [posting, setPosting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
+  // 관리자 DM
+  const [dmChatId, setDmChatId] = useState<string | null>(null)
+  const [dmOtherName, setDmOtherName] = useState("")
+
+  // 거절/취소 사유 모달
+  const [rejectModal, setRejectModal] = useState<{ req: VerifyRequest; action: "거절" | "취소" } | null>(null)
+  const [rejectReason, setRejectReason] = useState("")
+  const [processing, setProcessing] = useState(false)
 
   const activeCert = CERT_TYPES.find(c => c.type === selectedType)!
 
@@ -132,14 +143,19 @@ export default function VerifyRequestPage() {
     finally { setPosting(false) }
   }
 
-  const handleStatus = async (req: VerifyRequest, status: "승인" | "거절") => {
+  // 승인 처리
+  const handleApprove = async (req: VerifyRequest) => {
     try {
-      await updateDoc(doc(db, "verify_requests", req.id), { status })
-      if (status === "승인") {
-        await setDoc(doc(db, "users", req.authorUid), {
-          verified: true,
-          [getVerifiedField(req.type)]: true,
-        }, { merge: true })
+      await updateDoc(doc(db, "verify_requests", req.id), { status: "승인" })
+      await setDoc(doc(db, "users", req.authorUid), {
+        verified: true,
+        [getVerifiedField(req.type)]: true,
+      }, { merge: true })
+      // 승인 DM 알림
+      if (user) {
+        const chatId = await getOrCreateDMRoom(user.uid, userNickname, req.authorUid, req.authorName)
+        await sendDMMessage(chatId, user.uid, "🛡️ 시스템",
+          `✅ ${req.authorName}님의 ${req.type} 인증이 승인되었습니다!`, req.authorUid)
       }
     } catch (e) {
       console.error("인증 처리 실패:", e)
@@ -147,24 +163,61 @@ export default function VerifyRequestPage() {
     }
   }
 
-  const handleRevoke = async (req: VerifyRequest) => {
-    if (!confirm(`${req.authorName}님의 ${req.type} 인증을 취소할까요?`)) return
+  // 거절/취소 모달 열기
+  const openRejectModal = (req: VerifyRequest, action: "거절" | "취소") => {
+    setRejectModal({ req, action })
+    setRejectReason("")
+  }
+
+  // 거절/취소 확정
+  const confirmReject = async () => {
+    if (!rejectModal || !user) return
+    const { req, action } = rejectModal
+    const reason = rejectReason.trim()
+    setProcessing(true)
     try {
-      await updateDoc(doc(db, "verify_requests", req.id), { status: "대기중" })
-      const verifiedField = getVerifiedField(req.type)
-      const userSnap = await getDoc(doc(db, "users", req.authorUid))
-      if (userSnap.exists()) {
-        const data = userSnap.data()
-        const updates: Record<string, any> = { [verifiedField]: false }
-        const hasOtherCert = ["emailVerified", "phoneVerified", "handsVerified"]
-          .filter(f => f !== verifiedField)
-          .some(f => !!data[f])
-        if (!hasOtherCert) updates.verified = false
-        await updateDoc(doc(db, "users", req.authorUid), updates)
+      if (action === "거절") {
+        await updateDoc(doc(db, "verify_requests", req.id), { status: "거절" })
+      } else {
+        // 승인 취소
+        await updateDoc(doc(db, "verify_requests", req.id), { status: "대기중" })
+        const verifiedField = getVerifiedField(req.type)
+        const userSnap = await getDoc(doc(db, "users", req.authorUid))
+        if (userSnap.exists()) {
+          const data = userSnap.data()
+          const updates: Record<string, any> = { [verifiedField]: false }
+          const hasOtherCert = ["emailVerified", "phoneVerified", "handsVerified"]
+            .filter(f => f !== verifiedField)
+            .some(f => !!data[f])
+          if (!hasOtherCert) updates.verified = false
+          await updateDoc(doc(db, "users", req.authorUid), updates)
+        }
       }
-    } catch (e) {
-      console.error("승인 취소 실패:", e)
-      alert("취소 중 오류가 발생했어요")
+
+      // 사유 DM 전송
+      const chatId = await getOrCreateDMRoom(user.uid, userNickname, req.authorUid, req.authorName)
+      const msg = action === "거절"
+        ? `❌ ${req.authorName}님은 ${reason ? reason : "사유 미기재"} 사유로 인증이 거절되었습니다.`
+        : `🔔 ${req.authorName}님의 인증 승인이 취소되었습니다.${reason ? ` 사유: ${reason}` : ""}`
+      await sendDMMessage(chatId, user.uid, "🛡️ 시스템", msg, req.authorUid)
+
+      setRejectModal(null)
+    } catch (e: any) {
+      alert("오류: " + e?.message)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  // 관리자 DM 열기
+  const handleOpenDM = async (req: VerifyRequest) => {
+    if (!user) return
+    try {
+      const chatId = await getOrCreateDMRoom(user.uid, userNickname, req.authorUid, req.authorName)
+      setDmOtherName(req.authorName)
+      setDmChatId(chatId)
+    } catch (e: any) {
+      alert("DM 열기 실패: " + e?.message)
     }
   }
 
@@ -230,7 +283,6 @@ export default function VerifyRequestPage() {
 
               {showForm && (
                 <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-5 space-y-4 shadow-md">
-                  {/* 선택된 인증 타입 표시 */}
                   <div className="flex items-center gap-3 p-3 bg-[#EBF7FF] rounded-xl border border-[#90C4E8]">
                     <span className="text-2xl">{activeCert.icon}</span>
                     <div>
@@ -241,7 +293,6 @@ export default function VerifyRequestPage() {
 
                   <p className="font-black text-[#0A3D6B] text-xs">🍁 {userNickname} 님의 신청</p>
 
-                  {/* 내용 입력 */}
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -249,7 +300,6 @@ export default function VerifyRequestPage() {
                     rows={4}
                     className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] resize-none" />
 
-                  {/* 이미지 업로드 */}
                   <div className="space-y-1.5">
                     <p className="text-xs font-black text-[#0A3D6B]">📸 사진 첨부 (선택)</p>
                     <ImageUploader onFile={setImageFile} />
@@ -328,36 +378,90 @@ export default function VerifyRequestPage() {
                   )}
 
                   {/* 처리 버튼 */}
-                  {req.status === "대기중" && (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleStatus(req, "승인")}
-                        className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
-                        ✅ 승인
-                      </button>
-                      <button onClick={() => handleStatus(req, "거절")}
-                        className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
-                        ❌ 거절
-                      </button>
-                    </div>
-                  )}
-                  {req.status === "승인" && (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleStatus(req, "승인")}
-                        className="flex-1 py-2.5 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
-                        🔄 재처리
-                      </button>
-                      <button onClick={() => handleRevoke(req)}
+                  <div className="flex gap-2">
+                    {/* 1:1 대화 버튼 — 항상 표시 */}
+                    <button onClick={() => handleOpenDM(req)}
+                      className="px-3 py-2.5 bg-[#EBF7FF] hover:bg-[#D0E8FF] text-[#1877D4] rounded-xl font-black text-sm transition-colors border-2 border-[#90C4E8]">
+                      💬 대화
+                    </button>
+
+                    {req.status === "대기중" && (
+                      <>
+                        <button onClick={() => handleApprove(req)}
+                          className="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-black text-sm transition-colors">
+                          ✅ 승인
+                        </button>
+                        <button onClick={() => openRejectModal(req, "거절")}
+                          className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition-colors">
+                          ❌ 거절
+                        </button>
+                      </>
+                    )}
+                    {req.status === "승인" && (
+                      <button onClick={() => openRejectModal(req, "취소")}
                         className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors">
                         ❌ 승인 취소
                       </button>
-                    </div>
-                  )}
+                    )}
+                    {req.status === "거절" && (
+                      <button onClick={() => handleApprove(req)}
+                        className="flex-1 py-2.5 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
+                        🔄 재처리 (승인)
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* 거절/취소 사유 모달 */}
+      {rejectModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <h3 className="font-black text-[#0A3D6B] text-base">
+              {rejectModal.action === "거절" ? "❌ 거절 사유 입력" : "❌ 승인 취소 사유 입력"}
+            </h3>
+            <p className="text-xs text-gray-500 font-bold">
+              입력한 사유가 <span className="text-[#1877D4]">{rejectModal.req.authorName}</span>님 DM으로 자동 전달됩니다.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="예: 제출하신 사진이 불명확합니다"
+              rows={3}
+              className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4] resize-none"
+            />
+            <div className="flex gap-2">
+              <button onClick={confirmReject} disabled={processing}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white rounded-xl font-black text-sm transition-colors">
+                {processing ? "처리 중..." : "확인"}
+              </button>
+              <button onClick={() => setRejectModal(null)} disabled={processing}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-black text-sm transition-colors">
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1:1 DM 오버레이 */}
+      {dmChatId && user && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="w-full md:max-w-md h-[70vh] md:h-[600px] bg-white rounded-t-3xl md:rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <DMChatWindow
+              chatId={dmChatId}
+              myUid={user.uid}
+              myName={userNickname}
+              otherName={dmOtherName}
+              onBack={() => setDmChatId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -66,7 +66,7 @@ export default function DMChatWindow({ chatId, myUid, myName, otherName, onBack 
     setSending(true)
 
     // 상대방 uid 구하기 (chatId = uid1_uid2 형태)
-    const otherUid = chatId.split("_").find(id => id !== myUid) || ""
+    const otherUid = chatId.split("__").find(id => id !== myUid) || ""
 
     try {
       await sendDMMessage(chatId, myUid, myName, text, otherUid)
