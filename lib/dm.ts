@@ -42,6 +42,15 @@ export async function getOrCreateDMRoom(
         ...(uid2.startsWith("guest_") ? [uid2] : []),
       ]
     })
+    // 새 방 생성 시 안전 거래 안내 시스템 메시지 자동 전송
+    await addDoc(collection(db, "dm_rooms", chatId, "messages"), {
+      text: "📌 안전한 거래를 위해 안내드립니다.\n• 상대방과 핸드폰 번호를 꼭 교환하세요\n• 게임 내에서 만나서 거래하세요",
+      senderUid: "system",
+      senderName: "📢 공지",
+      isSystem: true,
+      createdAt: serverTimestamp(),
+      clientTime: Date.now(),
+    })
   } else {
     // 닉네임이 바뀌었을 경우 업데이트
     const data = snap.data()
