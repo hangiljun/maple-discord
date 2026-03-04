@@ -31,8 +31,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-image.png",
-        width: 1200,
-        height: 630,
+        width: 1024,
+        height: 1024,
         alt: "메이플랜드 거래방 - 메소·아이템 안전거래 디스코드",
       },
     ],
