@@ -59,6 +59,7 @@ export const metadata: Metadata = {
   },
 
   verification: {
+    google: "sd0mpvL-LpAQqdFPh2CyLlowAXq-PL_EJQvpmZ0r8H0",
     other: {
       "naver-site-verification": "c95798ba6a654dd8a756d613f745c1afc6d64d81",
     },
