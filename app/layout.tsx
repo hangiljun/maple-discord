@@ -54,6 +54,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://메이플디스코드.com",
   },
+
+  verification: {
+    other: {
+      "naver-site-verification": "c95798ba6a654dd8a756d613f745c1afc6d64d81",
+    },
+  },
 }
 
 export default function RootLayout({
