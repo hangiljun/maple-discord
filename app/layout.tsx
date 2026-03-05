@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://xn--hy1b4dx1oi1j79fx7mzwj.com"),
+  metadataBase: new URL("https://maplediscord.com"),
 
   title: {
     default: "메이플랜드 거래방 | 메랜 메소·아이템 안전거래 디스코드",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    url: "https://xn--hy1b4dx1oi1j79fx7mzwj.com",
+    url: "https://maplediscord.com",
     siteName: "메이플랜드 거래방",
     title: "메이플랜드 거래방 | 메랜 메소·아이템 안전거래 디스코드",
     description:
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: "https://xn--hy1b4dx1oi1j79fx7mzwj.com",
+    canonical: "https://maplediscord.com",
     types: {
-      "application/rss+xml": "https://xn--hy1b4dx1oi1j79fx7mzwj.com/rss.xml",
+      "application/rss+xml": "https://maplediscord.com/rss.xml",
     },
   },
 
