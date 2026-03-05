@@ -69,6 +69,7 @@ export default function Navbar() {
 
   const menuItems = [
     { href: "/mapleland",      label: "실시간 거래방" },
+    { href: "/tip",            label: "거래 주의사항" },
     { href: "/notice",         label: "공지사항" },
     { href: "/board",          label: "자유게시판" },
     { href: "/verify-request", label: "인증 신청" },
