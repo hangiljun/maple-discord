@@ -44,8 +44,9 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow read: if true;
       allow create: if true;
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.uid;
+      allow update: if false;
+      allow delete: if request.auth != null
+        && exists(/databases/$(database)/documents/admin/$(request.auth.uid));
     }
 
     // ── admin 컬렉션 ──────────────────────────────────────
