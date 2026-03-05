@@ -53,6 +53,9 @@ export const metadata: Metadata = {
 
   alternates: {
     canonical: "https://메이플디스코드.com",
+    types: {
+      "application/rss+xml": "https://메이플디스코드.com/rss.xml",
+    },
   },
 
   verification: {
