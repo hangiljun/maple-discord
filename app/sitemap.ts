@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://maplediscord.com"
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.maplediscord.com"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const BASE_URL = "https://maplediscord.com"
+const BASE_URL = "https://www.maplediscord.com"
 const PROJECT_ID = "maplediscord-cfc6a"
 
 async function fetchCollection(collection: string, orderBy: string, limit: number) {
