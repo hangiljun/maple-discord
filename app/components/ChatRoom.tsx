@@ -17,7 +17,7 @@ import {
 interface Message {
   id: string
   text: string
-  msgType: "일반" | "삽니다" | "팝니다"
+  msgType: "일반" | "삽니다" | "팝니다" | "경고"
   createdAt?: any
   clientTime?: number
   time: string
@@ -441,7 +441,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
-  const [sendType, setSendType] = useState<"일반" | "삽니다" | "팝니다">("일반")
+  const [sendType, setSendType] = useState<"일반" | "삽니다" | "팝니다" | "경고">("일반")
   const [user, setUser] = useState<any>(null)
   const [userNickname, setUserNickname] = useState<string>("")
   const [guestName, setGuestName] = useState("")
@@ -461,7 +461,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const userScrolledUpRef = useRef(false)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const initialScrollDone = useRef(false)
 
   // 유저가 위로 스크롤했는지 추적
   useEffect(() => {
@@ -482,9 +482,6 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
     })
   }
 
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-  }, [])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -531,10 +528,22 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         return { id: d.id, ...data, time: date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) } as Message
       })
       setMessages(msgs)
-      scrollToBottom()
     }, console.error)
     return () => unsub()
   }, [room])
+
+  // 새로고침 시 최신 메시지로 스크롤, 이후엔 스마트 스크롤
+  useEffect(() => {
+    if (messages.length === 0) return
+    const el = scrollContainerRef.current
+    if (!el) return
+    if (!initialScrollDone.current) {
+      initialScrollDone.current = true
+      el.scrollTop = el.scrollHeight
+      return
+    }
+    scrollToBottom()
+  }, [messages])
 
   const checkIsAdminUid = useCallback(async (uid: string): Promise<boolean> => {
     if (adminUidCache.current.has(uid)) return adminUidCache.current.get(uid)!
@@ -606,6 +615,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
     일반: "bg-gray-100 text-gray-700 border-gray-300",
     삽니다: "bg-blue-50 text-blue-700 border-blue-300",
     팝니다: "bg-orange-50 text-orange-700 border-orange-300",
+    경고: "bg-red-50 text-red-700 border-red-300",
   }
 
   return (
@@ -640,15 +650,11 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
         )}
         {messages.map((msg) => {
           const isMsgFromAdmin = !!msg.isAdminMessage
-          const isInteractable = msg.uid !== user?.uid && !msg.isSystem
 
           return (
             <div key={msg.id}
               className={`flex flex-col ${msg.isSystem ? "items-center" : msg.uid === user?.uid ? "items-end" : "items-start"}`}
-              onContextMenu={(e) => handleContextMenu(e, msg)}
-              onTouchStart={isInteractable ? () => { longPressTimer.current = setTimeout(() => setActionSheet(msg), 500) } : undefined}
-              onTouchEnd={isInteractable ? handleLongPressEnd : undefined}
-              onTouchMove={isInteractable ? handleLongPressEnd : undefined}>
+              onContextMenu={(e) => handleContextMenu(e, msg)}>
               {msg.isSystem ? (
                 <div className="mx-auto px-4 py-1.5 bg-yellow-100 border border-yellow-400 rounded-full text-xs font-bold text-yellow-800 max-w-[90%] text-center">
                   {msg.text}
@@ -669,12 +675,18 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
                     )}
                   </div>
                   <div className={`p-3 rounded-2xl text-sm font-bold border max-w-[80%] break-words ${
+                    msg.msgType === "경고" ? "border-red-400 bg-red-50 text-red-800" :
                     isMsgFromAdmin ? "border-red-200 bg-red-50 text-red-800" :
                     msg.msgType === "삽니다" ? "border-blue-200 bg-blue-50 text-blue-700" :
                     msg.msgType === "팝니다" ? "border-orange-200 bg-orange-50 text-orange-700" :
                     msg.uid === user?.uid ? "border-orange-200 bg-orange-100 text-gray-800" :
                     "border-gray-200 bg-white text-gray-800"}`}>
-                    {msg.msgType !== "일반" && !isMsgFromAdmin && (
+                    {msg.msgType === "경고" && (
+                      <span className="mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black bg-red-200 text-red-800">
+                        🚨 경고
+                      </span>
+                    )}
+                    {msg.msgType !== "일반" && msg.msgType !== "경고" && !isMsgFromAdmin && (
                       <span className={`mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black ${msg.msgType === "삽니다" ? "bg-blue-200 text-blue-800" : "bg-orange-200 text-orange-800"}`}>
                         [{msg.msgType}]
                       </span>
@@ -709,11 +721,12 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
           </div>
         )}
         <div className="flex gap-1.5 items-center">
-          <select value={sendType} onChange={(e) => setSendType(e.target.value as "일반" | "삽니다" | "팝니다")}
+          <select value={sendType} onChange={(e) => setSendType(e.target.value as "일반" | "삽니다" | "팝니다" | "경고")}
             className={`p-2.5 rounded-xl border-2 font-black text-xs outline-none cursor-pointer transition-colors flex-shrink-0 ${typeStyle[sendType]}`}>
             <option value="일반">일반</option>
             <option value="삽니다">🔵 삽니다</option>
             <option value="팝니다">🟠 팝니다</option>
+            {isAdminUser && <option value="경고">🚨 경고</option>}
           </select>
           <input className="flex-1 p-2.5 rounded-2xl border border-gray-300 font-bold text-sm outline-none focus:border-orange-400 min-w-0 bg-white"
             placeholder={blocked?.banned ? "채팅 차단됨" : blocked?.muted ? "채팅 금지됨" : "거래 내용 입력"}

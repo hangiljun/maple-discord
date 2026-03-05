@@ -8,7 +8,7 @@ export default function MaplelandPage() {
 
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 text-center shadow-lg">
-          <h1 className="text-3xl font-black text-white">🏪 메이플랜드 실시간 경매장</h1>
+          <h1 className="text-3xl font-black text-white">🏪 메이플랜드 실시간 거래방</h1>
           <p className="text-sky-200 font-bold text-sm mt-1">실시간 채팅으로 빠르게 거래하세요!</p>
         </div>
 
