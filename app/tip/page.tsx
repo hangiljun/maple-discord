@@ -353,9 +353,9 @@ export default function TipPage() {
               <div className="tp-fact-card">
                 <div className="tp-fact-q">
                   <span className="tp-q-badge">Q1</span>
-                  닉네임과 계좌주 성함이 다르면 위험한가요?
+                  메소 구매자와 입금자 계좌 성함이 다르면 위험한가요?
                 </div>
-                <div className="tp-fact-a"><strong>매우 위험합니다.</strong> 메이플은 1인 1계정 원칙이므로 캐릭터 닉네임과 계좌 실명이 일치하는지 반드시 확인하세요. 다를 경우 3자 사기 타겟이 될 확률이 매우 높습니다.</div>
+                <div className="tp-fact-a"><strong>매우 위험합니다.</strong> &ldquo;지인이 보내주겠다&rdquo; 또는 &ldquo;대신 구매해주겠다&rdquo;는 말은 보통 3자 사기의 타겟이 되는 상황입니다.</div>
               </div>
 
               <div className="tp-fact-card">
@@ -371,7 +371,7 @@ export default function TipPage() {
                   <span className="tp-q-badge">Q3</span>
                   경매장 거래가 더 안전하지 않나요?
                 </div>
-                <div className="tp-fact-a">일반 경매장 이용은 안전하지만, 개인 간 거래에서 <strong>&ldquo;경매장 등록 후 입금&rdquo; 방식은 위험합니다.</strong> 다른 유저가 아이템을 채가거나 입금 확인 없이 잠적할 수 있습니다. 인게임 1:1 교환 시스템을 이용하세요.</div>
+                <div className="tp-fact-a">경매장 거래도 안전할 수도 있지만, 우선 <strong>게임 내에서 만나서 서로 신분을 확인한 후에 거래하는 것이 조금 더 안전합니다.</strong></div>
               </div>
 
               <div className="tp-fact-card">
@@ -380,6 +380,14 @@ export default function TipPage() {
                   본인인증으로 민증 사진을 보내주는데 믿어도 될까요?
                 </div>
                 <div className="tp-fact-a"><strong>절대 안 됩니다.</strong> 도용한 타인의 신분증일 가능성이 매우 높습니다. 신분증보다는 실제 통화와 문자 인증이 훨씬 신뢰도가 높습니다.</div>
+              </div>
+
+              <div className="tp-fact-card">
+                <div className="tp-fact-q">
+                  <span className="tp-q-badge">Q5</span>
+                  입금한 사진을 보내달라고 하는데 보내줘도 될까요?
+                </div>
+                <div className="tp-fact-a">보통 3자 사기에서 메소를 파는 사람이 구매자에게 입금 사진을 받아 메소 판매자에게 전달하는 방식으로 이루어집니다. <strong>요청할 땐 상대방과 통화 후 보내주세요.</strong></div>
               </div>
 
             </div>
