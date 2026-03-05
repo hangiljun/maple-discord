@@ -35,7 +35,7 @@ export default function Home() {
         {/* 상단 안내 패널 */}
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           <div className="bg-[#1e3a5f] px-5 py-3">
-            <span className="text-white font-black text-sm">🍁 메이플랜드 경매장에 오신 것을 환영합니다!</span>
+            <span className="text-white font-black text-sm">🍁 메이플랜드 거래방에 오신 것을 환영합니다!</span>
           </div>
           <div className="px-5 py-4 space-y-3">
             <div>
@@ -60,7 +60,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-gray-300" />
             <div className="bg-[#1e3a5f] px-5 py-2 rounded-full shadow-sm">
-              <span className="text-white font-bold text-sm">🏪 실시간 경매장</span>
+              <span className="text-white font-bold text-sm">🏪 실시간 거래방</span>
             </div>
             <div className="h-px flex-1 bg-gray-300" />
           </div>

@@ -68,7 +68,7 @@ export default function Navbar() {
   }
 
   const menuItems = [
-    { href: "/mapleland",      label: "실시간 경매장" },
+    { href: "/mapleland",      label: "실시간 거래방" },
     { href: "/notice",         label: "공지사항" },
     { href: "/board",          label: "자유게시판" },
     { href: "/verify-request", label: "인증 신청" },
@@ -82,7 +82,7 @@ export default function Navbar() {
 
           {/* 로고 */}
           <Link href="/" className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
-            <span className="text-base font-black text-orange-400 tracking-tight">🍁 메이플랜드 경매장</span>
+            <span className="text-base font-black text-orange-400 tracking-tight">🍁 메이플랜드 거래방</span>
           </Link>
 
           {/* 데스크탑 메뉴 - 중앙 */}
