@@ -478,7 +478,6 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   const [adminModal, setAdminModal] = useState<Message | null>(null)
 
   const adminUidCache = useRef<Map<string, boolean>>(new Map())
-  const scrollRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const userScrolledUpRef = useRef(false)
   const initialScrollDone = useRef(false)
@@ -718,7 +717,6 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
             </div>
           )
         })}
-        <div ref={scrollRef} />
       </div>
 
       {/* 입력 폼 */}
