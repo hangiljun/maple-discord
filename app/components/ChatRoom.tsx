@@ -189,95 +189,95 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
 
   return (
     <div ref={popupRef} style={{ position: "fixed", left, top, zIndex: 9999 }}
-      className="w-60 bg-white border-2 border-[#5BA8D8] rounded-2xl shadow-2xl overflow-y-auto max-h-[85vh]"
+      className="w-60 bg-white border border-[#E5E8EB] rounded-2xl shadow-2xl overflow-y-auto max-h-[85vh]"
       onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-      <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-3 flex justify-between items-center">
-        <span className="font-black text-white text-sm">유저 정보</span>
+      <div className="bg-[#F9FAFB] border-b border-[#E5E8EB] px-4 py-3 flex justify-between items-center">
+        <span className="font-semibold text-[#191F28] text-sm">유저 정보</span>
         <button onClick={onClose}
-          className="w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 text-white text-xs font-black">✕</button>
+          className="w-5 h-5 flex items-center justify-center rounded-full bg-[#E5E8EB] hover:bg-[#D1D5DB] text-[#8B95A1] text-xs">✕</button>
       </div>
       <div className="p-4">
         {loading ? (
           <div className="flex justify-center py-6">
-            <div className="w-6 h-6 border-2 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-[#3182F6] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : isGuest ? (
           <div className="text-center py-3">
             <div className="text-4xl mb-2">👤</div>
-            <p className="font-black text-sm text-[#0A3D6B]">{displayName}</p>
-            <div className="mt-2 px-3 py-1 bg-gray-100 rounded-full inline-block">
-              <span className="text-xs text-gray-500 font-bold">비회원</span>
+            <p className="font-semibold text-sm text-[#191F28]">{displayName}</p>
+            <div className="mt-2 px-3 py-1 bg-[#F2F4F6] rounded-full inline-block">
+              <span className="text-xs text-[#8B95A1]">비회원</span>
             </div>
-            <p className="text-[10px] text-gray-400 mt-2">인증 정보가 없어요</p>
+            <p className="text-[10px] text-[#8B95A1] mt-2">인증 정보가 없어요</p>
           </div>
         ) : isTargetAdmin ? (
           <div className="text-center py-3 space-y-3">
             <div className="text-4xl mb-1">🛡️</div>
-            <p className="font-black text-sm text-red-700">운영자</p>
+            <p className="font-semibold text-sm text-red-700">운영자</p>
             <div className="px-3 py-1 bg-red-50 border border-red-200 rounded-full inline-block">
-              <span className="text-xs text-red-600 font-black">🛡️ 공식 운영자</span>
+              <span className="text-xs text-red-600 font-medium">공식 운영자</span>
             </div>
-            <p className="text-[10px] text-gray-400">매너 투표 대상이 아니에요</p>
+            <p className="text-[10px] text-[#8B95A1]">매너 투표 대상이 아니에요</p>
           </div>
         ) : profile ? (
           <div className="space-y-3">
-            <div className="text-center pb-3 border-b border-[#D0E8FF]">
+            <div className="text-center pb-3 border-b border-[#E5E8EB]">
               <div className="text-3xl mb-1">🍁</div>
-              <p className="font-black text-sm text-[#0A3D6B]">{profile.nickname || displayName}</p>
+              <p className="font-semibold text-sm text-[#191F28]">{profile.nickname || displayName}</p>
               {certCount > 0 && (
                 <div className="flex justify-center gap-0.5 mt-1">
                   {Array.from({ length: certCount }).map((_, i) => <span key={i} className="text-base">⭐</span>)}
                 </div>
               )}
               {profile.server && (
-                <span className="text-[11px] text-[#1877D4] font-bold bg-[#EBF7FF] px-2 py-0.5 rounded-full mt-1.5 inline-block">
-                  🗺 {profile.server} 서버
+                <span className="text-[11px] text-[#3182F6] bg-[#EBF3FE] px-2 py-0.5 rounded-full mt-1.5 inline-block">
+                  {profile.server} 서버
                 </span>
               )}
             </div>
             <div className="space-y-1.5">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">인증 내역</p>
+              <p className="text-[10px] text-[#8B95A1] uppercase tracking-wide">인증 내역</p>
               {certItems.map(({ field, label, icon, ok }) => (
                 <div key={field}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold ${ok ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs ${ok ? "bg-green-50 text-green-700 border-green-200" : "bg-[#F9FAFB] text-[#8B95A1] border-[#E5E8EB]"}`}>
                   <span className="text-sm">{icon}</span>
                   <span className="flex-1">{label}</span>
-                  <span className={`font-black ${ok ? "text-green-600" : "text-gray-300"}`}>{ok ? "✓ 완료" : "미인증"}</span>
+                  <span className={`font-medium ${ok ? "text-green-600" : "text-[#B0B8C1]"}`}>{ok ? "완료" : "미인증"}</span>
                   {ok && isCurrentUserAdmin && (
                     <button onClick={() => handleRevokeCert(field)}
-                      className="w-4 h-4 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-red-500 text-[10px] font-black ml-1"
+                      className="w-4 h-4 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-red-500 text-[10px] ml-1"
                       title="인증 취소">✕</button>
                   )}
                 </div>
               ))}
             </div>
-            <div className="border-t border-[#D0E8FF] pt-3 space-y-2">
+            <div className="border-t border-[#E5E8EB] pt-3 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-gray-400 uppercase">매너 점수</p>
-                <span className={`text-lg font-black ${scoreColor}`}>{score > 0 ? `+${score}` : score}점</span>
+                <p className="text-[10px] text-[#8B95A1] uppercase">매너 점수</p>
+                <span className={`text-lg font-bold ${scoreColor}`}>{score > 0 ? `+${score}` : score}점</span>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => handleVote("manner")} disabled={!currentUser || !!alreadyVoted || voteLoading}
-                  className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1 ${!currentUser || alreadyVoted ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed" : "bg-green-50 text-green-700 border-green-300 hover:bg-green-100 active:scale-95"}`}>
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-all flex items-center justify-center gap-1 ${!currentUser || alreadyVoted ? "bg-[#F9FAFB] text-[#B0B8C1] border-[#E5E8EB] cursor-not-allowed" : "bg-green-50 text-green-700 border-green-200 hover:bg-green-100"}`}>
                   👍 매너
                 </button>
                 <button onClick={() => handleVote("badmanner")} disabled={!currentUser || !!alreadyVoted || voteLoading}
-                  className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all flex items-center justify-center gap-1 ${!currentUser || alreadyVoted ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed" : "bg-red-50 text-red-600 border-red-300 hover:bg-red-100 active:scale-95"}`}>
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-all flex items-center justify-center gap-1 ${!currentUser || alreadyVoted ? "bg-[#F9FAFB] text-[#B0B8C1] border-[#E5E8EB] cursor-not-allowed" : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"}`}>
                   👎 비매너
                 </button>
               </div>
-              {!currentUser && <p className="text-[10px] text-gray-400 text-center">로그인 후 투표할 수 있어요</p>}
-              {alreadyVoted && <p className="text-[10px] text-gray-400 text-center">이미 투표한 유저예요</p>}
-              {voteMsg && <p className="text-[11px] font-bold text-center text-[#1877D4]">{voteMsg}</p>}
+              {!currentUser && <p className="text-[10px] text-[#8B95A1] text-center">로그인 후 투표할 수 있어요</p>}
+              {alreadyVoted && <p className="text-[10px] text-[#8B95A1] text-center">이미 투표한 유저예요</p>}
+              {voteMsg && <p className="text-[11px] font-medium text-center text-[#3182F6]">{voteMsg}</p>}
             </div>
           </div>
         ) : (
-          <p className="text-xs text-center text-gray-400 py-4">정보를 찾을 수 없어요</p>
+          <p className="text-xs text-center text-[#8B95A1] py-4">정보를 찾을 수 없어요</p>
         )}
         {onStartDM && uid !== currentUser?.uid && (
           <button onClick={() => { onStartDM(); onClose() }}
-            className="w-full mt-3 py-2.5 rounded-xl text-xs font-black bg-[#1e3a5f] text-white hover:bg-[#16304f] active:scale-95 transition-all flex items-center justify-center gap-1.5">
-            💬 1:1 대화하기
+            className="w-full mt-3 py-2.5 rounded-xl text-xs font-semibold bg-[#3182F6] text-white hover:bg-[#1C6EE8] transition-colors flex items-center justify-center gap-1.5">
+            1:1 대화하기
           </button>
         )}
       </div>
@@ -396,20 +396,20 @@ function ActionSheet({ targetMsg, isAdminUser, isTargetAdmin, onClose, onViewPro
         </div>
         <div className="p-3 space-y-1 pb-8">
           <button onClick={() => { onViewProfile(); onClose() }}
-            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] active:bg-[#D0E8FF] transition-colors flex items-center gap-3">
+            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-medium text-[#191F28] hover:bg-[#F9FAFB] transition-colors flex items-center gap-3">
             <span className="text-xl">🔍</span> 정보 보기
           </button>
           <button onClick={() => { onStartDM(); onClose() }}
-            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] active:bg-[#D0E8FF] transition-colors flex items-center gap-3">
+            className="w-full text-left px-4 py-4 rounded-2xl text-sm font-medium text-[#191F28] hover:bg-[#F9FAFB] transition-colors flex items-center gap-3">
             <span className="text-xl">💬</span> 1:1 대화하기
           </button>
           {isAdminUser && !targetMsg.isSystem && !isTargetAdmin && (
             <button onClick={() => { onAdminAction(); onClose() }}
-              className="w-full text-left px-4 py-4 rounded-2xl text-sm font-bold text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors flex items-center gap-3">
+              className="w-full text-left px-4 py-4 rounded-2xl text-sm font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3">
               <span className="text-xl">🛡️</span> 관리자 메뉴
             </button>
           )}
-          <button onClick={onClose} className="w-full py-4 rounded-2xl text-sm font-black text-gray-400 bg-gray-50 mt-2">취소</button>
+          <button onClick={onClose} className="w-full py-4 rounded-2xl text-sm font-medium text-[#8B95A1] bg-[#F9FAFB] mt-2">취소</button>
         </div>
       </div>
     </div>
@@ -436,19 +436,19 @@ function ContextMenu({ pos, targetMsg, currentUid, isAdminUser, isTargetAdmin, o
 
   return (
     <div ref={menuRef} style={{ position: "fixed", left, top, zIndex: 9999 }}
-      className="w-48 bg-white border-2 border-[#5BA8D8] rounded-xl shadow-2xl overflow-hidden"
+      className="w-48 bg-white border border-[#E5E8EB] rounded-xl shadow-xl overflow-hidden"
       onMouseDown={(e) => e.stopPropagation()}>
       <button onClick={() => { onViewProfile(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] transition-colors flex items-center gap-2">
+        className="w-full text-left px-4 py-3 text-sm font-medium text-[#191F28] hover:bg-[#F9FAFB] transition-colors flex items-center gap-2">
         🔍 정보 보기
       </button>
       <button onClick={() => { onStartDM(); onClose() }}
-        className="w-full text-left px-4 py-3 text-sm font-bold text-[#0A3D6B] hover:bg-[#EBF7FF] transition-colors border-t border-[#D0E8FF] flex items-center gap-2">
+        className="w-full text-left px-4 py-3 text-sm font-medium text-[#191F28] hover:bg-[#F9FAFB] transition-colors border-t border-[#E5E8EB] flex items-center gap-2">
         💬 1:1 대화하기
       </button>
       {isAdminUser && !targetMsg.isSystem && !isTargetAdmin && (
         <button onClick={() => { onAdminAction(); onClose() }}
-          className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors border-t-2 border-red-100 flex items-center gap-2">
+          className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-red-100 flex items-center gap-2">
           🛡️ 관리자 메뉴
         </button>
       )}
@@ -638,34 +638,34 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
   }
 
   return (
-    <div className="flex flex-col h-[650px] bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-md"
+    <div className="flex flex-col h-[650px] bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden"
       onClick={() => { setProfilePopup(null); setContextMenu(null) }}>
 
       {/* 채팅 헤더 */}
-      <div className="bg-[#1e3a5f] px-5 py-3 flex items-center gap-2 rounded-t-2xl">
-        <span className="text-lg">🍁</span>
-        <span className="font-black text-white text-sm">메이플랜드 거래 채팅</span>
+      <div className="bg-white border-b border-[#E5E8EB] px-5 py-3 flex items-center gap-2">
+        <span className="text-base">🍁</span>
+        <span className="font-semibold text-[#191F28] text-sm">메이플랜드 거래 채팅</span>
         {isAdminUser && (
-          <span className="text-[10px] bg-red-500 text-white font-black px-2 py-0.5 rounded-full">🛡️ 관리자</span>
+          <span className="text-[10px] bg-red-500 text-white font-semibold px-2 py-0.5 rounded-full">관리자</span>
         )}
-        <span className="ml-auto text-[11px] text-blue-300 font-bold">{messages.length}개</span>
+        <span className="ml-auto text-xs text-[#8B95A1]">{messages.length}개</span>
       </div>
 
       {blocked?.banned && (
-        <div className="bg-red-100 border-b-2 border-red-300 px-4 py-2 text-xs font-black text-red-700 text-center">
-          🚫 이 계정은 채팅이 영구 차단됐어요
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-xs font-medium text-red-600 text-center">
+          이 계정은 채팅이 영구 차단됐어요
         </div>
       )}
       {blocked?.muted && (
-        <div className="bg-orange-100 border-b-2 border-orange-300 px-4 py-2 text-xs font-black text-orange-700 text-center">
-          🔇 {blocked.until?.toLocaleString("ko-KR")}까지 채팅 금지
+        <div className="bg-orange-50 border-b border-orange-200 px-4 py-2 text-xs font-medium text-orange-600 text-center">
+          {blocked.until?.toLocaleString("ko-KR")}까지 채팅 금지
         </div>
       )}
 
       {/* 메시지 영역 */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#ddeeff]">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F9FAFB]">
         {messages.length === 0 && (
-          <div className="text-center py-20 text-[#90C4E8] font-bold">아직 메시지가 없어요!</div>
+          <div className="text-center py-20 text-[#8B95A1]">아직 메시지가 없어요!</div>
         )}
         {messages.map((msg) => {
           const isMsgFromAdmin = !!msg.isAdminMessage
@@ -675,39 +675,39 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
               className={`flex flex-col ${msg.isSystem ? "items-center" : msg.uid === user?.uid ? "items-end" : "items-start"}`}
               onContextMenu={(e) => handleContextMenu(e, msg)}>
               {msg.isSystem ? (
-                <div className="mx-auto px-4 py-1.5 bg-yellow-100 border border-yellow-400 rounded-full text-xs font-bold text-yellow-800 max-w-[90%] text-center">
+                <div className="mx-auto px-4 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs font-medium text-amber-700 max-w-[90%] text-center">
                   {msg.text}
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold text-gray-600">
+                  <div className="flex items-center gap-1.5 mb-1 text-[10px] font-medium text-[#8B95A1]">
                     <span
-                      className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:underline active:opacity-60" : ""}`}
+                      className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:text-[#191F28] transition-colors" : ""}`}
                       onClick={(e) => handleNameClick(e, msg)}>
                       {isMsgFromAdmin ? msg.displayName : msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
                     </span>
                     {!msg.isGuest && !isMsgFromAdmin && profileCache.has(msg.uid) && <StarBadge profile={profileCache.get(msg.uid)!} />}
-                    <span className="text-gray-400 font-normal">{msg.time}</span>
+                    <span className="text-[#B0B8C1]">{msg.time}</span>
                     {(isAdminUser || msg.uid === user?.uid) && !msg.isSystem && (
                       <button onClick={() => deleteMessage(msg.id)}
-                        className="ml-1 text-red-300 hover:text-red-500 text-[10px]" title="삭제">✕</button>
+                        className="ml-1 text-[#B0B8C1] hover:text-red-500 text-[10px] transition-colors" title="삭제">✕</button>
                     )}
                   </div>
-                  <div className={`p-3 rounded-2xl text-sm font-bold border max-w-[80%] break-words ${
-                    msg.msgType === "경고" ? "border-red-400 bg-red-50 text-red-800" :
-                    isMsgFromAdmin ? "border-red-200 bg-red-50 text-red-800" :
+                  <div className={`p-3 rounded-2xl text-sm border max-w-[80%] break-words ${
+                    msg.msgType === "경고" ? "border-red-200 bg-red-50 text-red-700 font-medium" :
+                    isMsgFromAdmin ? "border-red-200 bg-red-50 text-red-700 font-medium" :
                     msg.msgType === "삽니다" ? "border-blue-200 bg-blue-50 text-blue-700" :
                     msg.msgType === "팝니다" ? "border-orange-200 bg-orange-50 text-orange-700" :
-                    msg.uid === user?.uid ? "border-orange-200 bg-orange-100 text-gray-800" :
-                    "border-gray-200 bg-white text-gray-800"}`}>
+                    msg.uid === user?.uid ? "border-[#3182F6] bg-[#EBF3FE] text-[#191F28]" :
+                    "border-[#E5E8EB] bg-white text-[#191F28]"}`}>
                     {msg.msgType === "경고" && (
-                      <span className="mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black bg-red-200 text-red-800">
-                        🚨 경고
+                      <span className="mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-semibold bg-red-200 text-red-700">
+                        경고
                       </span>
                     )}
                     {msg.msgType !== "일반" && msg.msgType !== "경고" && !isMsgFromAdmin && (
-                      <span className={`mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-black ${msg.msgType === "삽니다" ? "bg-blue-200 text-blue-800" : "bg-orange-200 text-orange-800"}`}>
-                        [{msg.msgType}]
+                      <span className={`mr-1.5 px-1.5 py-0.5 rounded-md text-xs font-semibold ${msg.msgType === "삽니다" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
+                        {msg.msgType}
                       </span>
                     )}
                     {renderTextWithLinks(msg.text)}
@@ -721,47 +721,47 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
       {/* 입력 폼 */}
       <form onSubmit={sendMessage}
-        className="p-3 bg-white border-t border-gray-200 flex flex-col gap-2"
+        className="p-3 bg-white border-t border-[#E5E8EB] flex flex-col gap-2"
         onClick={(e) => e.stopPropagation()}>
         {!user && (
-          <input className="w-full p-2.5 rounded-xl border border-gray-300 font-bold text-sm outline-none focus:border-orange-400 bg-white"
+          <input className="w-full p-2.5 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]"
             placeholder="닉네임 입력 (비회원)" value={guestName}
             onChange={(e) => setGuestName(e.target.value)} maxLength={20} />
         )}
         {user && (
-          <div className="text-xs font-bold px-1 flex items-center gap-1">
+          <div className="text-xs px-1 flex items-center gap-1">
             {isAdminUser
-              ? <><span className="text-red-500">🛡️ 운영자</span><span className="text-gray-400">로 채팅 중</span></>
+              ? <><span className="text-red-500 font-medium">운영자</span><span className="text-[#8B95A1]">로 채팅 중</span></>
               : !isVerified
-              ? <><span className="text-yellow-600">⏳ 승인 대기중 유저</span><span className="text-gray-400">로 채팅 중</span></>
-              : <><span className="text-[#0A3D6B] font-black">🍁 {userNickname}</span><span className="text-gray-400"> 으로 채팅 중</span></>
+              ? <><span className="text-amber-600 font-medium">승인 대기중</span><span className="text-[#8B95A1]">으로 채팅 중</span></>
+              : <><span className="text-[#3182F6] font-medium">{userNickname}</span><span className="text-[#8B95A1]">으로 채팅 중</span></>
             }
           </div>
         )}
         <div className="flex gap-1.5 items-center">
           <select value={sendType} onChange={(e) => setSendType(e.target.value as "일반" | "삽니다" | "팝니다" | "경고")}
-            className={`p-2.5 rounded-xl border-2 font-black text-xs outline-none cursor-pointer transition-colors flex-shrink-0 ${typeStyle[sendType]}`}>
+            className={`p-2.5 rounded-xl border text-xs outline-none cursor-pointer transition-colors flex-shrink-0 font-medium ${typeStyle[sendType]}`}>
             <option value="일반">일반</option>
-            <option value="삽니다">🔵 삽니다</option>
-            <option value="팝니다">🟠 팝니다</option>
-            {isAdminUser && <option value="경고">🚨 경고</option>}
+            <option value="삽니다">삽니다</option>
+            <option value="팝니다">팝니다</option>
+            {isAdminUser && <option value="경고">경고</option>}
           </select>
-          <input className="flex-1 p-2.5 rounded-2xl border border-gray-300 font-bold text-sm outline-none focus:border-orange-400 min-w-0 bg-white"
+          <input className="flex-1 p-2.5 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] min-w-0 placeholder:text-[#B0B8C1]"
             placeholder={blocked?.banned ? "채팅 차단됨" : blocked?.muted ? "채팅 금지됨" : "거래 내용 입력"}
             value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
             disabled={!!blocked?.banned || !!blocked?.muted} />
           <button disabled={!!blocked?.banned || !!blocked?.muted}
-            className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2.5 rounded-2xl font-black text-sm shadow-md active:scale-95 whitespace-nowrap flex-shrink-0 transition-colors">
+            className="bg-[#3182F6] hover:bg-[#1C6EE8] disabled:bg-[#E5E8EB] disabled:text-[#8B95A1] text-white px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap flex-shrink-0 transition-colors">
             전송
           </button>
         </div>
       </form>
 
       {dmLoading && (
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-[28px] z-50">
-          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border border-gray-200">
-            <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <span className="font-black text-sm text-gray-700">대화방 연결 중...</span>
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-2xl z-50">
+          <div className="bg-white rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl border border-[#E5E8EB]">
+            <div className="w-5 h-5 border-2 border-[#3182F6] border-t-transparent rounded-full animate-spin" />
+            <span className="font-medium text-sm text-[#191F28]">대화방 연결 중...</span>
           </div>
         </div>
       )}

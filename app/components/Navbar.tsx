@@ -7,7 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, onSnapshot, collection, query, where, getDocs, getDoc } from 'firebase/firestore'
 import { getOrCreateDMRoom } from '@/lib/dm'
 import { useRouter } from 'next/navigation'
-import { LogOut, MessageCircle, User } from 'lucide-react'
+import { LogOut, MessageCircle, User, Menu, X } from 'lucide-react'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
@@ -78,24 +78,24 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-[#1e1e2e] shadow-lg">
-        <div className="px-4 py-2.5 flex items-center gap-2">
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#E5E8EB]">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-2">
 
           {/* 로고 */}
-          <Link href="/" className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
-            <span className="text-base font-black text-orange-400 tracking-tight">🍁 메이플랜드 거래방</span>
+          <Link href="/" className="flex items-center gap-1.5 whitespace-nowrap shrink-0 mr-2">
+            <span className="text-base font-black text-[#191F28] tracking-tight">🍁 메이플랜드 거래방</span>
           </Link>
 
-          {/* 데스크탑 메뉴 - 중앙 */}
-          <div className="hidden lg:flex items-center gap-0.5 flex-1 justify-center px-4">
+          {/* 데스크탑 메뉴 */}
+          <div className="hidden lg:flex items-center gap-0.5 flex-1">
             {menuItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
               return (
                 <Link key={item.href} href={item.href}
-                  className={`px-4 py-1 rounded-full text-sm font-bold transition whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                     isActive
-                      ? "bg-orange-500 text-white"
-                      : "text-gray-300 hover:text-orange-400"
+                      ? "text-[#3182F6] bg-[#EBF3FE] font-semibold"
+                      : "text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6]"
                   }`}>
                   {item.label}
                 </Link>
@@ -104,36 +104,33 @@ export default function Navbar() {
           </div>
 
           {/* 오른쪽 버튼 영역 */}
-          <div className="flex items-center ml-auto">
+          <div className="flex items-center gap-1 ml-auto">
             {user ? (
               <>
-                {/* 마이페이지 */}
                 <Link href="/profile"
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium border-r border-gray-600">
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
                   <User size={15} />
                   마이페이지
                 </Link>
 
-                {/* 로그아웃 */}
                 <button onClick={() => signOut(auth)}
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium border-r border-gray-600">
+                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
                   <LogOut size={15} />
                   로그아웃
                 </button>
 
-                {/* 1:1 대화 */}
                 <Link href="/messages"
-                  className="relative flex items-center gap-1.5 px-3 py-1.5 text-white hover:text-orange-400 transition text-sm font-medium">
+                  className="relative flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
                   <MessageCircle size={15} />
                   1:1 대화
                   {unreadTotal > 0 && (
-                    <span className="absolute top-1 left-5 w-2 h-2 bg-red-500 rounded-full" />
+                    <span className="absolute top-1.5 left-5 w-2 h-2 bg-red-500 rounded-full" />
                   )}
                 </Link>
               </>
             ) : (
               <Link href="/login"
-                className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full font-bold text-sm transition">
+                className="flex items-center gap-1.5 bg-[#3182F6] hover:bg-[#1C6EE8] text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors">
                 <User size={14} />
                 로그인
               </Link>
@@ -142,44 +139,53 @@ export default function Navbar() {
             {/* 햄버거 */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden flex flex-col justify-center items-center w-8 h-8 rounded-lg gap-1 hover:bg-white/10 transition">
-              <span className={`block w-4 h-0.5 bg-gray-300 transition-all duration-200 origin-center ${menuOpen ? "rotate-45 translate-y-[6px]" : ""}`} />
-              <span className={`block w-4 h-0.5 bg-gray-300 transition-all duration-200 ${menuOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-4 h-0.5 bg-gray-300 transition-all duration-200 origin-center ${menuOpen ? "-rotate-45 -translate-y-[6px]" : ""}`} />
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#8B95A1] hover:bg-[#F2F4F6] transition-colors">
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
 
         {/* 모바일 드롭다운 */}
         {menuOpen && (
-          <div className="lg:hidden bg-[#16213e] border-t border-white/10 py-1 flex flex-col">
+          <div className="lg:hidden bg-white border-t border-[#E5E8EB] py-2 flex flex-col">
             {menuItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link key={item.href} href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className={`px-5 py-3 text-sm font-bold transition border-b border-white/5 ${
+                  className={`px-5 py-3 text-sm font-medium transition-colors ${
                     isActive
-                      ? "text-orange-400 bg-white/5"
-                      : "text-gray-300 hover:text-orange-400 hover:bg-white/5"
+                      ? "text-[#3182F6] bg-[#EBF3FE]"
+                      : "text-[#191F28] hover:bg-[#F2F4F6]"
                   }`}>
                   {item.label}
                 </Link>
               )
             })}
-            {user && (
+            {user ? (
               <>
+                <Link href="/profile"
+                  onClick={() => setMenuOpen(false)}
+                  className="px-5 py-3 text-sm font-medium text-[#191F28] hover:bg-[#F2F4F6] transition-colors border-t border-[#E5E8EB] mt-1 flex items-center gap-2">
+                  <User size={15} /> 마이페이지
+                </Link>
                 <button
                   onClick={() => { handleContactAdmin(); setMenuOpen(false) }}
-                  className="px-5 py-3 text-sm font-bold text-left text-gray-300 hover:text-orange-400 hover:bg-white/5 border-b border-white/5 transition">
-                  📩 운영자 문의
+                  className="px-5 py-3 text-sm font-medium text-left text-[#191F28] hover:bg-[#F2F4F6] transition-colors flex items-center gap-2">
+                  <MessageCircle size={15} /> 운영자 문의
                 </button>
                 <button
                   onClick={() => { signOut(auth); setMenuOpen(false) }}
-                  className="px-5 py-3 text-sm font-bold text-left text-red-400 hover:bg-white/5 transition">
-                  🚪 로그아웃
+                  className="px-5 py-3 text-sm font-medium text-left text-red-500 hover:bg-[#F2F4F6] transition-colors flex items-center gap-2">
+                  <LogOut size={15} /> 로그아웃
                 </button>
               </>
+            ) : (
+              <Link href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="mx-4 my-2 py-2.5 bg-[#3182F6] hover:bg-[#1C6EE8] text-white rounded-lg font-semibold text-sm text-center transition-colors">
+                로그인
+              </Link>
             )}
           </div>
         )}

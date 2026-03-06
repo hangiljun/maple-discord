@@ -65,66 +65,76 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto mt-20 p-8 bg-[#1e1e1e] rounded-2xl border border-gray-700 shadow-2xl text-white">
-      <h1 className="text-3xl font-bold mb-2 text-center text-[#60A5FA]">
-        {isRegister ? "회원가입" : "로그인"}
-      </h1>
-      <p className="text-center text-sm text-gray-500 mb-10">
-        {isRegister ? "새로운 계정을 만들고 커뮤니티에 참여하세요." : "등록된 계정으로 로그인하세요."}
-      </p>
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
 
-      <form onSubmit={handleAuth} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium mb-2 text-gray-400">이메일 주소</label>
-          <input
-            type="email"
-            className="w-full bg-black border border-gray-600 p-4 rounded-xl outline-none focus:border-[#1B6FDC] focus:ring-1 focus:ring-[#1B6FDC] transition"
-            placeholder="example@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2 text-gray-400">비밀번호</label>
-          <input
-            type="password"
-            className="w-full bg-black border border-gray-600 p-4 rounded-xl outline-none focus:border-[#1B6FDC] focus:ring-1 focus:ring-[#1B6FDC] transition"
-            placeholder="6자리 이상 입력"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        {/* 로고 */}
+        <div className="text-center mb-8">
+          <span className="text-3xl">🍁</span>
+          <h1 className="text-xl font-bold text-[#191F28] mt-2">
+            {isRegister ? "회원가입" : "로그인"}
+          </h1>
+          <p className="text-sm text-[#8B95A1] mt-1">
+            {isRegister ? "새로운 계정을 만들고 커뮤니티에 참여하세요." : "등록된 계정으로 로그인하세요."}
+          </p>
         </div>
 
-        {!isRegister && (
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={rememberEmail}
-              onChange={(e) => setRememberEmail(e.target.checked)}
-              className="w-4 h-4 accent-[#1B6FDC] cursor-pointer"
-            />
-            <span className="text-sm text-gray-400 font-medium">아이디 저장</span>
-          </label>
-        )}
+        <div className="bg-white border border-[#E5E8EB] rounded-2xl p-6 space-y-4">
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#4E5968] mb-1.5">이메일 주소</label>
+              <input
+                type="email"
+                className="w-full border border-[#E5E8EB] p-3.5 rounded-xl outline-none focus:border-[#3182F6] text-[#191F28] text-sm placeholder:text-[#B0B8C1] transition-colors"
+                placeholder="example@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#4E5968] mb-1.5">비밀번호</label>
+              <input
+                type="password"
+                className="w-full border border-[#E5E8EB] p-3.5 rounded-xl outline-none focus:border-[#3182F6] text-[#191F28] text-sm placeholder:text-[#B0B8C1] transition-colors"
+                placeholder="6자리 이상 입력"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-        <button
-          disabled={loading}
-          className="w-full bg-[#1B6FDC] hover:bg-[#1558B0] disabled:bg-gray-700 font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg text-lg"
-        >
-          {loading ? "처리 중..." : (isRegister ? "지금 가입하기" : "로그인하기")}
-        </button>
-      </form>
+            {!isRegister && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberEmail}
+                  onChange={(e) => setRememberEmail(e.target.checked)}
+                  className="w-4 h-4 accent-[#3182F6] cursor-pointer"
+                />
+                <span className="text-sm text-[#4E5968]">아이디 저장</span>
+              </label>
+            )}
 
-      <div className="mt-10 text-center pt-6 border-t border-gray-800">
-        <button
-          onClick={() => setIsRegister(!isRegister)}
-          className="text-sm text-gray-400 hover:text-[#60A5FA] underline underline-offset-4 transition"
-        >
-          {isRegister ? "이미 아이디가 있으신가요? 로그인" : "처음이신가요? 3초만에 회원가입"}
-        </button>
+            <button
+              disabled={loading}
+              className="w-full bg-[#3182F6] hover:bg-[#1C6EE8] disabled:bg-[#E5E8EB] disabled:text-[#8B95A1] text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
+            >
+              {loading ? "처리 중..." : (isRegister ? "가입하기" : "로그인하기")}
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-[#E5E8EB] text-center">
+            <button
+              onClick={() => setIsRegister(!isRegister)}
+              className="text-sm text-[#8B95A1] hover:text-[#3182F6] transition-colors"
+            >
+              {isRegister ? "이미 계정이 있으신가요? 로그인" : "처음이신가요? 회원가입"}
+            </button>
+          </div>
+        </div>
+
       </div>
-    </main>
+    </div>
   )
 }

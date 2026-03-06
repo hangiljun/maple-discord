@@ -25,9 +25,9 @@ interface Notice {
 const CATEGORIES: Notice["category"][] = ["공지", "패치노트", "변경사항"]
 
 const categoryStyle: Record<string, string> = {
-  패치노트: "bg-blue-100 text-blue-700 border-blue-300",
-  변경사항: "bg-purple-100 text-purple-700 border-purple-300",
-  공지: "bg-amber-100 text-amber-700 border-amber-300",
+  패치노트: "bg-blue-50 text-blue-600 border-blue-200",
+  변경사항: "bg-purple-50 text-purple-600 border-purple-200",
+  공지: "bg-amber-50 text-amber-600 border-amber-200",
 }
 
 const categoryIcon: Record<string, string> = {
@@ -132,93 +132,95 @@ export default function NoticePage() {
     await deleteDoc(doc(db, "notices", id))
   }
 
-
   return (
-    <div className="min-h-screen bg-[#D6EEFF] p-4 md:p-10">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-4">
 
         {/* 헤더 */}
-        <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 flex items-center justify-between shadow-lg">
+        <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-white">📢 공지사항</h1>
-            <p className="text-sm text-sky-200 font-bold mt-1">운영 공지 및 패치노트를 확인하세요</p>
+            <h1 className="text-xl font-bold text-[#191F28]">공지사항</h1>
+            <p className="text-[#8B95A1] text-sm mt-0.5">운영 공지 및 패치노트를 확인하세요</p>
           </div>
           {adminUser && (
             <button onClick={() => { if (showForm && !editingId) { resetForm() } else { resetForm(); setShowForm(true) } }}
-              className="bg-white text-[#1877D4] px-5 py-2.5 rounded-xl font-black text-sm shadow-md active:scale-95 hover:bg-sky-50 transition-colors">
-              {showForm && !editingId ? "✕ 취소" : "✏️ 공지 작성"}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                showForm && !editingId
+                  ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
+                  : "bg-[#3182F6] text-white hover:bg-[#1C6EE8]"
+              }`}>
+              {showForm && !editingId ? "취소" : "공지 작성"}
             </button>
           )}
         </div>
 
         {/* 관리자 작성/수정 폼 */}
         {adminUser && showForm && (
-          <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-5 space-y-3 shadow-md">
-            <p className="font-black text-[#0A3D6B] text-sm">
-              🛡️ {editingId ? "공지 수정" : "새 공지 작성"}
+          <div className="bg-white border border-[#E5E8EB] rounded-2xl p-5 space-y-3">
+            <p className="font-semibold text-[#191F28] text-sm">
+              {editingId ? "공지 수정" : "새 공지 작성"}
             </p>
 
             <select value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value as Notice["category"] })}
-              className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none bg-[#EBF7FF] focus:border-[#1877D4]">
+              className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] bg-white">
               {CATEGORIES.map(c => <option key={c} value={c}>{categoryIcon[c]} {c}</option>)}
             </select>
 
             <input value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="제목을 입력해주세요"
-              className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4]" />
+              className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
 
             <div>
-              <p className="text-xs font-black text-[#0A3D6B] mb-1.5">📸 이미지 첨부 (선택)</p>
+              <p className="text-xs text-[#8B95A1] mb-1.5">이미지 첨부 (선택)</p>
               <ImageUploader onFile={handleImageFile} initialPreview={existingImageUrl} />
             </div>
 
             <textarea value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="공지 내용을 입력하세요" rows={6}
-              className="w-full p-3 rounded-xl border-2 border-[#90C4E8] font-bold text-sm outline-none focus:border-[#1877D4] resize-none" />
+              className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
 
             <div className="flex gap-2">
               <button onClick={handlePost} disabled={posting}
-                className="flex-1 py-3 bg-[#1877D4] disabled:bg-gray-300 hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
-                {posting ? "저장 중..." : (editingId ? "✅ 수정 완료" : "📢 공지 등록")}
+                className="flex-1 py-3 bg-[#3182F6] disabled:bg-[#E5E8EB] hover:bg-[#1C6EE8] text-white disabled:text-[#8B95A1] rounded-xl font-semibold text-sm transition-colors">
+                {posting ? "저장 중..." : (editingId ? "수정 완료" : "공지 등록")}
               </button>
               <button onClick={resetForm}
-                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-black text-sm transition-colors">
+                className="px-6 py-3 bg-[#F2F4F6] hover:bg-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold text-sm transition-colors">
                 취소
               </button>
             </div>
           </div>
         )}
 
-        {/* 공지 목록 — 카드 레이아웃 */}
+        {/* 공지 목록 */}
         {notices.length === 0 ? (
           <div className="text-center py-24">
-            <div className="text-5xl mb-3">📭</div>
-            <p className="text-[#5BA8D8] font-bold">아직 공지사항이 없어요</p>
+            <p className="text-[#8B95A1]">아직 공지사항이 없어요</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {notices.map((notice) => (
               <Link key={notice.id} href={`/notice/${notice.id}`}
-                className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow flex flex-col cursor-pointer">
+                className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
 
                 {/* 카드 헤더 */}
-                <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5 flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
                       {categoryIcon[notice.category]} {notice.category}
                     </span>
-                    <span className="text-[10px] text-sky-200 font-bold">{notice.date}</span>
+                    <span className="text-xs text-[#8B95A1]">{notice.date}</span>
                   </div>
                   {adminUser && (
                     <div className="flex gap-1">
-                      <button onClick={(e) => { e.stopPropagation(); handleEdit(notice) }}
-                        className="text-xs text-sky-300 hover:text-white px-1.5 py-0.5 rounded transition-colors font-black"
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(notice) }}
+                        className="text-xs text-[#8B95A1] hover:text-[#191F28] px-1.5 py-0.5 rounded transition-colors"
                         title="수정">✏️</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(notice.id) }}
-                        className="text-xs text-red-300 hover:text-red-400 px-1.5 py-0.5 rounded transition-colors font-black"
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(notice.id) }}
+                        className="text-xs text-[#8B95A1] hover:text-red-500 px-1.5 py-0.5 rounded transition-colors"
                         title="삭제">🗑️</button>
                     </div>
                   )}
@@ -226,7 +228,7 @@ export default function NoticePage() {
 
                 {/* 이미지 */}
                 {notice.imageUrl && (
-                  <div className="w-full aspect-video overflow-hidden bg-[#EBF7FF]">
+                  <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
                     <img
                       src={notice.imageUrl}
                       alt={notice.title}
@@ -241,11 +243,11 @@ export default function NoticePage() {
 
                 {/* 본문 */}
                 <div className="p-4 flex flex-col flex-1 space-y-2">
-                  <h3 className="font-black text-[#0A3D6B] text-sm leading-snug">{notice.title}</h3>
-                  <p className="text-xs text-[#5D4037] font-bold leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
+                  <h3 className="font-semibold text-[#191F28] text-sm leading-snug">{notice.title}</h3>
+                  <p className="text-xs text-[#8B95A1] leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
                     {notice.content}
                   </p>
-                  <span className="text-[11px] text-[#1877D4] font-black mt-1">자세히 보기 →</span>
+                  <span className="text-xs text-[#3182F6] font-medium mt-1">자세히 보기 →</span>
                 </div>
 
               </Link>
