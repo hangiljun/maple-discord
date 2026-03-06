@@ -54,14 +54,15 @@ function StarBadge({ profile }: { profile: UserProfile | null }) {
 const profileCache = new Map<string, UserProfile>()
 
 function renderTextWithLinks(text: string) {
-  const urlRegex = /https?:\/\/[^\s]+/g
+  const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+/g
   const parts = text.split(urlRegex)
   const matches = text.match(urlRegex) || []
   return parts.flatMap((part, i) => {
     const result: React.ReactNode[] = [part]
     if (matches[i]) {
+      const href = matches[i].startsWith("http") ? matches[i] : `https://${matches[i]}`
       result.push(
-        <a key={i} href={matches[i]} target="_blank" rel="noopener noreferrer"
+        <a key={i} href={href} target="_blank" rel="noopener noreferrer"
           className="underline text-blue-500 break-all hover:text-blue-700"
           onClick={(e) => e.stopPropagation()}>
           {matches[i]}
