@@ -53,6 +53,25 @@ function StarBadge({ profile }: { profile: UserProfile | null }) {
 
 const profileCache = new Map<string, UserProfile>()
 
+function renderTextWithLinks(text: string) {
+  const urlRegex = /https?:\/\/[^\s]+/g
+  const parts = text.split(urlRegex)
+  const matches = text.match(urlRegex) || []
+  return parts.flatMap((part, i) => {
+    const result: React.ReactNode[] = [part]
+    if (matches[i]) {
+      result.push(
+        <a key={i} href={matches[i]} target="_blank" rel="noopener noreferrer"
+          className="underline text-blue-500 break-all hover:text-blue-700"
+          onClick={(e) => e.stopPropagation()}>
+          {matches[i]}
+        </a>
+      )
+    }
+    return result
+  })
+}
+
 function getSafePos(x: number, y: number, w = 240, h = 320) {
   const vw = typeof window !== "undefined" ? window.innerWidth : 400
   const vh = typeof window !== "undefined" ? window.innerHeight : 700
@@ -691,7 +710,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
                         [{msg.msgType}]
                       </span>
                     )}
-                    {msg.text}
+                    {renderTextWithLinks(msg.text)}
                   </div>
                 </>
               )}
