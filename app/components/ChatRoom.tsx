@@ -222,7 +222,7 @@ function ProfilePopup({ uid, displayName, isGuest, anchorPos, onClose, currentUs
         ) : profile ? (
           <div className="space-y-3">
             <div className="text-center pb-3 border-b border-[#E5E8EB]">
-              <div className="text-3xl mb-1">🍁</div>
+              <div className="text-3xl mb-1">👤</div>
               <p className="font-semibold text-sm text-[#191F28]">{profile.nickname || displayName}</p>
               {certCount > 0 && (
                 <div className="flex justify-center gap-0.5 mt-1">
@@ -643,7 +643,6 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
 
       {/* 채팅 헤더 */}
       <div className="bg-white border-b border-[#E5E8EB] px-5 py-3 flex items-center gap-2">
-        <span className="text-base">🍁</span>
         <span className="font-semibold text-[#191F28] text-sm">메이플랜드 거래 채팅</span>
         {isAdminUser && (
           <span className="text-[10px] bg-red-500 text-white font-semibold px-2 py-0.5 rounded-full">관리자</span>
@@ -684,7 +683,7 @@ export default function ChatRoom({ room = "mapleland_trade" }) {
                     <span
                       className={`select-none ${msg.uid !== user?.uid ? "cursor-pointer hover:text-[#191F28] transition-colors" : ""}`}
                       onClick={(e) => handleNameClick(e, msg)}>
-                      {isMsgFromAdmin ? msg.displayName : msg.isGuest ? `👤 ${msg.displayName}` : `🍁 ${msg.displayName}`}
+                      {isMsgFromAdmin ? msg.displayName : msg.isGuest ? `👤 ${msg.displayName}` : msg.displayName}
                     </span>
                     {!msg.isGuest && !isMsgFromAdmin && profileCache.has(msg.uid) && <StarBadge profile={profileCache.get(msg.uid)!} />}
                     <span className="text-[#B0B8C1]">{msg.time}</span>

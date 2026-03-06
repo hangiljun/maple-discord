@@ -83,7 +83,7 @@ export default function Navbar() {
 
           {/* 로고 */}
           <Link href="/" className="flex items-center gap-1.5 whitespace-nowrap shrink-0 mr-2">
-            <span className="text-base font-black text-[#191F28] tracking-tight">🍁 메이플랜드 거래방</span>
+            <span className="text-base font-black text-[#191F28] tracking-tight">메이플랜드 거래방</span>
           </Link>
 
           {/* 데스크탑 메뉴 */}
