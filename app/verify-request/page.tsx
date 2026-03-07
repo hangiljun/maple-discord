@@ -304,7 +304,7 @@ export default function VerifyRequestPage() {
 
                   <div className="space-y-1.5">
                     <p className="text-xs font-black text-[#0A3D6B]">📸 사진 첨부 (선택)</p>
-                    <ImageUploader onFile={setImageFile} />
+                    <ImageUploader onFiles={(files) => setImageFile(files[0] || null)} />
                   </div>
 
                   <div className="flex items-start gap-2 p-3 bg-sky-50 border-2 border-sky-200 rounded-xl">
