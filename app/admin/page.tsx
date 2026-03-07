@@ -104,11 +104,6 @@ export default function AdminPage() {
     setEditExistingUrl("")
   }
 
-  const handleEditImageFile = (file: File | null) => {
-    setEditImageFile(file)
-    if (!file) setEditExistingUrl("")
-  }
-
   const handleUpdate = async () => {
     if (!form.description.trim() || !form.link.trim()) {
       alert("설명과 링크를 입력해주세요"); return
@@ -167,8 +162,9 @@ export default function AdminPage() {
           <div>
             <p className="text-xs font-black text-[#0A3D6B] mb-1.5">📸 배너 이미지</p>
             <ImageUploader
-              onFile={editingId ? handleEditImageFile : setImageFile}
-              initialPreview={editingId ? editExistingUrl : ""}
+              onFiles={(files) => editingId ? setEditImageFile(files[0] || null) : setImageFile(files[0] || null)}
+              initialPreviews={editingId && editExistingUrl ? [editExistingUrl] : []}
+              onRemoveExisting={() => setEditExistingUrl("")}
             />
           </div>
 
