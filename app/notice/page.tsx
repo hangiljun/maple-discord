@@ -17,6 +17,7 @@ interface Notice {
   id: string
   title: string
   category: "패치노트" | "변경사항" | "공지"
+  thumbnailUrl?: string
   blocks?: SavedBlock[]
   content?: string       // 하위 호환
   imageUrls?: string[]   // 하위 호환
@@ -47,6 +48,7 @@ function getLegacyImages(notice: Notice): string[] {
 }
 
 function getFirstImage(notice: Notice): string | null {
+  if (notice.thumbnailUrl) return notice.thumbnailUrl
   if (notice.blocks) {
     const b = notice.blocks.find(b => b.type === "image")
     return b ? b.url : null
@@ -85,6 +87,9 @@ export default function NoticePage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [blocks, setBlocks] = useState<EditorBlock[]>([{ type: "text", value: "" }])
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>("")
+  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>("")
   const [posting, setPosting] = useState(false)
 
   useEffect(() => {
@@ -109,8 +114,29 @@ export default function NoticePage() {
   const resetForm = () => {
     setForm(EMPTY_FORM)
     setBlocks([{ type: "text", value: "" }])
+    if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview)
+    setThumbnailFile(null)
+    setThumbnailPreview("")
+    setExistingThumbnailUrl("")
     setShowForm(false)
     setEditingId(null)
+  }
+
+  const handleThumbnailFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview)
+    setThumbnailFile(file)
+    setThumbnailPreview(URL.createObjectURL(file))
+    setExistingThumbnailUrl("")
+    e.target.value = ""
+  }
+
+  const removeThumbnail = () => {
+    if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview)
+    setThumbnailFile(null)
+    setThumbnailPreview("")
+    setExistingThumbnailUrl("")
   }
 
   // 블록 조작
@@ -172,10 +198,16 @@ export default function NoticePage() {
         })
       )
 
+      let thumbnailUrl: string | null = existingThumbnailUrl || null
+      if (thumbnailFile) {
+        thumbnailUrl = await uploadImageFile(thumbnailFile, `notices/thumb_${Date.now()}_${thumbnailFile.name}`)
+      }
+
       if (editingId) {
         await updateDoc(doc(db, "notices", editingId), {
           title: form.title,
           category: form.category,
+          thumbnailUrl,
           blocks: savedBlocks,
           content: null,
           imageUrls: null,
@@ -185,6 +217,7 @@ export default function NoticePage() {
         await addDoc(collection(db, "notices"), {
           title: form.title,
           category: form.category,
+          thumbnailUrl,
           blocks: savedBlocks,
           createdAt: serverTimestamp(),
           authorUid: user?.uid,
@@ -202,6 +235,9 @@ export default function NoticePage() {
   const handleEdit = (notice: Notice) => {
     setForm({ title: notice.title, category: notice.category })
     setBlocks(noticeToBlocks(notice))
+    setThumbnailFile(null)
+    setThumbnailPreview("")
+    setExistingThumbnailUrl(notice.thumbnailUrl || "")
     setEditingId(notice.id)
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -252,6 +288,46 @@ export default function NoticePage() {
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="제목을 입력해주세요"
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
+
+            {/* 썸네일 */}
+            <div className="border border-[#E5E8EB] rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border-b border-[#E5E8EB]">
+                <div>
+                  <span className="text-xs text-[#8B95A1] font-medium">썸네일 이미지</span>
+                  <span className="text-xs text-[#B0B8C1] ml-2">· 없으면 본문 첫 이미지로 자동 대체</span>
+                </div>
+                <span className="text-xs text-[#B0B8C1]">권장 1280×720 (16:9) · JPG/PNG · 2MB 이하</span>
+              </div>
+              <div className="p-3">
+                {thumbnailPreview || existingThumbnailUrl ? (
+                  <div className="relative">
+                    <img
+                      src={thumbnailPreview || existingThumbnailUrl}
+                      alt="썸네일 미리보기"
+                      className="w-full aspect-video object-cover rounded-lg"
+                    />
+                    <div className="absolute top-2 right-2 flex gap-1.5">
+                      <label htmlFor="thumbnail-replace"
+                        className="bg-white border border-[#E5E8EB] text-xs px-2.5 py-1 rounded-lg text-[#4E5968] hover:bg-[#F9FAFB] cursor-pointer shadow-sm transition-colors">
+                        교체
+                      </label>
+                      <button type="button" onClick={removeThumbnail}
+                        className="bg-white border border-[#E5E8EB] text-xs px-2.5 py-1 rounded-lg text-red-500 hover:bg-red-50 shadow-sm transition-colors">
+                        삭제
+                      </button>
+                    </div>
+                    <input id="thumbnail-replace" type="file" accept="image/*" className="hidden" onChange={handleThumbnailFile} />
+                  </div>
+                ) : (
+                  <label htmlFor="thumbnail-upload"
+                    className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-[#E5E8EB] rounded-xl cursor-pointer hover:bg-[#F9FAFB] hover:border-[#3182F6] transition-colors">
+                    <span className="text-sm text-[#8B95A1]">클릭하여 썸네일 선택</span>
+                    <span className="text-xs text-[#B0B8C1] mt-1">미설정 시 본문 첫 이미지 자동 사용</span>
+                    <input id="thumbnail-upload" type="file" accept="image/*" className="hidden" onChange={handleThumbnailFile} />
+                  </label>
+                )}
+              </div>
+            </div>
 
             {/* 블록 에디터 */}
             <div className="space-y-2">
