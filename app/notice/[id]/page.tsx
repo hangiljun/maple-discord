@@ -4,13 +4,16 @@ import { useParams, useRouter } from "next/navigation"
 import { db } from "@/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 
+type SavedBlock = { type: "text"; value: string } | { type: "image"; url: string }
+
 interface Notice {
   id: string
   title: string
-  content: string
   category: "패치노트" | "변경사항" | "공지"
-  imageUrls?: string[]
-  imageUrl?: string  // 하위 호환
+  blocks?: SavedBlock[]
+  content?: string      // 하위 호환
+  imageUrls?: string[]  // 하위 호환
+  imageUrl?: string     // 하위 호환
   createdAt?: any
   date: string
 }
@@ -27,10 +30,16 @@ const categoryIcon: Record<string, string> = {
   공지: "📢",
 }
 
-function getImages(notice: Notice): string[] {
-  if (notice.imageUrls && notice.imageUrls.length > 0) return notice.imageUrls
-  if (notice.imageUrl) return [notice.imageUrl]
-  return []
+function getBlocks(notice: Notice): SavedBlock[] {
+  if (notice.blocks && notice.blocks.length > 0) return notice.blocks
+  // 하위 호환: 기존 content + imageUrls 조합
+  const result: SavedBlock[] = []
+  if (notice.content) result.push({ type: "text", value: notice.content })
+  const imgs = notice.imageUrls && notice.imageUrls.length > 0
+    ? notice.imageUrls
+    : notice.imageUrl ? [notice.imageUrl] : []
+  imgs.forEach(url => result.push({ type: "image", url }))
+  return result
 }
 
 export default function NoticeDetailPage() {
@@ -78,7 +87,7 @@ export default function NoticeDetailPage() {
     )
   }
 
-  const images = getImages(notice)
+  const blocks = getBlocks(notice)
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
@@ -93,7 +102,7 @@ export default function NoticeDetailPage() {
         {/* 본문 카드 */}
         <div className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden">
 
-          {/* 제목 영역 */}
+          {/* 제목 */}
           <div className="p-6 pb-4 border-b border-[#E5E8EB]">
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${categoryStyle[notice.category]}`}>
@@ -106,37 +115,33 @@ export default function NoticeDetailPage() {
             </h1>
           </div>
 
-          {/* 내용 */}
-          <div className="p-6 space-y-5">
-            <p className="text-sm text-[#4E5968] leading-relaxed whitespace-pre-wrap">
-              {notice.content}
-            </p>
-
-            {/* 이미지 — 제목/내용 아래 고정 위치 */}
-            {images.length > 0 && (
-              <div className="space-y-3 pt-2">
-                {images.map((url, i) => (
-                  <div key={i} className="w-full bg-[#F9FAFB] rounded-xl overflow-hidden border border-[#E5E8EB]">
-                    <img
-                      src={url}
-                      alt={`${notice.title} 이미지 ${i + 1}`}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        const el = e.target as HTMLImageElement
-                        if (el.parentElement) el.parentElement.style.display = "none"
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+          {/* 블록 렌더링 */}
+          <div className="p-6 space-y-4">
+            {blocks.map((block, i) =>
+              block.type === "text" ? (
+                <p key={i} className="text-sm text-[#4E5968] leading-relaxed whitespace-pre-wrap">
+                  {block.value}
+                </p>
+              ) : (
+                <div key={i} className="w-full bg-[#F9FAFB] rounded-xl overflow-hidden border border-[#E5E8EB]">
+                  <img
+                    src={block.url}
+                    alt={`이미지 ${i + 1}`}
+                    className="w-full h-auto"
+                    onError={(e) => {
+                      const el = e.target as HTMLImageElement
+                      if (el.parentElement) el.parentElement.style.display = "none"
+                    }}
+                  />
+                </div>
+              )
             )}
           </div>
 
         </div>
 
         {/* 목록 버튼 */}
-        <button
-          onClick={() => router.push("/notice")}
+        <button onClick={() => router.push("/notice")}
           className="w-full py-3 bg-white border border-[#E5E8EB] text-[#4E5968] rounded-xl font-medium text-sm hover:bg-[#F9FAFB] transition-colors">
           ← 공지 목록으로 돌아가기
         </button>

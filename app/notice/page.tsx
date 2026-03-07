@@ -9,15 +9,18 @@ import {
 import { uploadImageFile } from "@/lib/storage"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
-import ImageUploader from "@/app/components/ImageUploader"
+
+type SavedBlock = { type: "text"; value: string } | { type: "image"; url: string }
+type EditorBlock = { type: "text"; value: string } | { type: "image"; url: string; file?: File }
 
 interface Notice {
   id: string
   title: string
-  content: string
   category: "패치노트" | "변경사항" | "공지"
-  imageUrls?: string[]
-  imageUrl?: string  // 하위 호환
+  blocks?: SavedBlock[]
+  content?: string       // 하위 호환
+  imageUrls?: string[]   // 하위 호환
+  imageUrl?: string      // 하위 호환
   createdAt?: any
   date: string
   authorUid?: string
@@ -37,13 +40,42 @@ const categoryIcon: Record<string, string> = {
   공지: "📢",
 }
 
-const EMPTY_FORM = { title: "", content: "", category: "공지" as Notice["category"] }
-
-function getImages(notice: Notice): string[] {
+function getLegacyImages(notice: Notice): string[] {
   if (notice.imageUrls && notice.imageUrls.length > 0) return notice.imageUrls
   if (notice.imageUrl) return [notice.imageUrl]
   return []
 }
+
+function getFirstImage(notice: Notice): string | null {
+  if (notice.blocks) {
+    const b = notice.blocks.find(b => b.type === "image")
+    return b ? b.url : null
+  }
+  return getLegacyImages(notice)[0] || null
+}
+
+function getPreviewText(notice: Notice): string {
+  if (notice.blocks) {
+    const b = notice.blocks.find(b => b.type === "text")
+    return b ? b.value : ""
+  }
+  return notice.content || ""
+}
+
+function getImageCount(notice: Notice): number {
+  if (notice.blocks) return notice.blocks.filter(b => b.type === "image").length
+  return getLegacyImages(notice).length
+}
+
+function noticeToBlocks(notice: Notice): EditorBlock[] {
+  if (notice.blocks && notice.blocks.length > 0) return notice.blocks as EditorBlock[]
+  const result: EditorBlock[] = []
+  if (notice.content) result.push({ type: "text", value: notice.content })
+  getLegacyImages(notice).forEach(url => result.push({ type: "image", url }))
+  return result.length > 0 ? result : [{ type: "text", value: "" }]
+}
+
+const EMPTY_FORM = { title: "", category: "공지" as Notice["category"] }
 
 export default function NoticePage() {
   const [notices, setNotices] = useState<Notice[]>([])
@@ -52,9 +84,8 @@ export default function NoticePage() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [blocks, setBlocks] = useState<EditorBlock[]>([{ type: "text", value: "" }])
   const [posting, setPosting] = useState(false)
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -77,35 +108,84 @@ export default function NoticePage() {
 
   const resetForm = () => {
     setForm(EMPTY_FORM)
-    setImageFiles([])
-    setExistingImageUrls([])
+    setBlocks([{ type: "text", value: "" }])
     setShowForm(false)
     setEditingId(null)
   }
 
+  // 블록 조작
+  const addTextBlock = () => setBlocks(prev => [...prev, { type: "text", value: "" }])
+
+  const addImageBlocks = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith("image/"))
+    const newBlocks: EditorBlock[] = files.map(file => ({
+      type: "image" as const,
+      url: URL.createObjectURL(file),
+      file,
+    }))
+    setBlocks(prev => [...prev, ...newBlocks])
+    e.target.value = ""
+  }
+
+  const handleImageBlockFile = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    setBlocks(prev => prev.map((b, idx) => idx === i ? { type: "image" as const, url, file } : b))
+    e.target.value = ""
+  }
+
+  const updateTextBlock = (i: number, value: string) => {
+    setBlocks(prev => prev.map((b, idx) => idx === i ? { ...b, value } : b))
+  }
+
+  const moveBlock = (i: number, dir: -1 | 1) => {
+    setBlocks(prev => {
+      const j = i + dir
+      if (j < 0 || j >= prev.length) return prev
+      const arr = [...prev]
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      return arr
+    })
+  }
+
+  const removeBlock = (i: number) => {
+    setBlocks(prev => {
+      const block = prev[i]
+      if (block.type === "image" && block.file) URL.revokeObjectURL(block.url)
+      return prev.filter((_, idx) => idx !== i)
+    })
+  }
+
   const handlePost = async () => {
-    if (!form.title.trim() || !form.content.trim()) { alert("제목과 내용을 입력해주세요"); return }
+    if (!form.title.trim()) { alert("제목을 입력해주세요"); return }
     setPosting(true)
     try {
-      const uploadedUrls = await Promise.all(
-        imageFiles.map(f => uploadImageFile(f, `notices/${Date.now()}_${f.name}`))
+      const savedBlocks: SavedBlock[] = await Promise.all(
+        blocks.map(async (block) => {
+          if (block.type === "text") return { type: "text" as const, value: block.value }
+          if (block.file) {
+            const url = await uploadImageFile(block.file, `notices/${Date.now()}_${block.file.name}`)
+            return { type: "image" as const, url }
+          }
+          return { type: "image" as const, url: block.url }
+        })
       )
-      const imageUrls = [...existingImageUrls, ...uploadedUrls].filter(Boolean)
 
       if (editingId) {
         await updateDoc(doc(db, "notices", editingId), {
           title: form.title,
-          content: form.content,
           category: form.category,
-          imageUrls,
+          blocks: savedBlocks,
+          content: null,
+          imageUrls: null,
           imageUrl: null,
         })
       } else {
         await addDoc(collection(db, "notices"), {
           title: form.title,
-          content: form.content,
           category: form.category,
-          imageUrls,
+          blocks: savedBlocks,
           createdAt: serverTimestamp(),
           authorUid: user?.uid,
         })
@@ -114,18 +194,14 @@ export default function NoticePage() {
     } catch (e: any) {
       console.error(e)
       alert("오류: " + (e?.message || String(e)))
+    } finally {
+      setPosting(false)
     }
-    finally { setPosting(false) }
   }
 
   const handleEdit = (notice: Notice) => {
-    setForm({
-      title: notice.title,
-      content: notice.content,
-      category: notice.category,
-    })
-    setExistingImageUrls(getImages(notice))
-    setImageFiles([])
+    setForm({ title: notice.title, category: notice.category })
+    setBlocks(noticeToBlocks(notice))
     setEditingId(notice.id)
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -147,7 +223,8 @@ export default function NoticePage() {
             <p className="text-[#8B95A1] text-sm mt-0.5">운영 공지 및 패치노트를 확인하세요</p>
           </div>
           {adminUser && (
-            <button onClick={() => { if (showForm && !editingId) { resetForm() } else { resetForm(); setShowForm(true) } }}
+            <button
+              onClick={() => { if (showForm && !editingId) { resetForm() } else { resetForm(); setShowForm(true) } }}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
                 showForm && !editingId
                   ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
@@ -176,18 +253,70 @@ export default function NoticePage() {
               placeholder="제목을 입력해주세요"
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
 
-            <textarea value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="공지 내용을 입력하세요" rows={6}
-              className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
+            {/* 블록 에디터 */}
+            <div className="space-y-2">
+              {blocks.map((block, i) => (
+                <div key={i} className="border border-[#E5E8EB] rounded-xl overflow-hidden">
+                  {/* 블록 헤더 */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border-b border-[#E5E8EB]">
+                    <span className="text-xs text-[#8B95A1] font-medium">
+                      {block.type === "text" ? "텍스트" : "이미지"}
+                    </span>
+                    <div className="flex items-center gap-0.5">
+                      <button type="button" onClick={() => moveBlock(i, -1)} disabled={i === 0}
+                        className="w-7 h-7 flex items-center justify-center text-[#8B95A1] hover:text-[#191F28] disabled:opacity-25 text-sm rounded-lg hover:bg-[#E5E8EB] transition-colors">↑</button>
+                      <button type="button" onClick={() => moveBlock(i, 1)} disabled={i === blocks.length - 1}
+                        className="w-7 h-7 flex items-center justify-center text-[#8B95A1] hover:text-[#191F28] disabled:opacity-25 text-sm rounded-lg hover:bg-[#E5E8EB] transition-colors">↓</button>
+                      <button type="button" onClick={() => removeBlock(i)}
+                        className="w-7 h-7 flex items-center justify-center text-[#B0B8C1] hover:text-red-500 text-sm rounded-lg hover:bg-red-50 transition-colors">✕</button>
+                    </div>
+                  </div>
 
-            <div>
-              <p className="text-xs text-[#8B95A1] mb-1.5">이미지 첨부 (선택 · 여러 장 가능)</p>
-              <ImageUploader
-                onFiles={setImageFiles}
-                initialPreviews={existingImageUrls}
-                onRemoveExisting={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))}
-              />
+                  {/* 블록 내용 */}
+                  {block.type === "text" ? (
+                    <textarea
+                      value={block.value}
+                      onChange={(e) => updateTextBlock(i, e.target.value)}
+                      rows={4}
+                      placeholder="텍스트를 입력하세요"
+                      className="w-full p-3 text-sm text-[#191F28] outline-none resize-none placeholder:text-[#B0B8C1]"
+                    />
+                  ) : (
+                    <div className="p-3">
+                      {block.url ? (
+                        <div className="relative">
+                          <img src={block.url} alt="이미지 블록" className="w-full h-auto rounded-lg" />
+                          <label htmlFor={`img-replace-${i}`}
+                            className="absolute top-2 right-2 bg-white border border-[#E5E8EB] text-xs px-2.5 py-1 rounded-lg text-[#4E5968] hover:bg-[#F9FAFB] cursor-pointer shadow-sm transition-colors">
+                            교체
+                          </label>
+                          <input id={`img-replace-${i}`} type="file" accept="image/*" className="hidden"
+                            onChange={(e) => handleImageBlockFile(i, e)} />
+                        </div>
+                      ) : (
+                        <label htmlFor={`img-empty-${i}`}
+                          className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-[#E5E8EB] rounded-xl cursor-pointer hover:bg-[#F9FAFB] transition-colors">
+                          <span className="text-sm text-[#8B95A1]">클릭하여 이미지 선택</span>
+                          <input id={`img-empty-${i}`} type="file" accept="image/*" className="hidden"
+                            onChange={(e) => handleImageBlockFile(i, e)} />
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 블록 추가 버튼 */}
+            <div className="flex gap-2">
+              <button type="button" onClick={addTextBlock}
+                className="flex-1 py-2.5 border border-dashed border-[#E5E8EB] rounded-xl text-sm text-[#8B95A1] hover:border-[#3182F6] hover:text-[#3182F6] transition-colors">
+                + 텍스트 추가
+              </button>
+              <label className="flex-1 py-2.5 border border-dashed border-[#E5E8EB] rounded-xl text-sm text-[#8B95A1] hover:border-[#3182F6] hover:text-[#3182F6] transition-colors cursor-pointer text-center">
+                + 이미지 추가
+                <input type="file" accept="image/*" multiple className="hidden" onChange={addImageBlocks} />
+              </label>
             </div>
 
             <div className="flex gap-2">
@@ -211,7 +340,9 @@ export default function NoticePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {notices.map((notice) => {
-              const images = getImages(notice)
+              const thumb = getFirstImage(notice)
+              const preview = getPreviewText(notice)
+              const imgCount = getImageCount(notice)
               return (
                 <Link key={notice.id} href={`/notice/${notice.id}`}
                   className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
@@ -236,31 +367,29 @@ export default function NoticePage() {
                     )}
                   </div>
 
-                  {/* 썸네일 (첫 번째 이미지만) */}
-                  {images.length > 0 && (
+                  {/* 썸네일 */}
+                  {thumb && (
                     <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
-                      <img
-                        src={images[0]}
-                        alt={notice.title}
-                        className="w-full h-full object-cover"
+                      <img src={thumb} alt={notice.title} className="w-full h-full object-cover"
                         onError={(e) => {
                           const el = e.target as HTMLImageElement
                           if (el.parentElement) el.parentElement.style.display = "none"
-                        }}
-                      />
+                        }} />
                     </div>
                   )}
 
                   {/* 본문 */}
                   <div className="p-4 flex flex-col flex-1 space-y-2">
                     <h3 className="font-semibold text-[#191F28] text-sm leading-snug">{notice.title}</h3>
-                    <p className="text-xs text-[#8B95A1] leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
-                      {notice.content}
-                    </p>
+                    {preview && (
+                      <p className="text-xs text-[#8B95A1] leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
+                        {preview}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-xs text-[#3182F6] font-medium">자세히 보기 →</span>
-                      {images.length > 1 && (
-                        <span className="text-xs text-[#B0B8C1]">사진 {images.length}장</span>
+                      {imgCount > 1 && (
+                        <span className="text-xs text-[#B0B8C1]">사진 {imgCount}장</span>
                       )}
                     </div>
                   </div>
