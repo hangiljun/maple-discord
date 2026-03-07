@@ -9,7 +9,8 @@ interface Notice {
   title: string
   content: string
   category: "패치노트" | "변경사항" | "공지"
-  imageUrl?: string
+  imageUrls?: string[]
+  imageUrl?: string  // 하위 호환
   createdAt?: any
   date: string
 }
@@ -24,6 +25,12 @@ const categoryIcon: Record<string, string> = {
   패치노트: "🔧",
   변경사항: "📝",
   공지: "📢",
+}
+
+function getImages(notice: Notice): string[] {
+  if (notice.imageUrls && notice.imageUrls.length > 0) return notice.imageUrls
+  if (notice.imageUrl) return [notice.imageUrl]
+  return []
 }
 
 export default function NoticeDetailPage() {
@@ -71,6 +78,8 @@ export default function NoticeDetailPage() {
     )
   }
 
+  const images = getImages(notice)
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-4">
@@ -83,21 +92,6 @@ export default function NoticeDetailPage() {
 
         {/* 본문 카드 */}
         <div className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden">
-
-          {/* 히어로 이미지 */}
-          {notice.imageUrl && (
-            <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
-              <img
-                src={notice.imageUrl}
-                alt={notice.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const el = e.target as HTMLImageElement
-                  if (el.parentElement) el.parentElement.style.display = "none"
-                }}
-              />
-            </div>
-          )}
 
           {/* 제목 영역 */}
           <div className="p-6 pb-4 border-b border-[#E5E8EB]">
@@ -113,10 +107,29 @@ export default function NoticeDetailPage() {
           </div>
 
           {/* 내용 */}
-          <div className="p-6">
+          <div className="p-6 space-y-5">
             <p className="text-sm text-[#4E5968] leading-relaxed whitespace-pre-wrap">
               {notice.content}
             </p>
+
+            {/* 이미지 — 제목/내용 아래 고정 위치 */}
+            {images.length > 0 && (
+              <div className="space-y-3 pt-2">
+                {images.map((url, i) => (
+                  <div key={i} className="w-full bg-[#F9FAFB] rounded-xl overflow-hidden border border-[#E5E8EB]">
+                    <img
+                      src={url}
+                      alt={`${notice.title} 이미지 ${i + 1}`}
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        const el = e.target as HTMLImageElement
+                        if (el.parentElement) el.parentElement.style.display = "none"
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

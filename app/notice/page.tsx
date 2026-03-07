@@ -16,7 +16,8 @@ interface Notice {
   title: string
   content: string
   category: "패치노트" | "변경사항" | "공지"
-  imageUrl?: string
+  imageUrls?: string[]
+  imageUrl?: string  // 하위 호환
   createdAt?: any
   date: string
   authorUid?: string
@@ -38,6 +39,12 @@ const categoryIcon: Record<string, string> = {
 
 const EMPTY_FORM = { title: "", content: "", category: "공지" as Notice["category"] }
 
+function getImages(notice: Notice): string[] {
+  if (notice.imageUrls && notice.imageUrls.length > 0) return notice.imageUrls
+  if (notice.imageUrl) return [notice.imageUrl]
+  return []
+}
+
 export default function NoticePage() {
   const [notices, setNotices] = useState<Notice[]>([])
   const [user, setUser] = useState<any>(null)
@@ -46,8 +53,8 @@ export default function NoticePage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [posting, setPosting] = useState(false)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [existingImageUrl, setExistingImageUrl] = useState<string>("")
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -70,38 +77,35 @@ export default function NoticePage() {
 
   const resetForm = () => {
     setForm(EMPTY_FORM)
-    setImageFile(null)
-    setExistingImageUrl("")
+    setImageFiles([])
+    setExistingImageUrls([])
     setShowForm(false)
     setEditingId(null)
-  }
-
-  const handleImageFile = (file: File | null) => {
-    setImageFile(file)
-    if (!file) setExistingImageUrl("")
   }
 
   const handlePost = async () => {
     if (!form.title.trim() || !form.content.trim()) { alert("제목과 내용을 입력해주세요"); return }
     setPosting(true)
     try {
-      let imageUrl: string | null = existingImageUrl || null
-      if (imageFile) {
-        imageUrl = await uploadImageFile(imageFile, `notices/${Date.now()}_${imageFile.name}`)
-      }
+      const uploadedUrls = await Promise.all(
+        imageFiles.map(f => uploadImageFile(f, `notices/${Date.now()}_${f.name}`))
+      )
+      const imageUrls = [...existingImageUrls, ...uploadedUrls].filter(Boolean)
+
       if (editingId) {
         await updateDoc(doc(db, "notices", editingId), {
           title: form.title,
           content: form.content,
           category: form.category,
-          imageUrl,
+          imageUrls,
+          imageUrl: null,
         })
       } else {
         await addDoc(collection(db, "notices"), {
           title: form.title,
           content: form.content,
           category: form.category,
-          imageUrl,
+          imageUrls,
           createdAt: serverTimestamp(),
           authorUid: user?.uid,
         })
@@ -120,8 +124,8 @@ export default function NoticePage() {
       content: notice.content,
       category: notice.category,
     })
-    setExistingImageUrl(notice.imageUrl || "")
-    setImageFile(null)
+    setExistingImageUrls(getImages(notice))
+    setImageFiles([])
     setEditingId(notice.id)
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -172,15 +176,19 @@ export default function NoticePage() {
               placeholder="제목을 입력해주세요"
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
 
-            <div>
-              <p className="text-xs text-[#8B95A1] mb-1.5">이미지 첨부 (선택)</p>
-              <ImageUploader onFile={handleImageFile} initialPreview={existingImageUrl} />
-            </div>
-
             <textarea value={form.content}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
               placeholder="공지 내용을 입력하세요" rows={6}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
+
+            <div>
+              <p className="text-xs text-[#8B95A1] mb-1.5">이미지 첨부 (선택 · 여러 장 가능)</p>
+              <ImageUploader
+                onFiles={setImageFiles}
+                initialPreviews={existingImageUrls}
+                onRemoveExisting={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))}
+              />
+            </div>
 
             <div className="flex gap-2">
               <button onClick={handlePost} disabled={posting}
@@ -202,56 +210,64 @@ export default function NoticePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {notices.map((notice) => (
-              <Link key={notice.id} href={`/notice/${notice.id}`}
-                className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
+            {notices.map((notice) => {
+              const images = getImages(notice)
+              return (
+                <Link key={notice.id} href={`/notice/${notice.id}`}
+                  className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
 
-                {/* 카드 헤더 */}
-                <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
-                      {categoryIcon[notice.category]} {notice.category}
-                    </span>
-                    <span className="text-xs text-[#8B95A1]">{notice.date}</span>
+                  {/* 카드 헤더 */}
+                  <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
+                        {categoryIcon[notice.category]} {notice.category}
+                      </span>
+                      <span className="text-xs text-[#8B95A1]">{notice.date}</span>
+                    </div>
+                    {adminUser && (
+                      <div className="flex gap-1">
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(notice) }}
+                          className="text-xs text-[#8B95A1] hover:text-[#191F28] px-1.5 py-0.5 rounded transition-colors"
+                          title="수정">✏️</button>
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(notice.id) }}
+                          className="text-xs text-[#8B95A1] hover:text-red-500 px-1.5 py-0.5 rounded transition-colors"
+                          title="삭제">🗑️</button>
+                      </div>
+                    )}
                   </div>
-                  {adminUser && (
-                    <div className="flex gap-1">
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(notice) }}
-                        className="text-xs text-[#8B95A1] hover:text-[#191F28] px-1.5 py-0.5 rounded transition-colors"
-                        title="수정">✏️</button>
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(notice.id) }}
-                        className="text-xs text-[#8B95A1] hover:text-red-500 px-1.5 py-0.5 rounded transition-colors"
-                        title="삭제">🗑️</button>
+
+                  {/* 썸네일 (첫 번째 이미지만) */}
+                  {images.length > 0 && (
+                    <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
+                      <img
+                        src={images[0]}
+                        alt={notice.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const el = e.target as HTMLImageElement
+                          if (el.parentElement) el.parentElement.style.display = "none"
+                        }}
+                      />
                     </div>
                   )}
-                </div>
 
-                {/* 이미지 */}
-                {notice.imageUrl && (
-                  <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
-                    <img
-                      src={notice.imageUrl}
-                      alt={notice.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const el = e.target as HTMLImageElement
-                        if (el.parentElement) el.parentElement.style.display = "none"
-                      }}
-                    />
+                  {/* 본문 */}
+                  <div className="p-4 flex flex-col flex-1 space-y-2">
+                    <h3 className="font-semibold text-[#191F28] text-sm leading-snug">{notice.title}</h3>
+                    <p className="text-xs text-[#8B95A1] leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
+                      {notice.content}
+                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-[#3182F6] font-medium">자세히 보기 →</span>
+                      {images.length > 1 && (
+                        <span className="text-xs text-[#B0B8C1]">사진 {images.length}장</span>
+                      )}
+                    </div>
                   </div>
-                )}
 
-                {/* 본문 */}
-                <div className="p-4 flex flex-col flex-1 space-y-2">
-                  <h3 className="font-semibold text-[#191F28] text-sm leading-snug">{notice.title}</h3>
-                  <p className="text-xs text-[#8B95A1] leading-relaxed whitespace-pre-wrap flex-1 line-clamp-4">
-                    {notice.content}
-                  </p>
-                  <span className="text-xs text-[#3182F6] font-medium mt-1">자세히 보기 →</span>
-                </div>
-
-              </Link>
-            ))}
+                </Link>
+              )
+            })}
           </div>
         )}
 
