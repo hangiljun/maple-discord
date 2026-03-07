@@ -1,7 +1,16 @@
 "use client"
 import { useEffect, useState } from "react"
-import ChatRoom from "./ChatRoom"
+import dynamic from "next/dynamic"
 import { db } from "@/lib/firebase"
+
+const ChatRoom = dynamic(() => import("./ChatRoom"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-white border border-[#E5E8EB] rounded-2xl flex items-center justify-center h-40">
+      <div className="w-6 h-6 border-2 border-[#3182F6] border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+})
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
 
 interface Banner {
@@ -68,6 +77,8 @@ export default function HomeClient() {
                       src={banner.imageUrl}
                       alt={banner.description}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                     />
                   </div>

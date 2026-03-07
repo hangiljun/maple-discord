@@ -447,6 +447,7 @@ export default function NoticePage() {
                   {thumb && (
                     <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
                       <img src={thumb} alt={notice.title} className="w-full h-full object-cover"
+                        loading="lazy" decoding="async"
                         onError={(e) => {
                           const el = e.target as HTMLImageElement
                           if (el.parentElement) el.parentElement.style.display = "none"

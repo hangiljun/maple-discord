@@ -128,6 +128,8 @@ export default function NoticeDetailPage() {
                     src={block.url}
                     alt={`이미지 ${i + 1}`}
                     className="w-full h-auto"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       const el = e.target as HTMLImageElement
                       if (el.parentElement) el.parentElement.style.display = "none"

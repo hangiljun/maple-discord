@@ -252,7 +252,7 @@ export default function BoardPage() {
                       <div className="space-y-2 pt-1">
                         {post.imageUrls.map((url, i) => (
                           <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB] bg-[#F9FAFB]">
-                            <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto"
+                            <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
                               onError={(e) => {
                                 const el = e.target as HTMLImageElement
                                 if (el.parentElement) el.parentElement.style.display = "none"
