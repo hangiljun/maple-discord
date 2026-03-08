@@ -1,17 +1,12 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "사기꾼 제보 | 메이플랜드 거래방",
-  description: "메이플랜드 사기 피해를 제보하고 다른 유저를 보호하세요. 사기꾼 계좌번호 및 닉네임을 공유해 안전한 거래 환경을 만들어요.",
-  openGraph: {
-    title: "사기꾼 제보 | 메이플랜드 거래방",
-    description: "메이플랜드 사기 피해를 제보하고 다른 유저를 보호하세요.",
-  },
-  alternates: {
-    canonical: "/report",
-  },
+  title: "메이플랜드 사기꾼 제보 | 거래 사기 조회",
+  description:
+    "메이플랜드 거래 사기꾼 닉네임 조회 및 신고. 메랜 사기 피해를 예방하고 안전한 거래를 도와드립니다.",
+  alternates: { canonical: "https://www.maplediscord.com/report" },
 }
 
-export default function ReportLayout({ children }: { children: React.ReactNode }) {
-  return children
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
 }

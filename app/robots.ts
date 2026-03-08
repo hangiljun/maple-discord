@@ -1,6 +1,4 @@
-import { MetadataRoute } from "next"
-
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.maplediscord.com"
+import type { MetadataRoute } from "next"
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,9 +6,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api/", "/profile/", "/messages", "/verify-request"],
+        disallow: ["/admin", "/profile", "/messages", "/api/"],
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: "https://www.maplediscord.com/sitemap.xml",
+    host: "https://www.maplediscord.com",
   }
 }
