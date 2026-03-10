@@ -19,6 +19,15 @@ interface Banner {
   active: boolean
 }
 
+interface Notice {
+  id: string
+  title: string
+  category: string
+  createdAt?: any
+  date: string
+  pinned?: boolean
+}
+
 const EMPTY_FORM = { description: "", link: "" }
 
 export default function AdminPage() {
@@ -31,6 +40,7 @@ export default function AdminPage() {
   const [editImageFile, setEditImageFile] = useState<File | null>(null)
   const [editExistingUrl, setEditExistingUrl] = useState("")
   const [saving, setSaving] = useState(false)
+  const [notices, setNotices] = useState<Notice[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -44,6 +54,17 @@ export default function AdminPage() {
     const q = query(collection(db, "banners"), orderBy("order"))
     return onSnapshot(q, (snap) => {
       setBanners(snap.docs.map(d => ({ id: d.id, ...d.data() } as Banner)))
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, "notices"), orderBy("createdAt", "desc"))
+    return onSnapshot(q, (snap) => {
+      setNotices(snap.docs.map(d => {
+        const data = d.data()
+        const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR") || ""
+        return { id: d.id, ...data, date } as Notice
+      }))
     })
   }, [])
 
@@ -104,6 +125,10 @@ export default function AdminPage() {
     setEditExistingUrl("")
   }
 
+  const handlePinNotice = async (notice: Notice) => {
+    await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+  }
+
   const handleUpdate = async () => {
     if (!form.description.trim() || !form.link.trim()) {
       alert("설명과 링크를 입력해주세요"); return
@@ -150,7 +175,7 @@ export default function AdminPage() {
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
           <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
-          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 — 활성 {activeBanners.length}/4</p>
+          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 — 활성 배너 {activeBanners.length}/4</p>
         </div>
 
         {/* 추가 / 수정 폼 */}
@@ -258,6 +283,47 @@ export default function AdminPage() {
                     </button>
                   </div>
 
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 공지 핀 관리 */}
+        <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5">
+            <h2 className="font-black text-white text-sm">📌 공지 핀 관리 ({notices.filter(n => n.pinned).length}개 고정 중)</h2>
+          </div>
+
+          {notices.length === 0 ? (
+            <p className="text-center text-[#5BA8D8] font-bold text-sm py-10">등록된 공지가 없어요</p>
+          ) : (
+            <div className="divide-y divide-[#EBF7FF]">
+              {[...notices].sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1
+                if (!a.pinned && b.pinned) return 1
+                return 0
+              }).map((notice) => (
+                <div key={notice.id} className={`flex items-center gap-3 px-4 py-3 ${notice.pinned ? "bg-red-50" : ""}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {notice.pinned && (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-100 text-red-500 border border-red-200">📌 고정</span>
+                      )}
+                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-[#EBF7FF] text-[#1877D4]">{notice.category}</span>
+                      <span className="text-xs text-[#8B95A1]">{notice.date}</span>
+                    </div>
+                    <p className="font-bold text-sm text-[#0A3D6B] mt-1 truncate">{notice.title}</p>
+                  </div>
+                  <button
+                    onClick={() => handlePinNotice(notice)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-colors flex-shrink-0 ${
+                      notice.pinned
+                        ? "bg-red-100 text-red-600 hover:bg-red-200"
+                        : "bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF]"
+                    }`}>
+                    {notice.pinned ? "고정 해제" : "📌 고정"}
+                  </button>
                 </div>
               ))}
             </div>

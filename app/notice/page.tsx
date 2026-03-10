@@ -25,6 +25,7 @@ interface Notice {
   createdAt?: any
   date: string
   authorUid?: string
+  pinned?: boolean
 }
 
 const CATEGORIES: Notice["category"][] = ["공지", "패치노트", "변경사항"]
@@ -248,6 +249,10 @@ export default function NoticePage() {
     await deleteDoc(doc(db, "notices", id))
   }
 
+  const handlePin = async (notice: Notice) => {
+    await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+  }
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-4">
@@ -415,17 +420,26 @@ export default function NoticePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {notices.map((notice) => {
+            {[...notices].sort((a, b) => {
+              if (a.pinned && !b.pinned) return -1
+              if (!a.pinned && b.pinned) return 1
+              return 0
+            }).map((notice) => {
               const thumb = getFirstImage(notice)
               const preview = getPreviewText(notice)
               const imgCount = getImageCount(notice)
               return (
                 <Link key={notice.id} href={`/notice/${notice.id}`}
-                  className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
+                  className={`bg-white rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer border ${notice.pinned ? "border-red-300" : "border-[#E5E8EB]"}`}>
 
                   {/* 카드 헤더 */}
                   <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
                     <div className="flex items-center gap-2">
+                      {notice.pinned && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">
+                          📌 고정
+                        </span>
+                      )}
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
                         {categoryIcon[notice.category]} {notice.category}
                       </span>
@@ -433,6 +447,9 @@ export default function NoticePage() {
                     </div>
                     {adminUser && (
                       <div className="flex gap-1">
+                        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePin(notice) }}
+                          className={`text-xs px-1.5 py-0.5 rounded transition-colors ${notice.pinned ? "text-red-500 hover:text-red-700" : "text-[#8B95A1] hover:text-red-500"}`}
+                          title={notice.pinned ? "고정 해제" : "고정"}>📌</button>
                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEdit(notice) }}
                           className="text-xs text-[#8B95A1] hover:text-[#191F28] px-1.5 py-0.5 rounded transition-colors"
                           title="수정">✏️</button>
