@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: "디스코드 봇 명령어 | 메이플랜드 거래방",
   description:
-    "메이플봇 슬래시 커맨드 전체 목록. /정보, /링크, /유니온, /연무장 명령어로 메이플스토리 캐릭터·링크스킬·유니온·연무장 정보를 조회하세요.",
+    "메이플봇 슬래시 커맨드 전체 목록. /정보, /링크, /유니온 명령어로 메이플스토리 캐릭터·링크스킬·유니온·연무장 정보를 조회하세요.",
   alternates: { canonical: "/bot" },
 }
 
@@ -21,7 +21,7 @@ const COMMANDS: Command[] = [
   {
     name: "/정보",
     usage: "/정보 캐릭터명",
-    desc: "메이플스토리 캐릭터의 기본 정보를 조회합니다. 결과 하단 버튼으로 장비, 헥사, 코디, 레벨 변동, 캐릭터 역사, 연무장 기록까지 확인할 수 있어요.",
+    desc: "메이플스토리 캐릭터의 기본 정보를 조회합니다. 결과 하단 버튼으로 장비, 헥사, 코디, 레벨 변동, 캐릭터 역사, 연무장 DPS 측정 결과까지 확인할 수 있어요.",
     badge: "캐릭터",
     badgeColor: "#f59e0b",
     features: [
@@ -30,7 +30,7 @@ const COMMANDS: Command[] = [
       { icon: "💎", text: "헥사 — 헥사 코어 및 헥사 스탯 현황" },
       { icon: "👗", text: "코디 — 착용 중인 캐시 아이템" },
       { icon: "🕰️", text: "캐릭터 역사 — 최근 6개월 닉네임·길드 변경 기록" },
-      { icon: "🥊", text: "연무장 — DPS 측정 결과, 스킬별 데미지 분석 TOP 5" },
+      { icon: "🥊", text: "연무장 — DPS 측정 결과 · 총합 데미지 · 스킬별 분석 TOP 5" },
     ],
     example: "/정보 아크메이지",
   },
@@ -61,27 +61,18 @@ const COMMANDS: Command[] = [
     ],
     example: "/유니온 모험가",
   },
-  {
-    name: "/연무장 랭킹",
-    usage: "/연무장 랭킹 [난이도] [월드]",
-    desc: "무릉도장 클리어 랭킹을 조회합니다. 난이도(일반/통달)와 월드는 선택 옵션이에요.",
-    badge: "연무장",
-    badgeColor: "#f97316",
-    features: [
-      { icon: "🥊", text: "일반 / 통달 난이도 버튼으로 즉시 전환" },
-      { icon: "🌍", text: "월드 옵션으로 특정 서버 랭킹만 조회 가능" },
-      { icon: "📊", text: "순위 · 캐릭터명 · 직업 · 레벨 · 클리어 층수 표시" },
-      { icon: "📅", text: "전일(KST 기준) 랭킹 데이터 제공" },
-    ],
-    example: "/연무장 랭킹 난이도:통달 월드:스카니아",
-  },
 ]
 
 const BADGE_BG: Record<string, string> = {
   "#f59e0b": "rgba(245,158,11,0.12)",
   "#22c55e": "rgba(34,197,94,0.12)",
   "#a855f7": "rgba(168,85,247,0.12)",
-  "#f97316": "rgba(249,115,22,0.12)",
+}
+
+const ICON: Record<string, string> = {
+  "캐릭터": "🍁",
+  "링크 스킬": "🔗",
+  "유니온": "🏆",
 }
 
 export default function BotPage() {
@@ -105,17 +96,28 @@ export default function BotPage() {
           </div>
         </div>
 
+        {/* 연무장 안내 박스 */}
+        <div className="bg-[#FFF7ED] border border-[#FED7AA] rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-xl shrink-0">🥊</span>
+          <div>
+            <p className="text-sm font-bold text-[#9A3412]">연무장 DPS 측정 결과 조회</p>
+            <p className="text-xs text-[#EA580C] mt-0.5 leading-relaxed">
+              /정보 명령어로 캐릭터를 조회한 후 하단의 🥊 연무장 버튼을 누르면 해당 캐릭터의 연무장 DPS 측정 결과를 확인할 수 있습니다.
+              리플레이를 등록한 캐릭터만 조회 가능합니다.
+            </p>
+          </div>
+        </div>
+
         {/* 커맨드 카드 목록 */}
         {COMMANDS.map((cmd) => (
           <div key={cmd.name} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden">
 
-            {/* 커맨드 헤더 */}
             <div className="px-6 py-5 flex items-start gap-4 border-b border-[#E5E8EB]">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                 style={{ background: BADGE_BG[cmd.badgeColor] }}
               >
-                {cmd.badge === "캐릭터" ? "🍁" : cmd.badge === "링크 스킬" ? "🔗" : cmd.badge === "유니온" ? "🏆" : "🥊"}
+                {ICON[cmd.badge]}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -136,7 +138,6 @@ export default function BotPage() {
               </div>
             </div>
 
-            {/* 기능 목록 */}
             <div className="px-6 py-4 space-y-2">
               {cmd.features.map((f, i) => (
                 <div key={i} className="flex items-start gap-3 text-sm text-[#4E5968]">
@@ -146,7 +147,6 @@ export default function BotPage() {
               ))}
             </div>
 
-            {/* 사용 예시 */}
             {cmd.example && (
               <div className="px-6 pb-5">
                 <div className="bg-[#F2F4F6] rounded-xl px-4 py-3 flex items-center gap-2">
@@ -158,11 +158,10 @@ export default function BotPage() {
           </div>
         ))}
 
-        {/* 안내 */}
         <div className="bg-[#F0F6FF] border border-[#C7DFFE] rounded-xl px-4 py-3">
           <p className="text-xs text-[#1A5FC8] leading-relaxed">
             💡 모든 명령어는 메이플스토리 공식 Nexon OpenAPI 기반으로 조회됩니다.
-            데이터는 최대 하루 지연될 수 있으며, 랭킹은 전일 기준으로 제공됩니다.
+            데이터는 최대 15분 지연될 수 있습니다.
           </p>
         </div>
 
