@@ -72,6 +72,8 @@ export default function Navbar() {
     { href: "/tip",            label: "거래 주의사항" },
     { href: "/notice",         label: "공지사항" },
     { href: "/board",          label: "자유게시판" },
+    { href: "/character",      label: "캐릭터 조회" },
+    { href: "/bot",            label: "봇 명령어" },
     { href: "/verify-request", label: "인증 신청" },
     { href: "/report",         label: "사기꾼 제보" },
   ]
