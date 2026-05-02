@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30일
   },
 
+  async rewrites() {
+    return [
+      { source: "/", destination: "/home" },
+    ]
+  },
+
   async headers() {
     return [
       // JS/CSS 정적 에셋 — 영구 캐시 (해시 포함이라 안전)
