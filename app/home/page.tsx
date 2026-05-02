@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "메이플스토리 디스코드 | 5만명 메이플 커뮤니티",
   description:
     "메이플스토리 최대 디스코드 커뮤니티. 실시간 거래방, 인증 시스템, 메이플봇으로 캐릭터 정보·링크스킬·유니온을 조회하세요. 지금 바로 참여하세요.",
-  alternates: { canonical: "/bot" },
+  alternates: { canonical: "/home" },
 }
 
 const FEATURES = [

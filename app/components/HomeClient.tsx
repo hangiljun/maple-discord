@@ -100,7 +100,7 @@ export default function HomeClient() {
         <div>
           <div className="flex items-center justify-between mb-2 px-1">
             <p className="text-xs font-semibold text-[#8B95A1] uppercase tracking-wide">메이플봇 기능</p>
-            <Link href="/bot" className="text-xs text-[#3182F6] font-semibold hover:underline">전체 보기 →</Link>
+            <Link href="/home" className="text-xs text-[#3182F6] font-semibold hover:underline">전체 보기 →</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {BOT_FEATURES.map((f) => (
