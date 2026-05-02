@@ -68,10 +68,10 @@ export default function Navbar() {
   }
 
   const menuItems = [
+    { href: "/bot",    label: "홈" },
     { href: "/tip",    label: "거래 주의사항" },
     { href: "/notice", label: "공지사항" },
     { href: "/board",  label: "자유게시판" },
-    { href: "/bot",    label: "봇 명령어" },
   ]
 
   return (
