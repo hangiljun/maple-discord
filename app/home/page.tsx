@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   keywords: [
     "메이플스토리 디스코드", "메이플랜드 디스코드", "메이플플래닛 디스코드",
     "메이플 디스코드", "메이플 커뮤니티", "메이플봇", "메이플 캐릭터 조회",
+    "메이플 종합 디스코드", "메이플 디스코드 서버", "국내 최대 메이플 디스코드",
+    "메이플 디스코드 커뮤니티 추천",
   ],
 }
 
@@ -266,6 +268,23 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* SEO 텍스트 */}
+      <section className="max-w-4xl mx-auto px-4 pb-8">
+        <div className="border-t border-white/10 pt-10 text-center space-y-3">
+          <p className="text-sm text-[#475569] leading-relaxed">
+            <strong className="text-[#64748b]">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛을 즐기는 유저들이 모인 국내 최대 메이플 종합 디스코드 커뮤니티입니다.
+          </p>
+          <p className="text-sm text-[#475569] leading-relaxed">
+            5만 명 이상의 메이플러가 활동하며, 게임별 전용 채널에서 거래·정보 공유·커뮤니티를 즐길 수 있습니다.
+            메이플봇을 통해 캐릭터 정보, 링크스킬, 유니온, 연무장 DPS를 디스코드 안에서 바로 조회하세요.
+          </p>
+          <p className="text-sm text-[#475569] leading-relaxed">
+            안전한 거래 환경을 위한 인증 시스템과 사기 제보 채널을 운영하고 있으며,
+            메이플스토리 패치노트와 메이플랜드·메이플플래닛 공지를 가장 빠르게 전달합니다.
+          </p>
         </div>
       </section>
 
