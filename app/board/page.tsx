@@ -234,86 +234,54 @@ export default function BoardPage() {
           <div className="text-center py-20 text-[#8B95A1]">아직 게시글이 없어요. 첫 글을 써보세요!</div>
         ) : (
           <div className="space-y-3">
-            {/* 이미지 있는 글 — 카드 그리드 */}
-            {(() => {
-              const pagePosts = posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-              const imagePosts = pagePosts.filter(p => p.imageUrls && p.imageUrls.length > 0)
-              const textPosts = pagePosts.filter(p => !p.imageUrls || p.imageUrls.length === 0)
-              return (
-                <>
-                  {imagePosts.length > 0 && (
-                    <div className="grid grid-cols-3 gap-3">
-                      {imagePosts.map((post) => (
-                        <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col relative">
-                          {canDelete(post) && (
-                            <button onClick={(e) => { e.stopPropagation(); handleDelete(post) }}
-                              className="absolute top-2 right-2 z-10 w-6 h-6 bg-black/40 hover:bg-red-500 text-white rounded-full text-xs flex items-center justify-center transition-colors">✕</button>
-                          )}
-                          <button onClick={() => setExpanded(expanded === post.id ? null : post.id)} className="text-left flex flex-col flex-1">
-                            {expanded !== post.id && (
-                              <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
-                                <img src={post.imageUrls![0]} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" loading="lazy" />
-                              </div>
-                            )}
-                            <div className="p-3 flex-1">
-                              <p className="font-semibold text-sm text-[#191F28] line-clamp-2 leading-snug">{post.title}</p>
-                              <p className="text-xs text-[#8B95A1] mt-1 truncate">
-                                {post.isAdminPost ? "운영자" : post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
-                              </p>
-                            </div>
-                          </button>
-                          {expanded === post.id && (
-                            <div className="px-3 pb-3 pt-2 border-t border-[#E5E8EB] space-y-2">
-                              <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                              <div className="space-y-2">
-                                {post.imageUrls!.map((url, i) => (
-                                  <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB]">
-                                    <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
-                                      onError={(e) => { const el = e.target as HTMLImageElement; if (el.parentElement) el.parentElement.style.display = "none" }} />
-                                  </div>
-                                ))}
-                              </div>
-                              {canDelete(post) && (
-                                <button onClick={() => handleDelete(post)} className="text-xs text-[#B0B8C1] hover:text-red-500 transition-colors">삭제</button>
-                              )}
-                            </div>
-                          )}
+            {/* 전체 카드 그리드 */}
+            <div className="grid grid-cols-3 gap-3">
+              {posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((post) => {
+                const hasImage = post.imageUrls && post.imageUrls.length > 0
+                const isOpen = expanded === post.id
+                return (
+                  <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col relative">
+                    {canDelete(post) && (
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(post) }}
+                        className="absolute top-2 right-2 z-10 w-6 h-6 bg-black/40 hover:bg-red-500 text-white rounded-full text-xs flex items-center justify-center transition-colors">✕</button>
+                    )}
+                    <button onClick={() => setExpanded(isOpen ? null : post.id)} className="text-left flex flex-col flex-1">
+                      {hasImage && !isOpen && (
+                        <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
+                          <img src={post.imageUrls![0]} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" loading="lazy" />
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* 이미지 없는 글 — 리스트 */}
-                  {textPosts.length > 0 && (
-                    <div className="space-y-2">
-                      {textPosts.map((post) => (
-                        <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden">
-                          <button onClick={() => setExpanded(expanded === post.id ? null : post.id)}
-                            className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#F9FAFB] transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-[#191F28] truncate">{post.title}</p>
-                              <p className="text-xs text-[#8B95A1] mt-0.5">
-                                {post.isAdminPost ? "운영자" : post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
-                              </p>
-                            </div>
-                            <span className={`text-[#B0B8C1] text-xs transition-transform flex-shrink-0 ${expanded === post.id ? "rotate-180" : ""}`}>▼</span>
-                            {canDelete(post) && (
-                              <button onClick={(e) => { e.stopPropagation(); handleDelete(post) }}
-                                className="text-[#B0B8C1] hover:text-red-500 text-xs flex-shrink-0 transition-colors">✕</button>
-                            )}
-                          </button>
-                          {expanded === post.id && (
-                            <div className="px-5 pb-5 pt-3 border-t border-[#E5E8EB]">
-                              <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                            </div>
-                          )}
+                      )}
+                      {!hasImage && !isOpen && (
+                        <div className="w-full aspect-square bg-[#F2F4F6] flex items-center justify-center p-4">
+                          <p className="text-sm text-[#4E5968] line-clamp-6 leading-relaxed text-center">{post.content}</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )
-            })()}
+                      )}
+                      <div className="p-3 flex-1">
+                        <p className="font-semibold text-sm text-[#191F28] line-clamp-2 leading-snug">{post.title}</p>
+                        <p className="text-xs text-[#8B95A1] mt-1 truncate">
+                          {post.isAdminPost ? "운영자" : post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
+                        </p>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="px-3 pb-3 pt-2 border-t border-[#E5E8EB] space-y-2">
+                        <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                        {hasImage && (
+                          <div className="space-y-2">
+                            {post.imageUrls!.map((url, i) => (
+                              <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB]">
+                                <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
+                                  onError={(e) => { const el = e.target as HTMLImageElement; if (el.parentElement) el.parentElement.style.display = "none" }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
 
             {/* 페이지네이션 */}
             {Math.ceil(posts.length / PAGE_SIZE) > 1 && (
