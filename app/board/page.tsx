@@ -1,9 +1,10 @@
 "use client"
 import { useState, useEffect, useRef, DragEvent } from "react"
+import Link from "next/link"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
-  deleteDoc, doc, serverTimestamp, getDoc, updateDoc
+  deleteDoc, doc, serverTimestamp, getDoc
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
@@ -29,7 +30,6 @@ interface ImageEntry {
 
 export default function BoardPage() {
   const [posts, setPosts] = useState<Post[]>([])
-  const [expanded, setExpanded] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [userNickname, setUserNickname] = useState("")
   const [guestName, setGuestName] = useState("")
@@ -40,8 +40,6 @@ export default function BoardPage() {
   const [dragging, setDragging] = useState(false)
   const [posting, setPosting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ title: "", content: "" })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const PAGE_SIZE = 12
 
@@ -77,11 +75,9 @@ export default function BoardPage() {
     })
   }, [])
 
-  // 이미지 추가
   const addImageFiles = (files: FileList | File[]) => {
     const arr = Array.from(files).filter(f => f.type.startsWith("image/"))
-    const entries: ImageEntry[] = arr.map(file => ({ preview: URL.createObjectURL(file), file }))
-    setImages(prev => [...prev, ...entries])
+    setImages(prev => [...prev, ...arr.map(file => ({ preview: URL.createObjectURL(file), file }))])
   }
 
   const removeImage = (i: number) => {
@@ -131,39 +127,27 @@ export default function BoardPage() {
       } else {
         alert("등록 중 오류가 발생했습니다. 다시 시도해주세요.")
       }
+    } finally {
+      setPosting(false)
     }
-    finally { setPosting(false) }
   }
 
-  const handleDelete = async (post: Post) => {
+  const handleDelete = async (e: React.MouseEvent, postId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
     if (!confirm("게시글을 삭제할까요?")) return
-    await deleteDoc(doc(db, "board_posts", post.id))
-  }
-
-  const startEdit = (post: Post) => {
-    setEditingId(post.id)
-    setEditForm({ title: post.title, content: post.content })
-    setExpanded(post.id)
-  }
-
-  const handleEditSave = async (post: Post) => {
-    if (!editForm.title.trim() || !editForm.content.trim()) { alert("제목과 내용을 입력해주세요"); return }
-    await updateDoc(doc(db, "board_posts", post.id), {
-      title: editForm.title,
-      content: editForm.content,
-    })
-    setEditingId(null)
+    await deleteDoc(doc(db, "board_posts", postId))
   }
 
   const canDelete = (post: Post) =>
     adminUser || (user && user.uid === post.authorUid)
 
-  const canEdit = (post: Post) =>
-    adminUser || (user && user.uid === post.authorUid)
+  const pagePosts = posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const totalPages = Math.ceil(posts.length / PAGE_SIZE)
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-4">
+      <div className="max-w-4xl mx-auto space-y-4">
 
         {/* 헤더 */}
         <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 flex items-center justify-between">
@@ -207,7 +191,6 @@ export default function BoardPage() {
             {!user && <p className="text-xs text-[#B0B8C1] px-1">이미지 첨부는 로그인 후 이용 가능해요.</p>}
             {user && (
               <div>
-                {/* 미리보기 */}
                 {images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {images.map((img, i) => (
@@ -221,8 +204,6 @@ export default function BoardPage() {
                     ))}
                   </div>
                 )}
-
-                {/* 드래그앤드롭 영역 */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
@@ -251,103 +232,91 @@ export default function BoardPage() {
 
         {/* 게시글 목록 */}
         {posts.length === 0 ? (
-          <div className="text-center py-20 text-[#8B95A1]">아직 게시글이 없어요. 첫 글을 써보세요!</div>
+          <div className="text-center py-24">
+            <p className="text-[#8B95A1]">아직 게시글이 없어요. 첫 글을 써보세요!</p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {/* 전체 카드 그리드 */}
-            <div className="grid grid-cols-3 gap-3">
-              {posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).map((post) => {
-                const hasImage = post.imageUrls && post.imageUrls.length > 0
-                const isOpen = expanded === post.id
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {pagePosts.map((post) => {
+                const thumb = post.imageUrls?.[0]
                 return (
-                  <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col relative">
-                    {canDelete(post) && (
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(post) }}
-                        className="absolute top-2 right-2 z-10 w-6 h-6 bg-black/40 hover:bg-red-500 text-white rounded-full text-xs flex items-center justify-center transition-colors">✕</button>
-                    )}
-                    <button onClick={() => setExpanded(isOpen ? null : post.id)} className="text-left flex flex-col flex-1">
-                      {hasImage && !isOpen && (
-                        <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
-                          <img src={post.imageUrls![0]} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" loading="lazy" />
-                        </div>
-                      )}
-                      {!hasImage && !isOpen && (
-                        <div className="w-full aspect-square bg-[#F2F4F6] flex items-center justify-center p-4">
-                          <p className="text-sm text-[#4E5968] line-clamp-6 leading-relaxed text-center">{post.content}</p>
-                        </div>
-                      )}
-                      <div className="p-3 flex-1">
-                        <p className="font-semibold text-sm text-[#191F28] line-clamp-2 leading-snug">{post.title}</p>
-                        <p className="text-xs text-[#8B95A1] mt-1 truncate">
-                          {post.isAdminPost ? "운영자" : post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
-                        </p>
+                  <Link key={post.id} href={`/board/${post.id}`}
+                    className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
+
+                    {/* 카드 헤더 */}
+                    <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {post.isAdminPost && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">
+                            운영자
+                          </span>
+                        )}
+                        <span className="text-xs text-[#8B95A1]">
+                          {post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
+                        </span>
                       </div>
-                    </button>
-                    {isOpen && (
-                      <div className="px-3 pb-3 pt-2 border-t border-[#E5E8EB] space-y-2">
-                        {editingId === post.id ? (
-                          <>
-                            <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                              className="w-full p-2 rounded-lg border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6]" />
-                            <textarea value={editForm.content} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                              rows={4} maxLength={3000}
-                              className="w-full p-2 rounded-lg border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none" />
-                            <div className="flex gap-2">
-                              <button onClick={() => handleEditSave(post)}
-                                className="px-3 py-1.5 bg-[#3182F6] text-white text-xs font-semibold rounded-lg hover:bg-[#1C6EE8] transition-colors">저장</button>
-                              <button onClick={() => setEditingId(null)}
-                                className="px-3 py-1.5 bg-[#F2F4F6] text-[#8B95A1] text-xs font-semibold rounded-lg hover:bg-[#E5E8EB] transition-colors">취소</button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                            {hasImage && (
-                              <div className="space-y-2">
-                                {post.imageUrls!.map((url, i) => (
-                                  <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB]">
-                                    <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
-                                      onError={(e) => { const el = e.target as HTMLImageElement; if (el.parentElement) el.parentElement.style.display = "none" }} />
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {canEdit(post) && (
-                              <button onClick={() => startEdit(post)}
-                                className="text-xs text-[#8B95A1] hover:text-[#3182F6] transition-colors">수정</button>
-                            )}
-                          </>
+                      {canDelete(post) && (
+                        <button onClick={(e) => handleDelete(e, post.id)}
+                          className="text-xs text-[#B0B8C1] hover:text-red-500 transition-colors px-1">🗑️</button>
+                      )}
+                    </div>
+
+                    {/* 썸네일 */}
+                    {thumb && (
+                      <div className="w-full aspect-video overflow-hidden bg-[#F9FAFB]">
+                        <img src={thumb} alt={post.title} className="w-full h-full object-cover"
+                          loading="lazy" decoding="async"
+                          onError={(e) => {
+                            const el = e.target as HTMLImageElement
+                            if (el.parentElement) el.parentElement.style.display = "none"
+                          }} />
+                      </div>
+                    )}
+
+                    {/* 본문 */}
+                    <div className="p-4 flex flex-col flex-1 space-y-2">
+                      <h3 className="font-semibold text-[#191F28] text-sm leading-snug">{post.title}</h3>
+                      <p className="text-xs text-[#8B95A1] leading-relaxed flex-1 line-clamp-3">
+                        {post.content}
+                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-[#3182F6] font-medium">자세히 보기 →</span>
+                        {post.imageUrls && post.imageUrls.length > 1 && (
+                          <span className="text-xs text-[#B0B8C1]">사진 {post.imageUrls.length}장</span>
                         )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+
+                  </Link>
                 )
               })}
             </div>
 
             {/* 페이지네이션 */}
-            {Math.ceil(posts.length / PAGE_SIZE) > 1 && (
+            {totalPages > 1 && (
               <div className="flex items-center justify-center gap-1.5 pt-2">
                 <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-2 rounded-lg text-sm text-[#4E5968] bg-white border border-[#E5E8EB] disabled:opacity-40 hover:bg-[#F9FAFB] transition-colors">
                   이전
                 </button>
-                {Array.from({ length: Math.ceil(posts.length / PAGE_SIZE) }, (_, i) => i + 1).map(p => (
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                   <button key={p} onClick={() => setCurrentPage(p)}
                     className={`w-9 h-9 rounded-lg text-sm transition-colors ${p === currentPage ? "bg-[#3182F6] text-white" : "bg-white text-[#4E5968] border border-[#E5E8EB] hover:bg-[#F9FAFB]"}`}>
                     {p}
                   </button>
                 ))}
-                <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(posts.length / PAGE_SIZE), p + 1))}
-                  disabled={currentPage === Math.ceil(posts.length / PAGE_SIZE)}
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
                   className="px-3 py-2 rounded-lg text-sm text-[#4E5968] bg-white border border-[#E5E8EB] disabled:opacity-40 hover:bg-[#F9FAFB] transition-colors">
                   다음
                 </button>
               </div>
             )}
-          </div>
+          </>
         )}
+
       </div>
     </div>
   )
