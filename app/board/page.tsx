@@ -246,9 +246,11 @@ export default function BoardPage() {
                       {imagePosts.map((post) => (
                         <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col">
                           <button onClick={() => setExpanded(expanded === post.id ? null : post.id)} className="text-left flex flex-col flex-1">
-                            <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
-                              <img src={post.imageUrls![0]} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" loading="lazy" />
-                            </div>
+                            {expanded !== post.id && (
+                              <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
+                                <img src={post.imageUrls![0]} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" loading="lazy" />
+                              </div>
+                            )}
                             <div className="p-3 flex-1">
                               <p className="font-semibold text-sm text-[#191F28] line-clamp-2 leading-snug">{post.title}</p>
                               <p className="text-xs text-[#8B95A1] mt-1 truncate">
