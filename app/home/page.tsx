@@ -159,7 +159,7 @@ export default function HomePage() {
 
           <p className="text-[#94a3b8] text-base md:text-lg max-w-lg mx-auto leading-relaxed mb-10">
             메이플스토리·메이플랜드·메이플플래닛을 한 곳에서.<br />
-            거래, 정보 조회, 커뮤니티까지 모두 무료.
+            거래, 파티, 보스, 정보 조회, 커뮤니티까지 한번에.
           </p>
 
           {/* 통계 */}
@@ -177,7 +177,7 @@ export default function HomePage() {
             <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752c4] text-white font-bold px-8 py-3.5 rounded-xl text-base transition-colors shadow-lg shadow-[#5865F2]/30">
               <DiscordIcon />
-              무료로 참여하기
+              디스코드 참여하기
             </a>
             <Link href="/notice"
               className="flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/15 text-white font-semibold px-6 py-3.5 rounded-xl text-base transition-colors">
