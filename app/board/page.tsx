@@ -122,7 +122,14 @@ export default function BoardPage() {
         createdAt: serverTimestamp(),
       })
       resetForm()
-    } catch (e) { console.error(e) }
+    } catch (e: any) {
+      console.error(e)
+      if (e?.code === "storage/unauthorized") {
+        alert("이미지 업로드 권한이 없습니다. 로그인 후 다시 시도해주세요.")
+      } else {
+        alert("등록 중 오류가 발생했습니다. 다시 시도해주세요.")
+      }
+    }
     finally { setPosting(false) }
   }
 
@@ -176,38 +183,41 @@ export default function BoardPage() {
               placeholder="내용을 입력하세요" rows={5} maxLength={3000}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
 
-            {/* 이미지 첨부 */}
-            <div>
-              {/* 미리보기 */}
-              {images.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {images.map((img, i) => (
-                    <div key={img.preview} className="relative w-20 h-20">
-                      <img src={img.preview} alt="" className="w-full h-full object-cover rounded-lg border border-[#E5E8EB]" />
-                      <button type="button" onClick={() => removeImage(i)}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center font-bold shadow transition-colors">
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* 이미지 첨부 — 로그인 유저만 */}
+            {!user && <p className="text-xs text-[#B0B8C1] px-1">이미지 첨부는 로그인 후 이용 가능해요.</p>}
+            {user && (
+              <div>
+                {/* 미리보기 */}
+                {images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {images.map((img, i) => (
+                      <div key={img.preview} className="relative w-20 h-20">
+                        <img src={img.preview} alt="" className="w-full h-full object-cover rounded-lg border border-[#E5E8EB]" />
+                        <button type="button" onClick={() => removeImage(i)}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center font-bold shadow transition-colors">
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {/* 드래그앤드롭 영역 */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl cursor-pointer transition-colors py-4 px-4 text-center
-                  ${dragging ? "border-[#3182F6] bg-[#EBF3FE]" : "border-[#E5E8EB] hover:border-[#3182F6] hover:bg-[#F9FAFB]"}`}>
-                <p className="text-xs text-[#8B95A1]">
-                  {images.length > 0 ? "사진 추가하기 · 클릭 또는 드래그" : "사진 첨부 · 클릭 또는 드래그 (선택)"}
-                </p>
+                {/* 드래그앤드롭 영역 */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-xl cursor-pointer transition-colors py-4 px-4 text-center
+                    ${dragging ? "border-[#3182F6] bg-[#EBF3FE]" : "border-[#E5E8EB] hover:border-[#3182F6] hover:bg-[#F9FAFB]"}`}>
+                  <p className="text-xs text-[#8B95A1]">
+                    {images.length > 0 ? "사진 추가하기 · 클릭 또는 드래그" : "사진 첨부 · 클릭 또는 드래그 (선택)"}
+                  </p>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                  onChange={(e) => { if (e.target.files) addImageFiles(e.target.files); e.target.value = "" }} />
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-                onChange={(e) => { if (e.target.files) addImageFiles(e.target.files); e.target.value = "" }} />
-            </div>
+            )}
 
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#B0B8C1]">{form.content.length}/3000</span>
