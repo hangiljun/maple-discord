@@ -173,7 +173,7 @@ export default function BoardPage() {
               placeholder="제목" maxLength={50}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
             <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="내용을 입력하세요" rows={5} maxLength={1000}
+              placeholder="내용을 입력하세요" rows={5} maxLength={3000}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
 
             {/* 이미지 첨부 */}
@@ -210,7 +210,7 @@ export default function BoardPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-xs text-[#B0B8C1]">{form.content.length}/1000</span>
+              <span className="text-xs text-[#B0B8C1]">{form.content.length}/3000</span>
               <button onClick={handlePost} disabled={posting}
                 className="px-5 py-2 bg-[#3182F6] disabled:bg-[#E5E8EB] hover:bg-[#1C6EE8] text-white disabled:text-[#8B95A1] rounded-lg font-semibold text-sm transition-colors">
                 {posting ? "등록 중..." : "등록하기"}
