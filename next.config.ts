@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ["lucide-react", "firebase", "firebase/app", "firebase/auth", "firebase/firestore", "firebase/storage"],
   },
 
   images: {
