@@ -41,7 +41,7 @@ export default function BoardPage() {
   const [posting, setPosting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const PAGE_SIZE = 20
+  const PAGE_SIZE = 12
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -242,7 +242,7 @@ export default function BoardPage() {
               return (
                 <>
                   {imagePosts.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       {imagePosts.map((post) => (
                         <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col">
                           <button onClick={() => setExpanded(expanded === post.id ? null : post.id)} className="text-left flex flex-col flex-1">
