@@ -1,35 +1,12 @@
 "use client"
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { auth, db } from '@/lib/firebase'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { LogOut, User, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null)
-  const [userData, setUserData] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
-  const innerUnsubs = useRef<Array<() => void>>([])
-
-  useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (currentUser) => {
-      innerUnsubs.current.forEach(u => u())
-      innerUnsubs.current = []
-      setUser(currentUser)
-      if (currentUser) {
-        const unsubUser = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
-          if (docSnap.exists()) setUserData(docSnap.data())
-        })
-        innerUnsubs.current = [unsubUser]
-      } else {
-        setUserData(null)
-      }
-    })
-    return () => { unsubAuth(); innerUnsubs.current.forEach(u => u()) }
-  }, [])
 
   const menuItems = [
     { href: "/home",   label: "홈" },
@@ -65,33 +42,11 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* 오른쪽 버튼 영역 */}
-          <div className="flex items-center gap-1 ml-auto">
-            {user ? (
-              <>
-                <Link href="/profile"
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
-                  <User size={15} />
-                  마이페이지
-                </Link>
-                <button onClick={() => signOut(auth)}
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
-                  <LogOut size={15} />
-                  로그아웃
-                </button>
-              </>
-            ) : (
-              <Link href="/login"
-                className="flex items-center gap-1.5 bg-[#3182F6] hover:bg-[#1C6EE8] text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors">
-                <User size={14} />
-                로그인
-              </Link>
-            )}
-
-            {/* 햄버거 */}
+          {/* 햄버거 */}
+          <div className="ml-auto lg:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#8B95A1] hover:bg-[#F2F4F6] transition-colors">
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-[#8B95A1] hover:bg-[#F2F4F6] transition-colors">
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -114,26 +69,6 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            {user ? (
-              <>
-                <Link href="/profile"
-                  onClick={() => setMenuOpen(false)}
-                  className="px-5 py-3 text-sm font-medium text-[#191F28] hover:bg-[#F2F4F6] transition-colors border-t border-[#E5E8EB] mt-1 flex items-center gap-2">
-                  <User size={15} /> 마이페이지
-                </Link>
-                <button
-                  onClick={() => { signOut(auth); setMenuOpen(false) }}
-                  className="px-5 py-3 text-sm font-medium text-left text-red-500 hover:bg-[#F2F4F6] transition-colors flex items-center gap-2">
-                  <LogOut size={15} /> 로그아웃
-                </button>
-              </>
-            ) : (
-              <Link href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="mx-4 my-2 py-2.5 bg-[#3182F6] hover:bg-[#1C6EE8] text-white rounded-lg font-semibold text-sm text-center transition-colors">
-                로그인
-              </Link>
-            )}
           </div>
         )}
       </nav>
