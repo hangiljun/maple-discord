@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, DragEvent } from "react"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
-  deleteDoc, doc, serverTimestamp, getDoc
+  deleteDoc, doc, serverTimestamp, getDoc, updateDoc
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
@@ -40,6 +40,8 @@ export default function BoardPage() {
   const [dragging, setDragging] = useState(false)
   const [posting, setPosting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ title: "", content: "" })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const PAGE_SIZE = 12
 
@@ -138,7 +140,25 @@ export default function BoardPage() {
     await deleteDoc(doc(db, "board_posts", post.id))
   }
 
+  const startEdit = (post: Post) => {
+    setEditingId(post.id)
+    setEditForm({ title: post.title, content: post.content })
+    setExpanded(post.id)
+  }
+
+  const handleEditSave = async (post: Post) => {
+    if (!editForm.title.trim() || !editForm.content.trim()) { alert("제목과 내용을 입력해주세요"); return }
+    await updateDoc(doc(db, "board_posts", post.id), {
+      title: editForm.title,
+      content: editForm.content,
+    })
+    setEditingId(null)
+  }
+
   const canDelete = (post: Post) =>
+    adminUser || (user && user.uid === post.authorUid)
+
+  const canEdit = (post: Post) =>
     adminUser || (user && user.uid === post.authorUid)
 
   return (
@@ -265,16 +285,38 @@ export default function BoardPage() {
                     </button>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-[#E5E8EB] space-y-2">
-                        <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
-                        {hasImage && (
-                          <div className="space-y-2">
-                            {post.imageUrls!.map((url, i) => (
-                              <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB]">
-                                <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
-                                  onError={(e) => { const el = e.target as HTMLImageElement; if (el.parentElement) el.parentElement.style.display = "none" }} />
+                        {editingId === post.id ? (
+                          <>
+                            <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                              className="w-full p-2 rounded-lg border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6]" />
+                            <textarea value={editForm.content} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                              rows={4} maxLength={3000}
+                              className="w-full p-2 rounded-lg border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none" />
+                            <div className="flex gap-2">
+                              <button onClick={() => handleEditSave(post)}
+                                className="px-3 py-1.5 bg-[#3182F6] text-white text-xs font-semibold rounded-lg hover:bg-[#1C6EE8] transition-colors">저장</button>
+                              <button onClick={() => setEditingId(null)}
+                                className="px-3 py-1.5 bg-[#F2F4F6] text-[#8B95A1] text-xs font-semibold rounded-lg hover:bg-[#E5E8EB] transition-colors">취소</button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                            {hasImage && (
+                              <div className="space-y-2">
+                                {post.imageUrls!.map((url, i) => (
+                                  <div key={i} className="rounded-xl overflow-hidden border border-[#E5E8EB]">
+                                    <img src={url} alt={`첨부 이미지 ${i + 1}`} className="w-full h-auto" loading="lazy" decoding="async"
+                                      onError={(e) => { const el = e.target as HTMLImageElement; if (el.parentElement) el.parentElement.style.display = "none" }} />
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </div>
+                            )}
+                            {canEdit(post) && (
+                              <button onClick={() => startEdit(post)}
+                                className="text-xs text-[#8B95A1] hover:text-[#3182F6] transition-colors">수정</button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
