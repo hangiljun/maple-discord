@@ -97,7 +97,7 @@ export async function generateMetadata(
   const notice = await getNotice(id)
   if (!notice) return { title: "공지를 찾을 수 없어요" }
 
-  const description = getPreviewText(notice) || `메이플랜드 거래방 ${notice.category} 공지사항입니다.`
+  const description = getPreviewText(notice) || `메이플디스코드 ${notice.category} 공지사항입니다.`
 
   return {
     title: notice.title,

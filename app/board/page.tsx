@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useRef, DragEvent } from "react"
+import { useState, useEffect, useRef, useMemo, DragEvent } from "react"
 import Link from "next/link"
 import { db, auth } from "@/lib/firebase"
 import {
@@ -171,11 +171,11 @@ export default function BoardPage() {
   const canDelete = (post: Post) =>
     adminUser || (user && user.uid === post.authorUid)
 
-  const sortedPosts = [...posts].sort((a, b) => {
+  const sortedPosts = useMemo(() => [...posts].sort((a, b) => {
     if (a.pinned && !b.pinned) return -1
     if (!a.pinned && b.pinned) return 1
     return 0
-  })
+  }), [posts])
 
   const pagePosts = sortedPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const totalPages = Math.ceil(posts.length / PAGE_SIZE)
