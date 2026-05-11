@@ -4,7 +4,7 @@ import Link from "next/link"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
-  deleteDoc, doc, serverTimestamp, getDoc
+  deleteDoc, doc, serverTimestamp, getDoc, updateDoc
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
@@ -19,6 +19,7 @@ interface Post {
   isGuest: boolean
   isAdminPost?: boolean
   imageUrls?: string[]
+  pinned?: boolean
   createdAt?: any
   date: string
 }
@@ -40,6 +41,8 @@ export default function BoardPage() {
   const [dragging, setDragging] = useState(false)
   const [posting, setPosting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ title: "", content: "" })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const PAGE_SIZE = 12
 
@@ -139,10 +142,42 @@ export default function BoardPage() {
     await deleteDoc(doc(db, "board_posts", postId))
   }
 
+  const handlePin = async (e: React.MouseEvent, post: Post) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await updateDoc(doc(db, "board_posts", post.id), { pinned: !post.pinned })
+  }
+
+  const startEdit = (e: React.MouseEvent, post: Post) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditingId(post.id)
+    setEditForm({ title: post.title, content: post.content })
+    setShowForm(false)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleEditSave = async (post: Post) => {
+    if (!editForm.title.trim() || !editForm.content.trim()) { alert("제목과 내용을 입력해주세요"); return }
+    setPosting(true)
+    await updateDoc(doc(db, "board_posts", post.id), { title: editForm.title, content: editForm.content })
+    setEditingId(null)
+    setPosting(false)
+  }
+
+  const canEdit = (post: Post) =>
+    adminUser || (user && user.uid === post.authorUid)
+
   const canDelete = (post: Post) =>
     adminUser || (user && user.uid === post.authorUid)
 
-  const pagePosts = posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1
+    if (!a.pinned && b.pinned) return 1
+    return 0
+  })
+
+  const pagePosts = sortedPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const totalPages = Math.ceil(posts.length / PAGE_SIZE)
 
   return (
@@ -164,6 +199,31 @@ export default function BoardPage() {
             {showForm ? "취소" : "글쓰기"}
           </button>
         </div>
+
+        {/* 수정 폼 */}
+        {editingId && (() => {
+          const post = posts.find(p => p.id === editingId)
+          if (!post) return null
+          return (
+            <div className="bg-white border border-[#3182F6] rounded-2xl p-5 space-y-3">
+              <p className="text-sm font-semibold text-[#191F28]">게시글 수정</p>
+              <input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                placeholder="제목" maxLength={50}
+                className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6]" />
+              <textarea value={editForm.content} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                rows={6} maxLength={3000}
+                className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none" />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setEditingId(null)}
+                  className="px-4 py-2 bg-[#F2F4F6] text-[#4E5968] text-sm font-semibold rounded-lg hover:bg-[#E5E8EB] transition-colors">취소</button>
+                <button onClick={() => handleEditSave(post)} disabled={posting}
+                  className="px-4 py-2 bg-[#3182F6] text-white text-sm font-semibold rounded-lg hover:bg-[#1C6EE8] disabled:opacity-50 transition-colors">
+                  {posting ? "저장 중..." : "저장"}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* 글쓰기 폼 */}
         {showForm && (
@@ -242,24 +302,36 @@ export default function BoardPage() {
                 const thumb = post.imageUrls?.[0]
                 return (
                   <Link key={post.id} href={`/board/${post.id}`}
-                    className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer">
+                    className={`bg-white rounded-2xl overflow-hidden hover:border-[#3182F6] transition-colors flex flex-col cursor-pointer border ${post.pinned ? "border-red-300" : "border-[#E5E8EB]"}`}>
 
                     {/* 카드 헤더 */}
                     <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {post.pinned && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">📌 고정</span>
+                        )}
                         {post.isAdminPost && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">
-                            운영자
-                          </span>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200">운영자</span>
                         )}
                         <span className="text-xs text-[#8B95A1]">
                           {post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
                         </span>
                       </div>
-                      {canDelete(post) && (
-                        <button onClick={(e) => handleDelete(e, post.id)}
-                          className="text-xs text-[#B0B8C1] hover:text-red-500 transition-colors px-1">🗑️</button>
-                      )}
+                      <div className="flex items-center gap-0.5">
+                        {adminUser && (
+                          <button onClick={(e) => handlePin(e, post)}
+                            className={`text-sm px-1 py-0.5 rounded transition-colors ${post.pinned ? "text-red-500 hover:text-red-700" : "text-[#B0B8C1] hover:text-red-400"}`}
+                            title={post.pinned ? "고정 해제" : "고정"}>📌</button>
+                        )}
+                        {canEdit(post) && (
+                          <button onClick={(e) => startEdit(e, post)}
+                            className="text-sm text-[#B0B8C1] hover:text-[#3182F6] px-1 py-0.5 rounded transition-colors" title="수정">✏️</button>
+                        )}
+                        {canDelete(post) && (
+                          <button onClick={(e) => handleDelete(e, post.id)}
+                            className="text-sm text-[#B0B8C1] hover:text-red-500 transition-colors px-1 py-0.5 rounded" title="삭제">🗑️</button>
+                        )}
+                      </div>
                     </div>
 
                     {/* 썸네일 */}
