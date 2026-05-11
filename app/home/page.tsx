@@ -157,8 +157,8 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-5">
-            3개 게임, 하나의<br />
-            <span className="text-[#5865F2]">메이플 디스코드</span>
+            메이플스토리·메이플랜드·메이플플래닛<br />
+            <span className="text-[#5865F2]">종합 디스코드</span>
           </h1>
 
           <p className="text-[#94a3b8] text-base md:text-lg max-w-lg mx-auto leading-relaxed mb-10">
