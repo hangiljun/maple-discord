@@ -238,13 +238,11 @@ export default function BoardPage() {
               <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden">
                 <button onClick={() => setExpanded(expanded === post.id ? null : post.id)}
                   className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#F9FAFB] transition-colors">
+                  {post.imageUrls && post.imageUrls.length > 0 && (
+                    <img src={post.imageUrls[0]} alt="" className="w-12 h-12 rounded-xl object-cover border border-[#E5E8EB] flex-shrink-0" loading="lazy" />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-semibold text-sm text-[#191F28] truncate">{post.title}</p>
-                      {post.imageUrls && post.imageUrls.length > 0 && (
-                        <span className="text-xs text-[#B0B8C1] flex-shrink-0">📷</span>
-                      )}
-                    </div>
+                    <p className="font-semibold text-sm text-[#191F28] truncate">{post.title}</p>
                     <p className="text-xs text-[#8B95A1] mt-0.5">
                       {post.isAdminPost ? "운영자" : post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
                     </p>
