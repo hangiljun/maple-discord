@@ -4,18 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, onSnapshot, collection, query, where, getDocs, getDoc } from 'firebase/firestore'
-import { getOrCreateDMRoom } from '@/lib/dm'
-import { useRouter } from 'next/navigation'
-import { LogOut, MessageCircle, User, Menu, X } from 'lucide-react'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { LogOut, User, Menu, X } from 'lucide-react'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
   const [userData, setUserData] = useState<any>(null)
-  const [unreadTotal, setUnreadTotal] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [contacting, setContacting] = useState(false)
-  const router = useRouter()
   const pathname = usePathname()
   const innerUnsubs = useRef<Array<() => void>>([])
 
@@ -28,47 +23,16 @@ export default function Navbar() {
         const unsubUser = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
           if (docSnap.exists()) setUserData(docSnap.data())
         })
-        const dmQuery = query(
-          collection(db, "dm_rooms"),
-          where("participants", "array-contains", currentUser.uid)
-        )
-        const unsubDM = onSnapshot(dmQuery, (snap) => {
-          let total = 0
-          snap.docs.forEach(d => { total += d.data().unread?.[currentUser.uid] || 0 })
-          setUnreadTotal(total)
-        })
-        innerUnsubs.current = [unsubUser, unsubDM]
+        innerUnsubs.current = [unsubUser]
       } else {
         setUserData(null)
-        setUnreadTotal(0)
       }
     })
     return () => { unsubAuth(); innerUnsubs.current.forEach(u => u()) }
   }, [])
 
-  const handleContactAdmin = async () => {
-    if (!user) { router.push("/login"); return }
-    if (contacting) return
-    setContacting(true)
-    try {
-      const adminSnap = await getDocs(collection(db, "admin"))
-      if (adminSnap.empty) { alert("운영자를 찾을 수 없어요"); return }
-      const adminUid = adminSnap.docs[0].id
-      const adminUserSnap = await getDoc(doc(db, "users", adminUid))
-      const adminName = adminUserSnap.exists() ? (adminUserSnap.data().nickname || "운영자") : "운영자"
-      const myName = userData?.nickname || user.email?.split("@")[0] || "모험가"
-      await getOrCreateDMRoom(user.uid, myName, adminUid, adminName)
-      router.push("/messages")
-    } catch (err) {
-      console.error(err)
-      alert("문의 시작에 실패했어요")
-    } finally {
-      setContacting(false)
-    }
-  }
-
   const menuItems = [
-    { href: "/home",    label: "홈" },
+    { href: "/home",   label: "홈" },
     { href: "/tip",    label: "거래 주의사항" },
     { href: "/notice", label: "공지사항" },
     { href: "/board",  label: "자유게시판" },
@@ -110,21 +74,11 @@ export default function Navbar() {
                   <User size={15} />
                   마이페이지
                 </Link>
-
                 <button onClick={() => signOut(auth)}
                   className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
                   <LogOut size={15} />
                   로그아웃
                 </button>
-
-                <Link href="/messages"
-                  className="relative flex items-center gap-1.5 px-3 py-1.5 text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors text-sm font-medium">
-                  <MessageCircle size={15} />
-                  1:1 대화
-                  {unreadTotal > 0 && (
-                    <span className="absolute top-1.5 left-5 w-2 h-2 bg-red-500 rounded-full" />
-                  )}
-                </Link>
               </>
             ) : (
               <Link href="/login"
@@ -167,11 +121,6 @@ export default function Navbar() {
                   className="px-5 py-3 text-sm font-medium text-[#191F28] hover:bg-[#F2F4F6] transition-colors border-t border-[#E5E8EB] mt-1 flex items-center gap-2">
                   <User size={15} /> 마이페이지
                 </Link>
-                <button
-                  onClick={() => { handleContactAdmin(); setMenuOpen(false) }}
-                  className="px-5 py-3 text-sm font-medium text-left text-[#191F28] hover:bg-[#F2F4F6] transition-colors flex items-center gap-2">
-                  <MessageCircle size={15} /> 운영자 문의
-                </button>
                 <button
                   onClick={() => { signOut(auth); setMenuOpen(false) }}
                   className="px-5 py-3 text-sm font-medium text-left text-red-500 hover:bg-[#F2F4F6] transition-colors flex items-center gap-2">
