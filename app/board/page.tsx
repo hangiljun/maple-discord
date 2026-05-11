@@ -244,7 +244,11 @@ export default function BoardPage() {
                   {imagePosts.length > 0 && (
                     <div className="grid grid-cols-3 gap-3">
                       {imagePosts.map((post) => (
-                        <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col">
+                        <div key={post.id} className="bg-white border border-[#E5E8EB] rounded-2xl overflow-hidden flex flex-col relative">
+                          {canDelete(post) && (
+                            <button onClick={(e) => { e.stopPropagation(); handleDelete(post) }}
+                              className="absolute top-2 right-2 z-10 w-6 h-6 bg-black/40 hover:bg-red-500 text-white rounded-full text-xs flex items-center justify-center transition-colors">✕</button>
+                          )}
                           <button onClick={() => setExpanded(expanded === post.id ? null : post.id)} className="text-left flex flex-col flex-1">
                             {expanded !== post.id && (
                               <div className="w-full aspect-square overflow-hidden bg-[#F2F4F6]">
