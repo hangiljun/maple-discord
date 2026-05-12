@@ -11,6 +11,7 @@ interface Notice {
   id: string
   title: string
   category: "패치노트" | "변경사항" | "공지"
+  thumbnailUrl?: string
   blocks?: SavedBlock[]
   content?: string
   imageUrls?: string[]
@@ -144,6 +145,17 @@ export default async function NoticeDetailPage(
           </div>
 
           <div className="p-6 space-y-4">
+            {notice.thumbnailUrl && (
+              <div className="w-full bg-[#F9FAFB] rounded-xl overflow-hidden border border-[#E5E8EB]">
+                <img
+                  src={notice.thumbnailUrl}
+                  alt={notice.title}
+                  className="w-full h-auto"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            )}
             {blocks.map((block, i) =>
               block.type === "text" ? (
                 <p key={i} className="text-sm text-[#4E5968] leading-relaxed whitespace-pre-wrap">
