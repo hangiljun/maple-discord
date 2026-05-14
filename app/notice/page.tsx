@@ -166,6 +166,21 @@ export default function NoticePage() {
     setBlocks(prev => prev.map((b, idx) => idx === i ? { ...b, value } : b))
   }
 
+  const handleBlockPaste = (i: number, e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items).filter(item => item.type.startsWith("image/"))
+    if (items.length === 0) return
+    e.preventDefault()
+    const newBlocks: EditorBlock[] = items
+      .map(item => item.getAsFile())
+      .filter(Boolean)
+      .map(file => ({ type: "image" as const, url: URL.createObjectURL(file!), file: file! }))
+    setBlocks(prev => [
+      ...prev.slice(0, i + 1),
+      ...newBlocks,
+      ...prev.slice(i + 1),
+    ])
+  }
+
   const moveBlock = (i: number, dir: -1 | 1) => {
     setBlocks(prev => {
       const j = i + dir
@@ -358,8 +373,9 @@ export default function NoticePage() {
                     <textarea
                       value={block.value}
                       onChange={(e) => updateTextBlock(i, e.target.value)}
+                      onPaste={(e) => handleBlockPaste(i, e)}
                       rows={4}
-                      placeholder="텍스트를 입력하세요"
+                      placeholder="텍스트를 입력하세요 (이미지 Ctrl+V 붙여넣기 가능)"
                       className="w-full p-3 text-sm text-[#191F28] outline-none resize-none placeholder:text-[#B0B8C1]"
                     />
                   ) : (
