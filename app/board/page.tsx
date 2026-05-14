@@ -98,12 +98,25 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (!showForm || !user) return
-    const handler = (e: ClipboardEvent) => {
-      const items = Array.from(e.clipboardData?.items || []).filter(item => item.type.startsWith("image/"))
-      if (items.length === 0) return
-      e.preventDefault()
-      const files = items.map(item => item.getAsFile()).filter(Boolean) as File[]
-      addImageFiles(files)
+    const handler = async (e: ClipboardEvent) => {
+      // 방법 1: clipboardData.items (표준)
+      const items = Array.from(e.clipboardData?.items || []).filter(i => i.type.startsWith("image/"))
+      if (items.length > 0) {
+        e.preventDefault()
+        const files = items.map(i => i.getAsFile()).filter(Boolean) as File[]
+        addImageFiles(files)
+        return
+      }
+      // 방법 2: Clipboard API 폴백 (Edge/Chrome 최신)
+      try {
+        const clipItems = await navigator.clipboard.read()
+        const imgItem = clipItems.find(ci => ci.types.some(t => t.startsWith("image/")))
+        if (!imgItem) return
+        const mimeType = imgItem.types.find(t => t.startsWith("image/"))!
+        const blob = await imgItem.getType(mimeType)
+        const file = new File([blob], `paste_${Date.now()}.png`, { type: mimeType })
+        addImageFiles([file])
+      } catch {}
     }
     document.addEventListener("paste", handler)
     return () => document.removeEventListener("paste", handler)
