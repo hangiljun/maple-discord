@@ -96,14 +96,18 @@ export default function BoardPage() {
     addImageFiles(e.dataTransfer.files)
   }
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    if (!user) return
-    const items = Array.from(e.clipboardData.items).filter(item => item.type.startsWith("image/"))
-    if (items.length === 0) return
-    e.preventDefault()
-    const files = items.map(item => item.getAsFile()).filter(Boolean) as File[]
-    addImageFiles(files)
-  }
+  useEffect(() => {
+    if (!showForm || !user) return
+    const handler = (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items || []).filter(item => item.type.startsWith("image/"))
+      if (items.length === 0) return
+      e.preventDefault()
+      const files = items.map(item => item.getAsFile()).filter(Boolean) as File[]
+      addImageFiles(files)
+    }
+    document.addEventListener("paste", handler)
+    return () => document.removeEventListener("paste", handler)
+  }, [showForm, user])
 
   const resetForm = () => {
     images.forEach(img => URL.revokeObjectURL(img.preview))
@@ -253,7 +257,6 @@ export default function BoardPage() {
               placeholder="제목" maxLength={50}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]" />
             <textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })}
-              onPaste={handlePaste}
               placeholder="내용을 입력하세요 (이미지 Ctrl+V 붙여넣기 가능)" rows={5} maxLength={3000}
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
 
