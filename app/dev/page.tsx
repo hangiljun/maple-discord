@@ -83,7 +83,7 @@ const SPRITES = {
 }
 
 
-// Canvas로 체커보드(투명 배경 무늬) 픽셀 제거
+// 외곽 DFS Flood Fill로 외부 배경만 제거 (내부 흰 영역 보존)
 function CharacterCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -97,17 +97,66 @@ function CharacterCanvas() {
       const ctx = canvas.getContext("2d")
       if (!ctx) return
       ctx.drawImage(img, 0, 0)
+
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const data = imageData.data
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i], g = data[i + 1], b = data[i + 2]
-        const max = Math.max(r, g, b), min = Math.min(r, g, b)
-        // 밝기 높고(>185) 채도 낮은(<40) 픽셀 = 체커보드 → 투명 처리
-        if (r > 185 && g > 185 && b > 185 && (max - min) < 40) {
-          data[i + 3] = 0
+      const w = canvas.width, h = canvas.height
+      const visited = new Uint8Array(w * h)
+
+      // 배경 픽셀 판별: 이미 투명 OR (밝고 채도 낮음)
+      const isBg = (idx: number) => {
+        if (data[idx + 3] < 15) return true
+        const r = data[idx], g = data[idx + 1], b = data[idx + 2]
+        return r > 170 && g > 170 && b > 170 &&
+          Math.max(r, g, b) - Math.min(r, g, b) < 60
+      }
+
+      // 4변 외곽 픽셀에서 DFS 시작 → 연결된 배경만 투명 처리
+      const stack: number[] = []
+      for (let x = 0; x < w; x++) {
+        stack.push(x)
+        stack.push((h - 1) * w + x)
+      }
+      for (let y = 1; y < h - 1; y++) {
+        stack.push(y * w)
+        stack.push(y * w + w - 1)
+      }
+
+      while (stack.length > 0) {
+        const pos = stack.pop()!
+        if (visited[pos]) continue
+        visited[pos] = 1
+        const idx = pos * 4
+        if (!isBg(idx)) continue
+        data[idx + 3] = 0
+        const x = pos % w, y = Math.floor(pos / w)
+        if (x > 0)     stack.push(pos - 1)
+        if (x < w - 1) stack.push(pos + 1)
+        if (y > 0)     stack.push(pos - w)
+        if (y < h - 1) stack.push(pos + w)
+      }
+
+      // 경계 엣지 스무딩: 투명 픽셀에 인접한 밝은 잔여 픽셀 페이딩
+      const out = new Uint8ClampedArray(data)
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const pos = y * w + x
+          const idx = pos * 4
+          if (data[idx + 3] === 0) continue
+          const adjTransparent =
+            data[(pos - 1) * 4 + 3] === 0 || data[(pos + 1) * 4 + 3] === 0 ||
+            data[(pos - w) * 4 + 3] === 0 || data[(pos + w) * 4 + 3] === 0
+          if (!adjTransparent) continue
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2]
+          if (r > 155 && g > 155 && b > 155 &&
+            Math.max(r, g, b) - Math.min(r, g, b) < 70) {
+            const br = (r + g + b) / 765
+            out[idx + 3] = Math.floor(data[idx + 3] * (1 - br * 0.8))
+          }
         }
       }
-      ctx.putImageData(imageData, 0, 0)
+
+      ctx.putImageData(new ImageData(out, w, h), 0, 0)
     }
     img.src = "/배경.png"
   }, [])
@@ -118,9 +167,8 @@ function CharacterCanvas() {
       style={{ height: "90%", maxHeight: "820px", maxWidth: "42%" }}
     >
       <canvas ref={canvasRef} aria-hidden className="h-full w-auto block" />
-      {/* 왼쪽 경계 자연스럽게 블렌딩 */}
       <div className="absolute inset-0"
-        style={{ background: "linear-gradient(to right, #07090f 0%, rgba(7,9,15,0.2) 18%, transparent 38%)" }} />
+        style={{ background: "linear-gradient(to right, #07090f 0%, rgba(7,9,15,0.15) 15%, transparent 35%)" }} />
     </div>
   )
 }
