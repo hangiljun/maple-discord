@@ -178,19 +178,17 @@ export default function DevPage() {
             <div className="grid grid-cols-3 gap-3 mb-10">
 
               {/* 카드 1: 총 멤버 — 캐릭터 이미지 */}
-              <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl overflow-hidden"
+              <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl overflow-hidden"
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.1)",
                   backdropFilter: "blur(20px)",
                 }}>
-                <div className="flex items-end justify-center h-14 mb-1">
-                  <img src="/캐릭터.png" alt="" aria-hidden
-                    className="h-14 w-auto max-w-full object-contain object-bottom"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                </div>
                 <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
                 <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
+                <img src="/캐릭터.png" alt="" aria-hidden
+                  className="h-8 w-auto max-w-full object-contain mt-1"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
               </div>
 
               {/* 카드 2: 게임 커버 — 텍스트 로고 스택 */}
