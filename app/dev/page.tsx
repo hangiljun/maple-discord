@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -72,31 +73,13 @@ const DiscordIcon = () => (
   </svg>
 )
 
-const UsersIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-  </svg>
-)
-
-const ClockIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
-  </svg>
-)
-
-const GameIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="6" width="20" height="12" rx="2"/>
-    <path d="M12 12h.01"/>
-    <path d="M7 12h2"/>
-    <path d="M8 11v2"/>
-    <path d="M16 10l1.5 2-1.5 2"/>
-  </svg>
-)
+// maplestory.io 공개 API 스프라이트 URL
+const SPRITES = {
+  slime:    "https://maplestory.io/api/GMS/253/mob/100100/icon",
+  mushroom: "https://maplestory.io/api/GMS/253/mob/210100/icon",
+  yeti:     "https://maplestory.io/api/GMS/253/mob/5100000/icon",
+  spirit:   "https://maplestory.io/api/GMS/253/mob/9300018/icon",
+}
 
 export default function DevPage() {
   return (
@@ -113,15 +96,36 @@ export default function DevPage() {
 
         {/* 배경 광원 효과 */}
         <div className="pointer-events-none absolute inset-0">
-          {/* 메인 퍼플 오브 */}
           <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(99,70,210,0.35) 0%, transparent 70%)" }} />
-          {/* 블루 사이드 오브 */}
           <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(59,130,246,0.18) 0%, transparent 70%)" }} />
-          {/* 하단 딥 퍼플 */}
           <div className="absolute bottom-[-5%] left-[10%] w-[600px] h-[400px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
+        </div>
+
+        {/* 배경 몬스터 스프라이트 */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* 왼쪽 슬라임 */}
+          <img src={SPRITES.slime} alt="" aria-hidden
+            className="absolute bottom-[18%] left-[3%] w-28 md:w-36 opacity-60 drop-shadow-lg"
+            style={{ imageRendering: "pixelated" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+          {/* 왼쪽 중간 버섯 */}
+          <img src={SPRITES.mushroom} alt="" aria-hidden
+            className="absolute bottom-[20%] left-[18%] w-24 md:w-32 opacity-55 drop-shadow-lg"
+            style={{ imageRendering: "pixelated" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+          {/* 오른쪽 설인 */}
+          <img src={SPRITES.yeti} alt="" aria-hidden
+            className="absolute bottom-[16%] right-[3%] w-32 md:w-44 opacity-55 drop-shadow-lg"
+            style={{ imageRendering: "pixelated" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+          {/* 오른쪽 중간 */}
+          <img src={SPRITES.spirit} alt="" aria-hidden
+            className="absolute bottom-[22%] right-[20%] w-20 md:w-28 opacity-45 drop-shadow-lg"
+            style={{ imageRendering: "pixelated" }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 pt-16 pb-20 text-center w-full">
@@ -176,46 +180,65 @@ export default function DevPage() {
           {/* 통계 카드 3개 — 글래스모피즘 */}
           <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-12">
 
-            {/* 카드 1: 총 멤버 */}
-            <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl"
+            {/* 카드 1: 총 멤버 — 캐릭터 그룹 스프라이트 */}
+            <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl overflow-hidden relative"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(20px)",
               }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-1"
-                style={{ background: "rgba(129,140,248,0.2)", color: "#818cf8" }}>
-                <UsersIcon />
+              <div className="flex items-end justify-center gap-0.5 h-14 mb-1">
+                <img src={SPRITES.slime} alt="" aria-hidden className="w-8 h-8 object-contain"
+                  style={{ imageRendering: "pixelated" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+                <img src={SPRITES.mushroom} alt="" aria-hidden className="w-9 h-9 object-contain"
+                  style={{ imageRendering: "pixelated" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+                <img src={SPRITES.spirit} alt="" aria-hidden className="w-8 h-8 object-contain"
+                  style={{ imageRendering: "pixelated" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
               </div>
               <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
               <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
             </div>
 
-            {/* 카드 2: 게임 커버 */}
+            {/* 카드 2: 게임 커버 — 텍스트 로고 스택 */}
             <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(20px)",
               }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-1"
-                style={{ background: "rgba(192,132,252,0.2)", color: "#c084fc" }}>
-                <GameIcon />
+              <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
+                <span className="text-[10px] font-black tracking-tight leading-tight"
+                  style={{ color: "#f59e0b" }}>MapleStory</span>
+                <span className="text-[10px] font-black tracking-tight leading-tight"
+                  style={{ color: "#4ade80" }}>MapleLand</span>
+                <span className="text-[10px] font-black tracking-tight leading-tight"
+                  style={{ color: "#c084fc" }}>🍁 Maple Planet</span>
               </div>
               <p className="text-2xl md:text-3xl font-black text-white leading-none">3개</p>
               <p className="text-xs text-[#64748b] font-medium">게임 커버</p>
             </div>
 
-            {/* 카드 3: 실시간 운영 */}
+            {/* 카드 3: 실시간 운영 — 네온 시계 */}
             <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(20px)",
               }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-1"
-                style={{ background: "rgba(34,211,238,0.15)", color: "#22d3ee" }}>
-                <ClockIcon />
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1 relative"
+                style={{
+                  background: "rgba(34,211,238,0.1)",
+                  border: "2px solid rgba(34,211,238,0.6)",
+                  boxShadow: "0 0 16px rgba(34,211,238,0.4), inset 0 0 12px rgba(34,211,238,0.1)",
+                }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                  stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
               </div>
               <p className="text-2xl md:text-3xl font-black text-white leading-none">24/7</p>
               <p className="text-xs text-[#64748b] font-medium">실시간 운영</p>
