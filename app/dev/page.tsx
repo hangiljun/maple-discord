@@ -182,11 +182,7 @@ export default function DevPage() {
                     alt=""
                     aria-hidden
                     className="w-full h-auto object-contain mt-1.5"
-                    style={{
-                      maxWidth: "88px",
-                      WebkitMaskImage: "radial-gradient(ellipse 78% 80% at 52% 52%, black 30%, transparent 72%)",
-                      maskImage: "radial-gradient(ellipse 78% 80% at 52% 52%, black 30%, transparent 72%)",
-                    }}
+                    style={{ maxWidth: "88px" }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                   />
                 </div>
@@ -272,9 +268,8 @@ export default function DevPage() {
                 aria-hidden
                 className="h-full w-auto object-contain block"
                 style={{
-                  mixBlendMode: "screen",
-                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%, black 85%, transparent 100%)",
-                  maskImage: "linear-gradient(to right, transparent 0%, black 18%, black 85%, transparent 100%)",
+                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 20%)",
+                  maskImage: "linear-gradient(to right, transparent 0%, black 20%)",
                 }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
               />
