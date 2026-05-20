@@ -81,12 +81,6 @@ const SPRITES = {
   spirit:   "https://maplestory.io/api/GMS/253/mob/9300018/icon",
 }
 
-// maplestory.io 캐릭터 렌더 (카드용)
-const CHARS = {
-  warrior: "https://maplestory.io/api/GMS/253/character/00002000%2C01302000/stand1/0",
-  mage:    "https://maplestory.io/api/GMS/253/character/00002000%2C01372000/stand1/0",
-  archer:  "https://maplestory.io/api/GMS/253/character/00002000%2C01452000/stand1/0",
-}
 
 export default function DevPage() {
   return (
@@ -99,181 +93,172 @@ export default function DevPage() {
       </div>
 
       {/* ── 히어로 ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-[92vh] flex flex-col items-center justify-center">
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center">
 
         {/* 배경 광원 효과 */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full"
+          <div className="absolute top-[-10%] left-[-5%] w-[700px] h-[600px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(99,70,210,0.35) 0%, transparent 70%)" }} />
-          <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full"
-            style={{ background: "radial-gradient(ellipse, rgba(59,130,246,0.18) 0%, transparent 70%)" }} />
-          <div className="absolute bottom-[-5%] left-[10%] w-[600px] h-[400px] rounded-full"
+          <div className="absolute bottom-[-5%] left-[5%] w-[500px] h-[400px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(139,92,246,0.15) 0%, transparent 70%)" }} />
         </div>
 
-        {/* 배경 몬스터 스프라이트 */}
+        {/* 배경 몬스터 스프라이트 — 왼쪽 하단 */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {/* 왼쪽 슬라임 */}
           <img src={SPRITES.slime} alt="" aria-hidden
-            className="absolute bottom-[18%] left-[3%] w-28 md:w-36 opacity-60 drop-shadow-lg"
+            className="absolute bottom-[8%] left-[1%] w-20 md:w-28 opacity-50 drop-shadow-lg"
             style={{ imageRendering: "pixelated" }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-          {/* 왼쪽 중간 버섯 */}
           <img src={SPRITES.mushroom} alt="" aria-hidden
-            className="absolute bottom-[20%] left-[18%] w-24 md:w-32 opacity-55 drop-shadow-lg"
-            style={{ imageRendering: "pixelated" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-          {/* 오른쪽 설인 */}
-          <img src={SPRITES.yeti} alt="" aria-hidden
-            className="absolute bottom-[16%] right-[3%] w-32 md:w-44 opacity-55 drop-shadow-lg"
-            style={{ imageRendering: "pixelated" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-          {/* 오른쪽 중간 */}
-          <img src={SPRITES.spirit} alt="" aria-hidden
-            className="absolute bottom-[22%] right-[20%] w-20 md:w-28 opacity-45 drop-shadow-lg"
+            className="absolute bottom-[10%] left-[12%] w-16 md:w-20 opacity-45 drop-shadow-lg"
             style={{ imageRendering: "pixelated" }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-16 pb-20 text-center w-full">
+        {/* 배경 이미지 — 오른쪽, 스크롤과 함께 이동 */}
+        <div className="pointer-events-none absolute top-0 right-0 h-full w-[55%] hidden md:block">
+          <img src="/배경.png" alt="" aria-hidden
+            className="w-full h-full object-cover object-left-top" />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(to right, #07090f 0%, #07090f 8%, rgba(7,9,15,0.5) 35%, transparent 65%)" }} />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, #07090f 0%, transparent 18%)" }} />
+        </div>
 
-          {/* 온라인 배지 */}
-          <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-7 text-sm font-medium text-[#a5b4fc]"
-            style={{
-              background: "rgba(99,70,210,0.18)",
-              border: "1px solid rgba(139,92,246,0.3)",
-              backdropFilter: "blur(12px)",
-            }}>
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            지금 온라인 · 5만 명 커뮤니티
-          </div>
+        {/* 텍스트 콘텐츠 — 왼쪽 */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-24">
+          <div className="max-w-[560px]">
 
-          {/* 게임 태그 */}
-          <div className="flex justify-center gap-2 flex-wrap mb-8">
-            <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
-              style={{ color: "#f59e0b", background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
-              🍁 메이플스토리
-            </span>
-            <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
-              style={{ color: "#4ade80", background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)" }}>
-              🌿 메이플랜드
-            </span>
-            <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
-              style={{ color: "#c084fc", background: "rgba(192,132,252,0.15)", border: "1px solid rgba(192,132,252,0.3)" }}>
-              🪐 메이플플래닛
-            </span>
-          </div>
-
-          {/* 메인 타이틀 */}
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.15] mb-6">
-            메이플스토리 · 메이플랜드 · 메이플플래닛
-            <br />
-            <span style={{
-              background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 40%, #c084fc 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              종합 디스코드
-            </span>
-          </h1>
-
-          {/* 서브 카피 */}
-          <p className="text-[#94a3b8] text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-12">
-            메이플스토리 · 메이플랜드 · 메이플플래닛을 한 곳에서.<br />
-            거래, 파티, 보스, 정보 조회, 커뮤니티까지 한번에.
-          </p>
-
-          {/* 통계 카드 3개 — 글래스모피즘 */}
-          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-12">
-
-            {/* 카드 1: 총 멤버 — 캐릭터 그룹 스프라이트 */}
-            <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl overflow-hidden relative"
+            {/* 온라인 배지 */}
+            <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-7 text-sm font-medium text-[#a5b4fc]"
               style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                backdropFilter: "blur(20px)",
-              }}>
-              <div className="flex items-end justify-center gap-1 h-14 mb-1">
-                <img src={CHARS.warrior} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                <img src={CHARS.mage} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                <img src={CHARS.archer} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-              </div>
-              <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
-              <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
-            </div>
-
-            {/* 카드 2: 게임 커버 — 텍스트 로고 스택 */}
-            <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                backdropFilter: "blur(20px)",
-              }}>
-              <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
-                <span className="text-sm font-black leading-tight"
-                  style={{ color: "#f59e0b" }}>🍁 메이플스토리</span>
-                <span className="text-sm font-black leading-tight"
-                  style={{ color: "#4ade80" }}>🌿 메이플랜드</span>
-                <span className="text-sm font-black leading-tight"
-                  style={{ color: "#c084fc" }}>🪐 메이플플래닛</span>
-              </div>
-              <p className="text-2xl md:text-3xl font-black text-white leading-none">3개</p>
-              <p className="text-xs text-[#64748b] font-medium">게임 커버</p>
-            </div>
-
-            {/* 카드 3: 실시간 운영 — 네온 시계 */}
-            <div className="flex flex-col items-center gap-2 px-4 py-6 rounded-2xl"
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                backdropFilter: "blur(20px)",
-              }}>
-              <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1 relative"
-                style={{
-                  background: "rgba(34,211,238,0.1)",
-                  border: "2px solid rgba(34,211,238,0.6)",
-                  boxShadow: "0 0 16px rgba(34,211,238,0.4), inset 0 0 12px rgba(34,211,238,0.1)",
-                }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
-                  stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-              </div>
-              <p className="text-2xl md:text-3xl font-black text-white leading-none">24/7</p>
-              <p className="text-xs text-[#64748b] font-medium">실시간 운영</p>
-            </div>
-
-          </div>
-
-          {/* CTA 버튼 */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2.5 font-bold px-8 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:-translate-y-1"
-              style={{
-                background: "#5865F2",
-                boxShadow: "0 0 24px rgba(88,101,242,0.5), 0 4px 20px rgba(88,101,242,0.3)",
-              }}
-              onMouseEnter={undefined}
-            >
-              <DiscordIcon />
-              디스코드 참여하기
-            </a>
-            <Link href="/notice"
-              className="flex items-center gap-2 font-semibold px-7 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:bg-white/10"
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(99,70,210,0.18)",
+                border: "1px solid rgba(139,92,246,0.3)",
                 backdropFilter: "blur(12px)",
               }}>
-              공지사항 보기
-            </Link>
-          </div>
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              지금 온라인 · 5만 명 커뮤니티
+            </div>
 
+            {/* 게임 태그 */}
+            <div className="flex gap-2 flex-wrap mb-8">
+              <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
+                style={{ color: "#f59e0b", background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                🍁 메이플스토리
+              </span>
+              <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
+                style={{ color: "#4ade80", background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                🌿 메이플랜드
+              </span>
+              <span className="text-xs font-bold px-3.5 py-1.5 rounded-full"
+                style={{ color: "#c084fc", background: "rgba(192,132,252,0.15)", border: "1px solid rgba(192,132,252,0.3)" }}>
+                🪐 메이플플래닛
+              </span>
+            </div>
+
+            {/* 메인 타이틀 */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] mb-6">
+              메이플스토리 · 메이플랜드 · 메이플플래닛
+              <br />
+              <span style={{
+                background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 40%, #c084fc 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}>
+                종합 디스코드
+              </span>
+            </h1>
+
+            {/* 서브 카피 */}
+            <p className="text-[#94a3b8] text-base md:text-lg leading-relaxed mb-10">
+              메이플스토리 · 메이플랜드 · 메이플플래닛을 한 곳에서.<br />
+              거래, 파티, 보스, 정보 조회, 커뮤니티까지 한번에.
+            </p>
+
+            {/* 통계 카드 3개 — 글래스모피즘 */}
+            <div className="grid grid-cols-3 gap-3 mb-10">
+
+              {/* 카드 1: 총 멤버 — 캐릭터 이미지 */}
+              <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl overflow-hidden"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(20px)",
+                }}>
+                <div className="flex items-end justify-center h-14 mb-1">
+                  <img src="/캐릭터.png" alt="" aria-hidden
+                    className="h-14 w-auto max-w-full object-contain object-bottom"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+                </div>
+                <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
+                <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
+              </div>
+
+              {/* 카드 2: 게임 커버 — 텍스트 로고 스택 */}
+              <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(20px)",
+                }}>
+                <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
+                  <span className="text-sm font-black leading-tight" style={{ color: "#f59e0b" }}>🍁 메이플스토리</span>
+                  <span className="text-sm font-black leading-tight" style={{ color: "#4ade80" }}>🌿 메이플랜드</span>
+                  <span className="text-sm font-black leading-tight" style={{ color: "#c084fc" }}>🪐 메이플플래닛</span>
+                </div>
+                <p className="text-2xl md:text-3xl font-black text-white leading-none">3개</p>
+                <p className="text-xs text-[#64748b] font-medium">게임 커버</p>
+              </div>
+
+              {/* 카드 3: 실시간 운영 — 네온 시계 */}
+              <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(20px)",
+                }}>
+                <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
+                  style={{
+                    background: "rgba(34,211,238,0.1)",
+                    border: "2px solid rgba(34,211,238,0.6)",
+                    boxShadow: "0 0 16px rgba(34,211,238,0.4), inset 0 0 12px rgba(34,211,238,0.1)",
+                  }}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                    stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <p className="text-2xl md:text-3xl font-black text-white leading-none">24/7</p>
+                <p className="text-xs text-[#64748b] font-medium">실시간 운영</p>
+              </div>
+
+            </div>
+
+            {/* CTA 버튼 */}
+            <div className="flex flex-col sm:flex-row items-start gap-3">
+              <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2.5 font-bold px-8 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:-translate-y-1"
+                style={{
+                  background: "#5865F2",
+                  boxShadow: "0 0 24px rgba(88,101,242,0.5), 0 4px 20px rgba(88,101,242,0.3)",
+                }}>
+                <DiscordIcon />
+                디스코드 참여하기
+              </a>
+              <Link href="/notice"
+                className="flex items-center gap-2 font-semibold px-7 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:bg-white/10"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  backdropFilter: "blur(12px)",
+                }}>
+                공지사항 보기
+              </Link>
+            </div>
+
+          </div>
         </div>
       </section>
 
