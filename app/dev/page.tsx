@@ -73,12 +73,19 @@ const DiscordIcon = () => (
   </svg>
 )
 
-// maplestory.io 공개 API 스프라이트 URL
+// maplestory.io 공개 API 스프라이트 URL (몬스터 — 배경용)
 const SPRITES = {
   slime:    "https://maplestory.io/api/GMS/253/mob/100100/icon",
   mushroom: "https://maplestory.io/api/GMS/253/mob/210100/icon",
   yeti:     "https://maplestory.io/api/GMS/253/mob/5100000/icon",
   spirit:   "https://maplestory.io/api/GMS/253/mob/9300018/icon",
+}
+
+// maplestory.io 캐릭터 렌더 (카드용)
+const CHARS = {
+  warrior: "https://maplestory.io/api/GMS/253/character/00002000%2C01302000/stand1/0",
+  mage:    "https://maplestory.io/api/GMS/253/character/00002000%2C01372000/stand1/0",
+  archer:  "https://maplestory.io/api/GMS/253/character/00002000%2C01452000/stand1/0",
 }
 
 export default function DevPage() {
@@ -187,15 +194,12 @@ export default function DevPage() {
                 border: "1px solid rgba(255,255,255,0.1)",
                 backdropFilter: "blur(20px)",
               }}>
-              <div className="flex items-end justify-center gap-0.5 h-14 mb-1">
-                <img src={SPRITES.slime} alt="" aria-hidden className="w-8 h-8 object-contain"
-                  style={{ imageRendering: "pixelated" }}
+              <div className="flex items-end justify-center gap-1 h-14 mb-1">
+                <img src={CHARS.warrior} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                <img src={SPRITES.mushroom} alt="" aria-hidden className="w-9 h-9 object-contain"
-                  style={{ imageRendering: "pixelated" }}
+                <img src={CHARS.mage} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                <img src={SPRITES.spirit} alt="" aria-hidden className="w-8 h-8 object-contain"
-                  style={{ imageRendering: "pixelated" }}
+                <img src={CHARS.archer} alt="" aria-hidden className="w-10 h-12 object-contain object-bottom"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
               </div>
               <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
@@ -210,12 +214,12 @@ export default function DevPage() {
                 backdropFilter: "blur(20px)",
               }}>
               <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
-                <span className="text-[10px] font-black tracking-tight leading-tight"
-                  style={{ color: "#f59e0b" }}>MapleStory</span>
-                <span className="text-[10px] font-black tracking-tight leading-tight"
-                  style={{ color: "#4ade80" }}>MapleLand</span>
-                <span className="text-[10px] font-black tracking-tight leading-tight"
-                  style={{ color: "#c084fc" }}>🍁 Maple Planet</span>
+                <span className="text-sm font-black leading-tight"
+                  style={{ color: "#f59e0b" }}>🍁 메이플스토리</span>
+                <span className="text-sm font-black leading-tight"
+                  style={{ color: "#4ade80" }}>🌿 메이플랜드</span>
+                <span className="text-sm font-black leading-tight"
+                  style={{ color: "#c084fc" }}>🪐 메이플플래닛</span>
               </div>
               <p className="text-2xl md:text-3xl font-black text-white leading-none">3개</p>
               <p className="text-xs text-[#64748b] font-medium">게임 커버</p>
