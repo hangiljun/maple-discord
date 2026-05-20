@@ -1,4 +1,5 @@
 "use client"
+import { useRef, useEffect } from "react"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -82,6 +83,48 @@ const SPRITES = {
 }
 
 
+// Canvas로 체커보드(투명 배경 무늬) 픽셀 제거
+function CharacterCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const img = new Image()
+    img.onload = () => {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const data = imageData.data
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2]
+        const max = Math.max(r, g, b), min = Math.min(r, g, b)
+        // 밝기 높고(>185) 채도 낮은(<40) 픽셀 = 체커보드 → 투명 처리
+        if (r > 185 && g > 185 && b > 185 && (max - min) < 40) {
+          data[i + 3] = 0
+        }
+      }
+      ctx.putImageData(imageData, 0, 0)
+    }
+    img.src = "/배경.png"
+  }, [])
+
+  return (
+    <div
+      className="pointer-events-none absolute bottom-0 right-0 hidden lg:flex items-end"
+      style={{ height: "90%", maxHeight: "820px", maxWidth: "42%" }}
+    >
+      <canvas ref={canvasRef} aria-hidden className="h-full w-auto block" />
+      {/* 왼쪽 경계 자연스럽게 블렌딩 */}
+      <div className="absolute inset-0"
+        style={{ background: "linear-gradient(to right, #07090f 0%, rgba(7,9,15,0.2) 18%, transparent 38%)" }} />
+    </div>
+  )
+}
+
 export default function DevPage() {
   return (
     <div className="min-h-screen bg-[#07090f] text-white">
@@ -115,13 +158,8 @@ export default function DevPage() {
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
         </div>
 
-        {/* 캐릭터 — 오른쪽 하단 배치 (누끼 PNG, 배경 없음) */}
-        <img
-          src="/배경.png" alt="" aria-hidden
-          className="pointer-events-none absolute bottom-0 right-0 h-[90%] w-auto hidden lg:block"
-          style={{ maxHeight: "820px", maxWidth: "42%" }}
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-        />
+        {/* 캐릭터 — 오른쪽 하단 배치 (Canvas로 체커보드 제거) */}
+        <CharacterCanvas />
 
         {/* 텍스트 콘텐츠 — 왼쪽 */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-24">
