@@ -3,9 +3,6 @@ import type { NextConfig } from "next"
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
-  experimental: {
-    optimizePackageImports: ["lucide-react", "firebase", "firebase/app", "firebase/auth", "firebase/firestore", "firebase/storage"],
-  },
 
   images: {
     remotePatterns: [
