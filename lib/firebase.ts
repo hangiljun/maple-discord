@@ -13,10 +13,8 @@ const firebaseConfig = {
   measurementId: "G-Z1LNXE69EV"
 };
 
-// 중복 초기화 방지
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// 인증(Auth) 및 데이터베이스(Firestore) export
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
