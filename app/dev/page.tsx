@@ -182,7 +182,11 @@ export default function DevPage() {
                     alt=""
                     aria-hidden
                     className="w-full h-auto object-contain mt-1.5"
-                    style={{ maxWidth: "80px" }}
+                    style={{
+                      maxWidth: "88px",
+                      WebkitMaskImage: "radial-gradient(ellipse 78% 80% at 52% 52%, black 30%, transparent 72%)",
+                      maskImage: "radial-gradient(ellipse 78% 80% at 52% 52%, black 30%, transparent 72%)",
+                    }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                   />
                 </div>
@@ -254,22 +258,23 @@ export default function DevPage() {
 
             {/* ── 오른쪽: 마법사 캐릭터 (배경.png) ── */}
             {/*
-              PNG의 알파 채널(투명 영역)은 브라우저가 그대로 렌더링하므로
-              뒤에 깔린 #07090f 다크 배경이 자연스럽게 비쳐 보입니다.
-              mask-image 로 왼쪽 경계선을 부드럽게 블렌딩합니다.
+              mix-blend-mode: screen — 이미지의 어두운 배경 픽셀이 사이트 다크 배경(#07090f)과
+              합성되어 사라지고, 밝은 캐릭터·이펙트 픽셀만 남습니다.
+              mask-image 로 왼쪽 경계선을 추가로 페이딩합니다.
             */}
             <div
-              className="hidden lg:flex items-end justify-center"
+              className="hidden lg:flex items-center justify-center"
               style={{ height: "85vh", maxHeight: "800px" }}
             >
               <img
                 src="/배경.png"
                 alt=""
                 aria-hidden
-                className="h-full w-auto object-contain object-bottom block"
+                className="h-full w-auto object-contain block"
                 style={{
-                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 22%)",
-                  maskImage: "linear-gradient(to right, transparent 0%, black 22%)",
+                  mixBlendMode: "screen",
+                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%, black 85%, transparent 100%)",
+                  maskImage: "linear-gradient(to right, transparent 0%, black 18%, black 85%, transparent 100%)",
                 }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
               />
