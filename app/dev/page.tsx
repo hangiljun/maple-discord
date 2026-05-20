@@ -115,15 +115,13 @@ export default function DevPage() {
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
         </div>
 
-        {/* 배경 이미지 — 오른쪽, 스크롤과 함께 이동 */}
-        <div className="pointer-events-none absolute top-0 right-0 h-full w-[55%] hidden md:block">
-          <img src="/배경.png" alt="" aria-hidden
-            className="w-full h-full object-cover object-left-top" />
-          <div className="absolute inset-0"
-            style={{ background: "linear-gradient(to right, #07090f 0%, #07090f 8%, rgba(7,9,15,0.5) 35%, transparent 65%)" }} />
-          <div className="absolute inset-0"
-            style={{ background: "linear-gradient(to top, #07090f 0%, transparent 18%)" }} />
-        </div>
+        {/* 캐릭터 — 오른쪽 하단 배치 (누끼 PNG, 배경 없음) */}
+        <img
+          src="/배경.png" alt="" aria-hidden
+          className="pointer-events-none absolute bottom-0 right-0 h-[90%] w-auto hidden lg:block"
+          style={{ maxHeight: "820px", maxWidth: "42%" }}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+        />
 
         {/* 텍스트 콘텐츠 — 왼쪽 */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-24">
