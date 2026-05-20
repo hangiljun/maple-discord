@@ -20,6 +20,8 @@ interface Post {
   isAdminPost?: boolean
   imageUrls?: string[]
   pinned?: boolean
+  viewCount?: number
+  likeCount?: number
   createdAt?: any
   date: string
 }
@@ -43,6 +45,7 @@ export default function BoardPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ title: "", content: "" })
+  const [search, setSearch] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const PAGE_SIZE = 12
 
@@ -197,33 +200,65 @@ export default function BoardPage() {
   const canDelete = (post: Post) =>
     adminUser || (user && user.uid === post.authorUid)
 
-  const sortedPosts = useMemo(() => [...posts].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1
-    if (!a.pinned && b.pinned) return 1
-    return 0
-  }), [posts])
+  const sortedPosts = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const filtered = q
+      ? posts.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.content.toLowerCase().includes(q) ||
+          p.authorName.toLowerCase().includes(q)
+        )
+      : posts
+    return [...filtered].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1
+      if (!a.pinned && b.pinned) return 1
+      return 0
+    })
+  }, [posts, search])
 
   const pagePosts = sortedPosts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const totalPages = Math.ceil(posts.length / PAGE_SIZE)
+  const totalPages = Math.ceil(sortedPosts.length / PAGE_SIZE)
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-4">
 
         {/* 헤더 */}
-        <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-[#191F28]">자유게시판</h1>
-            <p className="text-[#8B95A1] text-sm mt-0.5">자유롭게 글을 써보세요!</p>
+        <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-[#191F28]">자유게시판</h1>
+              <p className="text-[#8B95A1] text-sm mt-0.5">자유롭게 글을 써보세요!</p>
+            </div>
+            <button onClick={() => { if (showForm) resetForm(); else setShowForm(true) }}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                showForm
+                  ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
+                  : "bg-[#3182F6] text-white hover:bg-[#1C6EE8]"
+              }`}>
+              {showForm ? "취소" : "글쓰기"}
+            </button>
           </div>
-          <button onClick={() => { if (showForm) resetForm(); else setShowForm(true) }}
-            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-              showForm
-                ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
-                : "bg-[#3182F6] text-white hover:bg-[#1C6EE8]"
-            }`}>
-            {showForm ? "취소" : "글쓰기"}
-          </button>
+          {/* 검색 */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B0B8C1]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
+              placeholder="제목, 내용, 작성자 검색"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]"
+            />
+            {search && (
+              <button onClick={() => { setSearch(""); setCurrentPage(1) }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B0B8C1] hover:text-[#8B95A1]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/>
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 수정 폼 */}
@@ -317,9 +352,11 @@ export default function BoardPage() {
         )}
 
         {/* 게시글 목록 */}
-        {posts.length === 0 ? (
+        {sortedPosts.length === 0 ? (
           <div className="text-center py-24">
-            <p className="text-[#8B95A1]">아직 게시글이 없어요. 첫 글을 써보세요!</p>
+            <p className="text-[#8B95A1]">
+              {search.trim() ? `"${search.trim()}"에 대한 검색 결과가 없어요.` : "아직 게시글이 없어요. 첫 글을 써보세요!"}
+            </p>
           </div>
         ) : (
           <>
@@ -379,7 +416,10 @@ export default function BoardPage() {
                         {post.content}
                       </p>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-[#3182F6] font-medium">자세히 보기 →</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xs text-[#B0B8C1]">👁 {post.viewCount || 0}</span>
+                          <span className="text-xs text-[#B0B8C1]">❤️ {post.likeCount || 0}</span>
+                        </div>
                         {post.imageUrls && post.imageUrls.length > 1 && (
                           <span className="text-xs text-[#B0B8C1]">사진 {post.imageUrls.length}장</span>
                         )}

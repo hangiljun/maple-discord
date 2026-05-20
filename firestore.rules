@@ -85,11 +85,31 @@ service cloud.firestore {
           request.auth.uid == resource.data.authorUid
           || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
         );
-      allow update: if request.auth != null
+      // 조회수: 비로그인도 허용 / 좋아요·수정·고정: 로그인 필요
+      allow update: if (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount'])
+        ) || (
+          request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'likedBy'])
+        ) || (
+          request.auth != null
+          && (
+            request.auth.uid == resource.data.authorUid
+            || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
+          )
+        );
+    }
+
+    // ── board_comments 컬렉션 (자유게시판 댓글) ──────────
+    match /board_comments/{commentId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if request.auth != null
         && (
           request.auth.uid == resource.data.authorUid
           || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
         );
+      allow update: if false;
     }
 
     // ── banners 컬렉션 (홈 배너) ─────────────────────────
