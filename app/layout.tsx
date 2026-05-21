@@ -50,7 +50,7 @@ export const metadata: Metadata = {
       "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임 종합 디스코드. 5만 명 커뮤니티.",
     images: [
       {
-        url: "/og-image-v2.png",
+        url: "/og-image-v3.png",
         width: 1024,
         height: 1024,
         alt: "메이플디스코드 - 메이플스토리·메이플랜드·메이플플래닛 종합 디스코드",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "메이플디스코드 | 메이플스토리·메이플랜드·메이플플래닛 종합 디스코드",
     description: "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임 종합 디스코드. 5만 명 커뮤니티.",
-    images: ["/og-image-v2.png"],
+    images: ["/og-image-v3.png"],
   },
 
   robots: {
