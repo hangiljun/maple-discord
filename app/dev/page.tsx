@@ -99,11 +99,18 @@ function CharacterCanvas() {
       const out = new Uint8ClampedArray(data)
       const visited = new Uint8Array(w * h)
 
-      // 체커보드 픽셀 판별: 무채색(chroma<25) + 밝기>140
+      // 배경 픽셀 판별:
+      //   1) 이미 투명
+      //   2) 어두운 단색 배경 (avg<30, chroma<20)
+      //   3) 체커보드 (무채색 밝은 픽셀 avg>130, chroma<35)
       const isBg = (idx: number) => {
         if (data[idx + 3] < 10) return true
         const r = data[idx], g = data[idx + 1], b = data[idx + 2]
-        return Math.max(r, g, b) - Math.min(r, g, b) < 25 && (r + g + b) / 3 > 140
+        const avg = (r + g + b) / 3
+        const chroma = Math.max(r, g, b) - Math.min(r, g, b)
+        if (avg < 30 && chroma < 20) return true   // 외곽 어두운 배경
+        if (avg > 130 && chroma < 35) return true  // 체커보드 밝은 격자
+        return false
       }
 
       // 4변 외곽에서 DFS → 연결된 배경만 투명화 (내부 흰 영역 보존)
