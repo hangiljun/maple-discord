@@ -162,7 +162,7 @@ export default function HomePage() {
             {/* 오른쪽: 캐릭터 이미지 */}
             <div className="hidden lg:flex items-center justify-center" style={{ height: "85vh", maxHeight: "800px" }}>
               <img
-                src="/배경.png?v=2"
+                src="/배경.png?v=3"
                 alt=""
                 aria-hidden
                 className="h-full w-auto object-contain"
