@@ -1,4 +1,5 @@
 "use client"
+import { useEffect, useRef } from "react"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -76,6 +77,89 @@ const DiscordIcon = () => (
 const SPRITES = {
   slime:    "https://maplestory.io/api/GMS/253/mob/100100/icon",
   mushroom: "https://maplestory.io/api/GMS/253/mob/210100/icon",
+}
+
+// Canvas-based background remover: BFS flood fill from edges + small blob cleanup
+function BGCanvas({ src, className }: { src: string; className?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0)
+      const imageData = ctx.getImageData(0, 0, w, h)
+      const data = imageData.data
+
+      // Light gray checkerboard OR dark outer border → background
+      const isBg = (pi: number): boolean => {
+        const r = data[pi], g = data[pi + 1], b = data[pi + 2], a = data[pi + 3]
+        if (a < 10) return true
+        const chroma = Math.max(r, g, b) - Math.min(r, g, b)
+        const avg = (r + g + b) / 3
+        return (chroma < 25 && avg > 120) || (chroma < 20 && avg < 30)
+      }
+
+      // Phase 1: BFS flood fill from all 4 edges
+      const visited = new Uint8Array(w * h)
+      const queue: number[] = []
+      const enqueue = (idx: number) => {
+        if (idx < 0 || idx >= w * h || visited[idx]) return
+        if (isBg(idx * 4)) { visited[idx] = 1; queue.push(idx) }
+      }
+      for (let x = 0; x < w; x++) { enqueue(x); enqueue((h - 1) * w + x) }
+      for (let y = 0; y < h; y++) { enqueue(y * w); enqueue(y * w + w - 1) }
+
+      let qi = 0
+      while (qi < queue.length) {
+        const idx = queue[qi++]
+        const x = idx % w, y = Math.floor(idx / w)
+        data[idx * 4 + 3] = 0
+        if (x > 0) enqueue(idx - 1)
+        if (x < w - 1) enqueue(idx + 1)
+        if (y > 0) enqueue(idx - w)
+        if (y < h - 1) enqueue(idx + w)
+      }
+
+      // Phase 2: remove small enclosed gray blobs (e.g. patches inside ice effects)
+      const unvisited = new Uint8Array(w * h)
+      for (let i = 0; i < w * h; i++) {
+        if (!visited[i] && isBg(i * 4)) unvisited[i] = 1
+      }
+      for (let i = 0; i < w * h; i++) {
+        if (!unvisited[i]) continue
+        const blob: number[] = [i]
+        unvisited[i] = 0
+        let bqi = 0
+        while (bqi < blob.length) {
+          const idx = blob[bqi++]
+          const x = idx % w, y = Math.floor(idx / w)
+          const check = (nidx: number) => {
+            if (nidx >= 0 && nidx < w * h && unvisited[nidx]) {
+              unvisited[nidx] = 0; blob.push(nidx)
+            }
+          }
+          if (x > 0) check(idx - 1)
+          if (x < w - 1) check(idx + 1)
+          if (y > 0) check(idx - w)
+          if (y < h - 1) check(idx + w)
+        }
+        if (blob.length < 2000) {
+          for (const bIdx of blob) data[bIdx * 4 + 3] = 0
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0)
+    }
+  }, [src])
+
+  return <canvas ref={canvasRef} className={className} aria-hidden />
 }
 
 export default function DevPage() {
@@ -292,15 +376,8 @@ export default function DevPage() {
               className="hidden lg:flex items-center justify-center relative"
               style={{ height: "85vh", maxHeight: "800px", background: "#07090f" }}
             >
-              {/* 캐릭터 이미지 — mask/filter 없이 순수 img 태그 */}
-              <img
-                src="/배경.png"
-                alt=""
-                aria-hidden
-                className="h-full w-auto block"
-                style={{ objectFit: "contain" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-              />
+              {/* 캐릭터 이미지 — Canvas BFS로 체커보드 픽셀 제거 */}
+              <BGCanvas src="/배경.png" className="h-full w-auto block" />
 
               {/* 왼쪽 페이드 오버레이 — 이미지 위에 덮어씌워서 경계를 부드럽게 처리 */}
               <div
