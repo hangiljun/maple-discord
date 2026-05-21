@@ -1,4 +1,5 @@
 "use client"
+import { useRef, useEffect } from "react"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -76,6 +77,89 @@ const DiscordIcon = () => (
 const SPRITES = {
   slime:    "https://maplestory.io/api/GMS/253/mob/100100/icon",
   mushroom: "https://maplestory.io/api/GMS/253/mob/210100/icon",
+}
+
+// 배경.png 체커보드(격자) 제거: 외곽 DFS로 연결된 무채색 밝은 픽셀만 투명화
+function CharacterCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const img = new Image()
+    img.onload = () => {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0)
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const w = canvas.width, h = canvas.height
+      const out = new Uint8ClampedArray(data)
+      const visited = new Uint8Array(w * h)
+
+      // 체커보드 픽셀 판별: 무채색(chroma<25) + 밝기>140
+      const isBg = (idx: number) => {
+        if (data[idx + 3] < 10) return true
+        const r = data[idx], g = data[idx + 1], b = data[idx + 2]
+        return Math.max(r, g, b) - Math.min(r, g, b) < 25 && (r + g + b) / 3 > 140
+      }
+
+      // 4변 외곽에서 DFS → 연결된 배경만 투명화 (내부 흰 영역 보존)
+      const stack: number[] = []
+      for (let x = 0; x < w; x++) { stack.push(x); stack.push((h - 1) * w + x) }
+      for (let y = 1; y < h - 1; y++) { stack.push(y * w); stack.push(y * w + w - 1) }
+
+      while (stack.length) {
+        const pos = stack.pop()!
+        if (visited[pos]) continue
+        visited[pos] = 1
+        if (!isBg(pos * 4)) continue
+        out[pos * 4 + 3] = 0
+        const x = pos % w, y = Math.floor(pos / w)
+        if (x > 0)     stack.push(pos - 1)
+        if (x < w - 1) stack.push(pos + 1)
+        if (y > 0)     stack.push(pos - w)
+        if (y < h - 1) stack.push(pos + w)
+      }
+
+      // 경계 스무딩: 투명 인접 픽셀 중 잔여 밝은 픽셀 페이딩
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const pos = y * w + x, idx = pos * 4
+          if (out[idx + 3] === 0) continue
+          const adj = out[(pos-1)*4+3]===0 || out[(pos+1)*4+3]===0 ||
+                      out[(pos-w)*4+3]===0 || out[(pos+w)*4+3]===0
+          if (!adj) continue
+          const r = out[idx], g = out[idx+1], b = out[idx+2]
+          if (Math.max(r,g,b) - Math.min(r,g,b) < 30 && (r+g+b)/3 > 130) {
+            out[idx + 3] = Math.floor(out[idx + 3] * 0.15)
+          }
+        }
+      }
+
+      ctx.putImageData(new ImageData(out, w, h), 0, 0)
+    }
+    img.src = "/배경.png"
+  }, [])
+
+  return (
+    <div
+      className="hidden lg:flex items-center justify-center"
+      style={{ height: "85vh", maxHeight: "800px" }}
+    >
+      <canvas
+        ref={canvasRef}
+        aria-hidden
+        className="h-full w-auto object-contain block"
+        style={{
+          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 20%)",
+          maskImage: "linear-gradient(to right, transparent 0%, black 20%)",
+        }}
+      />
+    </div>
+  )
 }
 
 export default function DevPage() {
@@ -252,28 +336,8 @@ export default function DevPage() {
 
             </div>
 
-            {/* ── 오른쪽: 마법사 캐릭터 (배경.png) ── */}
-            {/*
-              mix-blend-mode: screen — 이미지의 어두운 배경 픽셀이 사이트 다크 배경(#07090f)과
-              합성되어 사라지고, 밝은 캐릭터·이펙트 픽셀만 남습니다.
-              mask-image 로 왼쪽 경계선을 추가로 페이딩합니다.
-            */}
-            <div
-              className="hidden lg:flex items-center justify-center"
-              style={{ height: "85vh", maxHeight: "800px" }}
-            >
-              <img
-                src="/배경.png"
-                alt=""
-                aria-hidden
-                className="h-full w-auto object-contain block"
-                style={{
-                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 20%)",
-                  maskImage: "linear-gradient(to right, transparent 0%, black 20%)",
-                }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
-              />
-            </div>
+            {/* ── 오른쪽: 마법사 캐릭터 (배경.png, Canvas 체커보드 제거) ── */}
+            <CharacterCanvas />
 
           </div>
         </div>
