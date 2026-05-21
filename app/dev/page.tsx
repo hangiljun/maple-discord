@@ -72,7 +72,7 @@ const DiscordIcon = () => (
 
 export default function DevPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen text-gray-900">
 
       {/* 테스트 배너 */}
       <div className="bg-yellow-400 text-black text-xs font-bold text-center py-2 px-4 flex items-center justify-center gap-3">
