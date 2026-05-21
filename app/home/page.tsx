@@ -259,18 +259,28 @@ export default function HomePage() {
       <section className="max-w-4xl mx-auto px-4 py-16 border-b border-gray-100">
         <div className="text-center space-y-3">
           <p className="text-sm text-gray-400 leading-relaxed">
-            <strong className="text-gray-500">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛을 즐기는 유저들이 모인 국내 최대 메이플 종합 디스코드 커뮤니티입니다.
+            <strong className="text-gray-500">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛을 즐기는 유저들이 함께 모인
+            국내 최대 메이플 종합 디스코드 커뮤니티입니다.
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            5만 명 이상의 메이플러가 활동하며, 게임별 전용 채널에서 거래·정보 공유·커뮤니티를 즐길 수 있습니다.
-            메이플봇을 통해 캐릭터 정보, 링크스킬, 유니온을 디스코드 안에서 바로 조회하세요.
+            현재 5만 명 이상의 메이플러가 활동하고 있으며,
+            게임별 전용 채널을 통해 거래, 정보 공유, 파티 모집, 길드 모집, 커뮤니티 활동을 편하게 즐길 수 있습니다.
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            안전한 거래 환경을 위한 인증 시스템과 사기 제보 채널을 운영하고 있으며,
-            메이플스토리 패치노트와 메이플랜드·메이플플래닛 공지를 가장 빠르게 전달합니다.
+            또한 메이플봇을 통해 디스코드 안에서
+            캐릭터 정보, 링크스킬, 유니온 정보까지 바로 조회할 수 있어 더욱 편리합니다.
           </p>
           <p className="text-sm text-gray-400 leading-relaxed">
-            메이플플래닛 전용 채널에서는 파티 모집, 길드 모집, 아이템·메소 거래, 공략 정보 공유를 자유롭게 진행할 수 있습니다.
+            안전한 거래 환경을 위해 인증 시스템과 사기 제보 채널을 운영하고 있으며,
+            메이플스토리 패치노트와 메이플랜드·메이플플래닛 공지도 빠르게 확인할 수 있습니다.
+          </p>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            특히 메이플플래닛 및 메이플랜드 전용 채널에서는
+            파티 모집, 길드 모집, 아이템 거래, 메소 거래, 사냥터 정보, 공략 공유까지 자유롭게 이용할 수 있습니다.
+          </p>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            메이플을 즐긴다면, 혼자보다 함께하는 공간에서
+            더 빠르고 안전하게 정보를 얻어보세요.
           </p>
         </div>
       </section>
