@@ -109,7 +109,7 @@ export default function DevPage() {
                 <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl border border-gray-200">
                   <p className="text-2xl font-black text-gray-900 leading-none">50,000+</p>
                   <p className="text-xs text-gray-400 font-medium">총 멤버</p>
-                  <img src="/캐릭터.png" alt="" aria-hidden
+                  <img src="/캐릭터.png?v=2" alt="" aria-hidden
                     className="w-full h-auto object-contain mt-1.5" style={{ maxWidth: "88px" }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                 </div>
