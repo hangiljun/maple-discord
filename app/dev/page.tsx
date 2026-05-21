@@ -89,7 +89,7 @@ export default function DevPage() {
       </div>
 
       {/* ── 히어로 ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-[92vh] flex items-center bg-[#07090f]">
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center" style={{ background: "#07090f" }}>
 
         {/* 배경 광원 효과 */}
         <div className="pointer-events-none absolute inset-0">
@@ -101,14 +101,22 @@ export default function DevPage() {
 
         {/* 배경 몬스터 스프라이트 — 왼쪽 하단 */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <img src={SPRITES.slime} alt="" aria-hidden
+          <img
+            src={SPRITES.slime}
+            alt=""
+            aria-hidden
             className="absolute bottom-[8%] left-[1%] w-20 md:w-28 opacity-50 drop-shadow-lg"
             style={{ imageRendering: "pixelated" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-          <img src={SPRITES.mushroom} alt="" aria-hidden
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+          />
+          <img
+            src={SPRITES.mushroom}
+            alt=""
+            aria-hidden
             className="absolute bottom-[10%] left-[12%] w-16 md:w-20 opacity-45 drop-shadow-lg"
             style={{ imageRendering: "pixelated" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+          />
         </div>
 
         {/* 메인 콘텐츠 — 2컬럼 그리드 */}
@@ -119,12 +127,14 @@ export default function DevPage() {
             <div className="flex flex-col items-center text-center">
 
               {/* 온라인 배지 */}
-              <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-7 text-sm font-medium text-[#a5b4fc]"
+              <div
+                className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-7 text-sm font-medium text-[#a5b4fc]"
                 style={{
                   background: "rgba(99,70,210,0.18)",
                   border: "1px solid rgba(139,92,246,0.3)",
                   backdropFilter: "blur(12px)",
-                }}>
+                }}
+              >
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 지금 온라인 · 5만 명 커뮤니티
               </div>
@@ -169,19 +179,16 @@ export default function DevPage() {
               <div className="grid grid-cols-3 gap-3 mb-10 w-full max-w-md">
 
                 {/* 카드 1: 총 멤버 + 캐릭터 이미지 */}
-                <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl overflow-hidden"
+                <div
+                  className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl overflow-hidden"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     backdropFilter: "blur(20px)",
-                  }}>
+                  }}
+                >
                   <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
                   <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
-                  {/*
-                    캐릭터.png: 진짜 투명 PNG → <img> 태그로 직접 표시
-                    부모 카드가 bg-[rgba(255,255,255,0.05)] 어두운 배경이므로
-                    transparent 영역에 다크 배경이 자연스럽게 비쳐 보임
-                  */}
                   <img
                     src="/캐릭터.png"
                     alt=""
@@ -193,12 +200,14 @@ export default function DevPage() {
                 </div>
 
                 {/* 카드 2: 게임 커버 */}
-                <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
+                <div
+                  className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     backdropFilter: "blur(20px)",
-                  }}>
+                  }}
+                >
                   <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
                     <span className="text-sm font-black leading-tight" style={{ color: "#f59e0b" }}>🍁 메이플스토리</span>
                     <span className="text-sm font-black leading-tight" style={{ color: "#4ade80" }}>🌿 메이플랜드</span>
@@ -209,18 +218,22 @@ export default function DevPage() {
                 </div>
 
                 {/* 카드 3: 실시간 운영 */}
-                <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
+                <div
+                  className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl"
                   style={{
                     background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.1)",
                     backdropFilter: "blur(20px)",
-                  }}>
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
+                  }}
+                >
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
                     style={{
                       background: "rgba(34,211,238,0.1)",
                       border: "2px solid rgba(34,211,238,0.6)",
                       boxShadow: "0 0 16px rgba(34,211,238,0.4), inset 0 0 12px rgba(34,211,238,0.1)",
-                    }}>
+                    }}
+                  >
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
                       stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/>
@@ -235,50 +248,66 @@ export default function DevPage() {
 
               {/* CTA 버튼 */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
+                <a
+                  href={DISCORD_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2.5 font-bold px-8 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:-translate-y-1"
                   style={{
                     background: "#5865F2",
                     boxShadow: "0 0 24px rgba(88,101,242,0.5), 0 4px 20px rgba(88,101,242,0.3)",
-                  }}>
+                  }}
+                >
                   <DiscordIcon />
                   디스코드 참여하기
                 </a>
-                <Link href="/notice"
+                <Link
+                  href="/notice"
                   className="flex items-center gap-2 font-semibold px-7 py-3.5 rounded-xl text-base text-white transition-all duration-200 hover:bg-white/10"
                   style={{
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.18)",
                     backdropFilter: "blur(12px)",
-                  }}>
+                  }}
+                >
                   공지사항 보기
                 </Link>
               </div>
 
             </div>
 
-            {/* ── 오른쪽: 마법사 캐릭터 (배경.png) ── */}
             {/*
-              진짜 투명 PNG이므로 <img> 태그만 사용.
-              Canvas/putImageData 없이 브라우저가 알파채널을 직접 처리.
-              부모 section에 bg-[#07090f]가 있어 투명 영역은 다크 배경으로 채워짐.
-              mask-image로 왼쪽 경계를 부드럽게 블렌딩.
+              ── 오른쪽: 마법사 캐릭터 (배경.png) ──
+
+              [체커보드 해결 방식]
+              mask-image 를 <img> 태그에 직접 쓰면 일부 브라우저(WebKit 계열)에서
+              PNG 알파채널을 먼저 회색 체커보드 위에 pre-composite 한 뒤 마스크를 씌워
+              격자 패턴이 그라데이션과 함께 노출되는 버그가 있습니다.
+
+              해결: <img>에는 mask/filter 일절 적용 안 함.
+              대신 이미지 위에 #07090f → transparent 그라디언트 오버레이 div를 올려
+              왼쪽 경계를 부드럽게 지움.
             */}
             <div
-              className="hidden lg:flex items-center justify-center"
-              style={{ height: "85vh", maxHeight: "800px" }}
+              className="hidden lg:flex items-center justify-center relative"
+              style={{ height: "85vh", maxHeight: "800px", background: "#07090f" }}
             >
+              {/* 캐릭터 이미지 — mask/filter 없이 순수 img 태그 */}
               <img
                 src="/배경.png"
                 alt=""
                 aria-hidden
                 className="h-full w-auto block"
-                style={{
-                  objectFit: "contain",
-                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)",
-                  maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
-                }}
+                style={{ objectFit: "contain" }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+              />
+
+              {/* 왼쪽 페이드 오버레이 — 이미지 위에 덮어씌워서 경계를 부드럽게 처리 */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: "linear-gradient(to right, #07090f 0%, #07090f 5%, transparent 30%)",
+                }}
               />
             </div>
 
@@ -293,8 +322,11 @@ export default function DevPage() {
         <p className="text-center text-sm text-[#64748b] mb-10">게임별 전용 채널을 운영하고 있어요</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {GAMES.map((g) => (
-            <div key={g.name} className="rounded-2xl border p-5 flex flex-col gap-4"
-              style={{ background: g.bg, borderColor: g.border }}>
+            <div
+              key={g.name}
+              className="rounded-2xl border p-5 flex flex-col gap-4"
+              style={{ background: g.bg, borderColor: g.border }}
+            >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{g.icon}</span>
                 <div>
@@ -310,9 +342,13 @@ export default function DevPage() {
                   </li>
                 ))}
               </ul>
-              <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
+              <a
+                href={DISCORD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-auto text-center text-xs font-bold py-2 rounded-xl border transition-colors hover:opacity-80"
-                style={{ color: g.color, borderColor: g.border }}>
+                style={{ color: g.color, borderColor: g.border }}
+              >
                 채널 입장하기 →
               </a>
             </div>
@@ -344,14 +380,26 @@ export default function DevPage() {
           {COMMANDS.map((cmd) => (
             <div key={cmd.name} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
               <div className="px-6 py-5 border-b border-white/10 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0"
-                  style={{ background: cmd.bg, color: cmd.color }}>/</div>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg shrink-0"
+                  style={{ background: cmd.bg, color: cmd.color }}
+                >
+                  /
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <code className="font-black text-base px-2 py-0.5 rounded-lg"
-                      style={{ color: cmd.color, background: cmd.bg }}>{cmd.name}</code>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ color: cmd.color, background: cmd.bg }}>{cmd.badge}</span>
+                    <code
+                      className="font-black text-base px-2 py-0.5 rounded-lg"
+                      style={{ color: cmd.color, background: cmd.bg }}
+                    >
+                      {cmd.name}
+                    </code>
+                    <span
+                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ color: cmd.color, background: cmd.bg }}
+                    >
+                      {cmd.badge}
+                    </span>
                   </div>
                   <p className="text-sm text-[#94a3b8] leading-relaxed">{cmd.desc}</p>
                 </div>
@@ -375,26 +423,35 @@ export default function DevPage() {
       {/* ── 하단 CTA ───────────────────────────────────────── */}
       <section className="relative overflow-hidden border-t border-white/[0.06]">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px]"
-            style={{ background: "radial-gradient(ellipse, rgba(88,101,242,0.2) 0%, transparent 70%)" }} />
+          <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px]"
+            style={{ background: "radial-gradient(ellipse, rgba(88,101,242,0.2) 0%, transparent 70%)" }}
+          />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 py-24 text-center">
           <div className="flex justify-center gap-2 flex-wrap mb-6">
             {GAMES.map(g => (
-              <span key={g.name} className="text-xs font-bold px-3 py-1 rounded-full border"
-                style={{ color: g.color, background: g.bg, borderColor: g.border }}>
+              <span
+                key={g.name}
+                className="text-xs font-bold px-3 py-1 rounded-full border"
+                style={{ color: g.color, background: g.bg, borderColor: g.border }}
+              >
                 {g.icon} {g.name}
               </span>
             ))}
           </div>
           <h2 className="text-3xl md:text-4xl font-black mb-3">지금 바로 참여하세요</h2>
           <p className="text-[#94a3b8] text-sm mb-10">5만 명의 메이플러가 기다리고 있어요 · 완전 무료</p>
-          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
+          <a
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2.5 font-bold px-10 py-4 rounded-xl text-base text-white transition-all duration-200 hover:-translate-y-1"
             style={{
               background: "#5865F2",
               boxShadow: "0 0 32px rgba(88,101,242,0.55), 0 4px 24px rgba(88,101,242,0.35)",
-            }}>
+            }}
+          >
             <DiscordIcon />
             디스코드 참여하기
           </a>
