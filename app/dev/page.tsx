@@ -124,32 +124,36 @@ export default function DevPage() {
               </p>
 
               {/* 통계 카드 */}
-              <div className="grid grid-cols-3 gap-3 mb-10 w-full max-w-md">
-                <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl border border-gray-200">
-                  <p className="text-2xl font-black text-gray-900 leading-none">50,000+</p>
-                  <p className="text-xs text-gray-400 font-medium">총 멤버</p>
-                  <img src="/캐릭터.png?v=2" alt="" aria-hidden
-                    className="w-full h-auto object-contain mt-1.5" style={{ maxWidth: "88px" }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                </div>
-                <div className="flex flex-col items-center gap-1 px-2 py-4 rounded-2xl border border-gray-200">
-                  <div className="flex flex-col items-center gap-0.5 mb-1">
-                    <span className="text-[10px] font-bold leading-tight text-amber-500">메이플스토리</span>
-                    <span className="text-[10px] font-bold leading-tight text-green-500">메이플랜드</span>
-                    <span className="text-[10px] font-bold leading-tight text-purple-500">메이플플래닛</span>
+              <div className="grid grid-cols-3 gap-3 mb-10 w-full max-w-md items-stretch">
+                <div className="flex flex-col items-center px-3 py-4 rounded-2xl border border-gray-200">
+                  <div className="flex-1 flex items-center justify-center w-full">
+                    <img src="/캐릭터.png?v=2" alt="" aria-hidden
+                      className="w-full h-auto object-contain" style={{ maxWidth: "88px", maxHeight: "72px" }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                   </div>
-                  <p className="text-2xl font-black text-gray-900 leading-none">3개</p>
-                  <p className="text-xs text-gray-400 font-medium">게임 커버</p>
+                  <p className="text-2xl font-black text-gray-900 leading-none mt-2">50,000+</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1">총 멤버</p>
                 </div>
-                <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl border border-gray-200">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1 border-2 border-cyan-400">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
-                      stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
+                <div className="flex flex-col items-center px-2 py-4 rounded-2xl border border-gray-200">
+                  <div className="flex-1 flex flex-col items-center justify-center gap-0.5">
+                    <span className="text-xs font-bold leading-tight text-amber-500">메이플스토리</span>
+                    <span className="text-xs font-bold leading-tight text-green-500">메이플랜드</span>
+                    <span className="text-xs font-bold leading-tight text-purple-500">메이플플래닛</span>
                   </div>
-                  <p className="text-2xl font-black text-gray-900 leading-none">24/7</p>
-                  <p className="text-xs text-gray-400 font-medium">실시간 운영</p>
+                  <p className="text-2xl font-black text-gray-900 leading-none mt-2">3개</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1">게임 커버</p>
+                </div>
+                <div className="flex flex-col items-center px-3 py-4 rounded-2xl border border-gray-200">
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center border-2 border-cyan-400">
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                        stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-2xl font-black text-gray-900 leading-none mt-2">24/7</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1">실시간 운영</p>
                 </div>
               </div>
 
