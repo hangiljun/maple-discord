@@ -132,11 +132,11 @@ export default function DevPage() {
                     className="w-full h-auto object-contain mt-1.5" style={{ maxWidth: "88px" }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                 </div>
-                <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl border border-gray-200">
-                  <div className="flex gap-1 mb-1">
-                    <span className="text-xl">🍁</span>
-                    <span className="text-xl">🌿</span>
-                    <span className="text-xl">🪐</span>
+                <div className="flex flex-col items-center gap-1 px-2 py-4 rounded-2xl border border-gray-200">
+                  <div className="flex flex-col items-center gap-0.5 mb-1">
+                    <span className="text-[10px] font-bold leading-tight text-amber-500">메이플스토리</span>
+                    <span className="text-[10px] font-bold leading-tight text-green-500">메이플랜드</span>
+                    <span className="text-[10px] font-bold leading-tight text-purple-500">메이플플래닛</span>
                   </div>
                   <p className="text-2xl font-black text-gray-900 leading-none">3개</p>
                   <p className="text-xs text-gray-400 font-medium">게임 커버</p>
