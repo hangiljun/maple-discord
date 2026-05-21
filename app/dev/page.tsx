@@ -151,7 +151,7 @@ export default function DevPage() {
             {/* 오른쪽: 캐릭터 이미지 (흰 배경 이미지 대기 중) */}
             <div className="hidden lg:flex items-center justify-center" style={{ height: "85vh", maxHeight: "800px" }}>
               <img
-                src="/배경.png"
+                src="/배경.png?v=2"
                 alt=""
                 aria-hidden
                 className="h-full w-auto object-contain"
