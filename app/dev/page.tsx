@@ -1,5 +1,4 @@
 "use client"
-import { useRef, useEffect } from "react"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -79,129 +78,6 @@ const SPRITES = {
   mushroom: "https://maplestory.io/api/GMS/253/mob/210100/icon",
 }
 
-// 배경.png 체커보드(격자) 제거: 외곽 DFS로 연결된 무채색 밝은 픽셀만 투명화
-function CharacterCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const img = new Image()
-    img.onload = () => {
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-      ctx.drawImage(img, 0, 0)
-
-      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const w = canvas.width, h = canvas.height
-      const out = new Uint8ClampedArray(data)
-      const visited = new Uint8Array(w * h)
-
-      // 배경 픽셀 판별:
-      //   1) 이미 투명
-      //   2) 어두운 단색 배경 (avg<30, chroma<20)
-      //   3) 체커보드 (무채색 밝은 픽셀 avg>130, chroma<35)
-      const isBg = (idx: number) => {
-        if (data[idx + 3] < 10) return true
-        const r = data[idx], g = data[idx + 1], b = data[idx + 2]
-        const avg = (r + g + b) / 3
-        const chroma = Math.max(r, g, b) - Math.min(r, g, b)
-        if (avg < 30 && chroma < 20) return true   // 외곽 어두운 배경
-        if (avg > 130 && chroma < 35) return true  // 체커보드 밝은 격자
-        return false
-      }
-
-      // Pass 1: 외곽 DFS → 연결된 배경 투명화
-      const stack: number[] = []
-      for (let x = 0; x < w; x++) { stack.push(x); stack.push((h - 1) * w + x) }
-      for (let y = 1; y < h - 1; y++) { stack.push(y * w); stack.push(y * w + w - 1) }
-
-      while (stack.length) {
-        const pos = stack.pop()!
-        if (visited[pos]) continue
-        visited[pos] = 1
-        if (!isBg(pos * 4)) continue
-        out[pos * 4 + 3] = 0
-        const x = pos % w, y = Math.floor(pos / w)
-        if (x > 0)     stack.push(pos - 1)
-        if (x < w - 1) stack.push(pos + 1)
-        if (y > 0)     stack.push(pos - w)
-        if (y < h - 1) stack.push(pos + w)
-      }
-
-      // Pass 2: 캐릭터 내부에 갇힌 소규모 체커보드 패치 제거
-      // → 연결된 밝은-회색 덩어리를 BFS로 탐색, 1500px 미만이면 제거
-      const blobVis = new Uint8Array(w * h)
-      for (let start = 0; start < w * h; start++) {
-        if (out[start * 4 + 3] === 0 || blobVis[start]) continue
-        const sr = out[start*4], sg = out[start*4+1], sb = out[start*4+2]
-        const savg = (sr + sg + sb) / 3
-        const schroma = Math.max(sr, sg, sb) - Math.min(sr, sg, sb)
-        if (savg <= 130 || schroma >= 35) continue
-
-        const blob: number[] = []
-        const bq: number[] = [start]
-        blobVis[start] = 1
-        for (let bi = 0; bi < bq.length; bi++) {
-          const pos = bq[bi]
-          blob.push(pos)
-          const px = pos % w, py = (pos / w) | 0
-          const ns = [
-            px > 0 ? pos - 1 : -1, px < w - 1 ? pos + 1 : -1,
-            py > 0 ? pos - w : -1, py < h - 1 ? pos + w : -1,
-          ]
-          for (const n of ns) {
-            if (n < 0 || blobVis[n] || out[n * 4 + 3] === 0) continue
-            const nr = out[n*4], ng = out[n*4+1], nb = out[n*4+2]
-            if ((nr+ng+nb)/3 > 130 && Math.max(nr,ng,nb)-Math.min(nr,ng,nb) < 35) {
-              blobVis[n] = 1
-              bq.push(n)
-            }
-          }
-        }
-        if (blob.length < 1500) for (const p of blob) out[p * 4 + 3] = 0
-      }
-
-      // Pass 3: 경계 스무딩
-      for (let y = 1; y < h - 1; y++) {
-        for (let x = 1; x < w - 1; x++) {
-          const pos = y * w + x, idx = pos * 4
-          if (out[idx + 3] === 0) continue
-          const adj = out[(pos-1)*4+3]===0 || out[(pos+1)*4+3]===0 ||
-                      out[(pos-w)*4+3]===0 || out[(pos+w)*4+3]===0
-          if (!adj) continue
-          const r = out[idx], g = out[idx+1], b = out[idx+2]
-          if (Math.max(r,g,b) - Math.min(r,g,b) < 30 && (r+g+b)/3 > 130) {
-            out[idx + 3] = Math.floor(out[idx + 3] * 0.15)
-          }
-        }
-      }
-
-      ctx.putImageData(new ImageData(out, w, h), 0, 0)
-    }
-    img.src = "/배경.png"
-  }, [])
-
-  return (
-    <div
-      className="hidden lg:flex items-center justify-center"
-      style={{ height: "85vh", maxHeight: "800px" }}
-    >
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        className="h-full w-auto object-contain block"
-        style={{
-          WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 20%)",
-          maskImage: "linear-gradient(to right, transparent 0%, black 20%)",
-        }}
-      />
-    </div>
-  )
-}
-
 export default function DevPage() {
   return (
     <div className="min-h-screen bg-[#07090f] text-white">
@@ -213,7 +89,7 @@ export default function DevPage() {
       </div>
 
       {/* ── 히어로 ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-[92vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center bg-[#07090f]">
 
         {/* 배경 광원 효과 */}
         <div className="pointer-events-none absolute inset-0">
@@ -237,9 +113,9 @@ export default function DevPage() {
 
         {/* 메인 콘텐츠 — 2컬럼 그리드 */}
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 lg:px-16 py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
-            {/* ── 왼쪽: 텍스트 콘텐츠 (가운데 정렬) ── */}
+            {/* ── 왼쪽: 텍스트 콘텐츠 ── */}
             <div className="flex flex-col items-center text-center">
 
               {/* 온라인 배지 */}
@@ -301,6 +177,11 @@ export default function DevPage() {
                   }}>
                   <p className="text-2xl md:text-3xl font-black text-white leading-none">50,000+</p>
                   <p className="text-xs text-[#64748b] font-medium">총 멤버</p>
+                  {/*
+                    캐릭터.png: 진짜 투명 PNG → <img> 태그로 직접 표시
+                    부모 카드가 bg-[rgba(255,255,255,0.05)] 어두운 배경이므로
+                    transparent 영역에 다크 배경이 자연스럽게 비쳐 보임
+                  */}
                   <img
                     src="/캐릭터.png"
                     alt=""
@@ -376,8 +257,30 @@ export default function DevPage() {
 
             </div>
 
-            {/* ── 오른쪽: 마법사 캐릭터 (배경.png, Canvas 체커보드 제거) ── */}
-            <CharacterCanvas />
+            {/* ── 오른쪽: 마법사 캐릭터 (배경.png) ── */}
+            {/*
+              진짜 투명 PNG이므로 <img> 태그만 사용.
+              Canvas/putImageData 없이 브라우저가 알파채널을 직접 처리.
+              부모 section에 bg-[#07090f]가 있어 투명 영역은 다크 배경으로 채워짐.
+              mask-image로 왼쪽 경계를 부드럽게 블렌딩.
+            */}
+            <div
+              className="hidden lg:flex items-center justify-center"
+              style={{ height: "85vh", maxHeight: "800px" }}
+            >
+              <img
+                src="/배경.png"
+                alt=""
+                aria-hidden
+                className="h-full w-auto block"
+                style={{
+                  objectFit: "contain",
+                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 18%)",
+                  maskImage: "linear-gradient(to right, transparent 0%, black 18%)",
+                }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+              />
+            </div>
 
           </div>
         </div>
