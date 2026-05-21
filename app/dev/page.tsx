@@ -97,10 +97,10 @@ export default function DevPage() {
                 지금 온라인 · 5만 명 커뮤니티
               </div>
 
-              <div className="flex gap-2 flex-wrap justify-center mb-8">
-                <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border border-amber-300 text-amber-500">🍁 메이플스토리</span>
-                <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border border-green-300 text-green-500">🌿 메이플랜드</span>
-                <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border border-purple-300 text-purple-500">🪐 메이플플래닛</span>
+              <div className="flex flex-row gap-1.5 justify-center flex-wrap mb-8">
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-amber-300 text-amber-500 whitespace-nowrap">🍁 메이플스토리</span>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-green-300 text-green-500 whitespace-nowrap">🌿 메이플랜드</span>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-purple-300 text-purple-500 whitespace-nowrap">🪐 메이플플래닛</span>
               </div>
 
               <h1 className="flex flex-col gap-1 mb-6 tracking-tight" style={{ lineHeight: 1.15 }}>
@@ -132,11 +132,11 @@ export default function DevPage() {
                     className="w-full h-auto object-contain mt-1.5" style={{ maxWidth: "88px" }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                 </div>
-                <div className="flex flex-col items-center gap-2 px-3 py-5 rounded-2xl border border-gray-200">
-                  <div className="flex flex-col items-center gap-0.5 mb-1 h-14 justify-center">
-                    <span className="text-sm font-black leading-tight text-amber-500">🍁 메이플스토리</span>
-                    <span className="text-sm font-black leading-tight text-green-500">🌿 메이플랜드</span>
-                    <span className="text-sm font-black leading-tight text-purple-500">🪐 메이플플래닛</span>
+                <div className="flex flex-col items-center gap-1 px-3 py-4 rounded-2xl border border-gray-200">
+                  <div className="flex gap-1 mb-1">
+                    <span className="text-xl">🍁</span>
+                    <span className="text-xl">🌿</span>
+                    <span className="text-xl">🪐</span>
                   </div>
                   <p className="text-2xl font-black text-gray-900 leading-none">3개</p>
                   <p className="text-xs text-gray-400 font-medium">게임 커버</p>
