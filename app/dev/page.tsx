@@ -173,7 +173,9 @@ export default function DevPage() {
             </div>
 
             {/* 오른쪽: 캐릭터 */}
-            <div className="hidden lg:block" style={{ height: "85vh", maxHeight: "800px" }} />
+            <div className="hidden lg:flex items-center justify-center" style={{ height: "85vh", maxHeight: "800px" }}>
+              <img src="/배경.png" alt="" aria-hidden className="h-full w-auto object-contain" />
+            </div>
 
           </div>
         </div>
