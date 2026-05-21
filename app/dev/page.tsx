@@ -113,7 +113,7 @@ function CharacterCanvas() {
         return false
       }
 
-      // 4변 외곽에서 DFS → 연결된 배경만 투명화 (내부 흰 영역 보존)
+      // Pass 1: 외곽 DFS → 연결된 배경 투명화
       const stack: number[] = []
       for (let x = 0; x < w; x++) { stack.push(x); stack.push((h - 1) * w + x) }
       for (let y = 1; y < h - 1; y++) { stack.push(y * w); stack.push(y * w + w - 1) }
@@ -131,7 +131,40 @@ function CharacterCanvas() {
         if (y < h - 1) stack.push(pos + w)
       }
 
-      // 경계 스무딩: 투명 인접 픽셀 중 잔여 밝은 픽셀 페이딩
+      // Pass 2: 캐릭터 내부에 갇힌 소규모 체커보드 패치 제거
+      // → 연결된 밝은-회색 덩어리를 BFS로 탐색, 1500px 미만이면 제거
+      const blobVis = new Uint8Array(w * h)
+      for (let start = 0; start < w * h; start++) {
+        if (out[start * 4 + 3] === 0 || blobVis[start]) continue
+        const sr = out[start*4], sg = out[start*4+1], sb = out[start*4+2]
+        const savg = (sr + sg + sb) / 3
+        const schroma = Math.max(sr, sg, sb) - Math.min(sr, sg, sb)
+        if (savg <= 130 || schroma >= 35) continue
+
+        const blob: number[] = []
+        const bq: number[] = [start]
+        blobVis[start] = 1
+        for (let bi = 0; bi < bq.length; bi++) {
+          const pos = bq[bi]
+          blob.push(pos)
+          const px = pos % w, py = (pos / w) | 0
+          const ns = [
+            px > 0 ? pos - 1 : -1, px < w - 1 ? pos + 1 : -1,
+            py > 0 ? pos - w : -1, py < h - 1 ? pos + w : -1,
+          ]
+          for (const n of ns) {
+            if (n < 0 || blobVis[n] || out[n * 4 + 3] === 0) continue
+            const nr = out[n*4], ng = out[n*4+1], nb = out[n*4+2]
+            if ((nr+ng+nb)/3 > 130 && Math.max(nr,ng,nb)-Math.min(nr,ng,nb) < 35) {
+              blobVis[n] = 1
+              bq.push(n)
+            }
+          }
+        }
+        if (blob.length < 1500) for (const p of blob) out[p * 4 + 3] = 0
+      }
+
+      // Pass 3: 경계 스무딩
       for (let y = 1; y < h - 1; y++) {
         for (let x = 1; x < w - 1; x++) {
           const pos = y * w + x, idx = pos * 4
