@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
@@ -61,7 +62,19 @@ const DiscordIcon = () => (
   </svg>
 )
 
+const TITLES = [
+  { name: "메이플스토리", color: "#f59e0b" },
+  { name: "메이플랜드",   color: "#22c55e" },
+  { name: "메이플플래닛", color: "#a855f7" },
+]
+
 export default function DevPage() {
+  const [active, setActive] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setActive(p => (p + 1) % 3), 2200)
+    return () => clearInterval(t)
+  }, [])
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
 
@@ -90,13 +103,19 @@ export default function DevPage() {
                 <span className="text-xs font-bold px-3.5 py-1.5 rounded-full border border-purple-300 text-purple-500">🪐 메이플플래닛</span>
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15] mb-6 text-gray-900">
-                메이플스토리 · 메이플랜드 · 메이플플래닛
-                <br />
-                <span style={{
-                  background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 40%, #c084fc 100%)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                }}>종합 디스코드</span>
+              <h1 className="flex flex-col gap-1 mb-6 tracking-tight" style={{ lineHeight: 1.15 }}>
+                {TITLES.map((t, i) => (
+                  <span key={t.name} style={{
+                    display: "block",
+                    fontSize: i === active ? "clamp(2.6rem, 6vw, 4rem)" : "clamp(1.3rem, 2.5vw, 1.8rem)",
+                    fontWeight: i === active ? 900 : 500,
+                    color: i === active ? t.color : "#9ca3af",
+                    transition: "font-size 0.45s ease, color 0.45s ease, font-weight 0.45s ease",
+                  }}>{t.name}</span>
+                ))}
+                <span className="mt-2 text-gray-900 font-black" style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>
+                  종합 디스코드
+                </span>
               </h1>
 
               <p className="text-gray-500 text-base md:text-lg leading-relaxed mb-10">
