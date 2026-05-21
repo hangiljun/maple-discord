@@ -279,24 +279,45 @@ export default function DevPage() {
 
             {/* 오른쪽: 마법사 캐릭터 */}
             <div
-              className="hidden lg:block"
-              style={{
-                height: "85vh",
-                maxHeight: "800px",
-                backgroundColor: "#07090f",
-                // 레이어 순서 (위 → 아래): 왼쪽 페이드 → sky-blue 글로우 → 캐릭터 PNG → 다크 베이스
-                backgroundImage: [
-                  "linear-gradient(to right, #07090f 0%, #07090f 8%, rgba(7,9,15,0.6) 28%, transparent 50%)",
-                  "radial-gradient(ellipse 55% 65% at 68% 50%, rgba(125,211,252,0.2) 0%, rgba(56,189,248,0.06) 45%, transparent 68%)",
-                  "url('/배경.png')",
-                  "linear-gradient(150deg, #0d0a1e 0%, #07090f 55%, #0c0814 100%)",
-                ].join(", "),
-                backgroundSize:     "100% 100%, 100% 100%, auto 88%, 100% 100%",
-                backgroundPosition: "0 0,      0 0,      right 4% center, 0 0",
-                backgroundRepeat:   "no-repeat",
-                boxShadow: "inset -240px 0 280px rgba(125,211,252,0.06)",
-              }}
-            />
+              className="hidden lg:block relative overflow-hidden"
+              style={{ height: "85vh", maxHeight: "800px" }}
+            >
+              {/* 다크 베이스 */}
+              <div
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(150deg, #0d0a1e 0%, #07090f 55%, #0c0814 100%)" }}
+              />
+
+              {/* 캐릭터 PNG — backgroundColor가 투명 픽셀을 직접 채워 체커보드 방지 */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: "url('/배경.png')",
+                  backgroundColor: "#07090f",
+                  backgroundSize: "auto 88%",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 4% center",
+                }}
+              />
+
+              {/* Sky-blue 글로우 */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 55% 65% at 68% 50%, rgba(125,211,252,0.2) 0%, rgba(56,189,248,0.06) 45%, transparent 68%)",
+                }}
+              />
+
+              {/* 왼쪽 페이드 */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(to right, #07090f 0%, #07090f 8%, rgba(7,9,15,0.6) 28%, transparent 50%)",
+                }}
+              />
+            </div>
 
           </div>
         </div>
