@@ -38,24 +38,32 @@ function getTimestamp(doc: any, field: string): string {
   return new Date(f.timestampValue).toUTCString()
 }
 
+function getDocId(doc: any): string {
+  // doc.name = "projects/.../databases/(default)/documents/collection/DOCID"
+  return (doc.name as string).split("/").pop() ?? ""
+}
+
 export async function GET() {
   const [boardDocs, noticeDocs] = await Promise.all([
     fetchCollection("board_posts", "createdAt", 20),
     fetchCollection("notices", "createdAt", 10),
   ])
 
-  type RssItem = { title: string; link: string; description: string; pubDate: string }
+  type RssItem = { title: string; link: string; description: string; pubDate: string; guid: string }
   const items: RssItem[] = []
 
   for (const doc of noticeDocs) {
     const title = getField(doc, "title")
     const content = getField(doc, "content")
     if (!title) continue
+    const id = getDocId(doc)
+    const url = `${BASE_URL}/notice/${id}`
     items.push({
       title: escape(title),
-      link: `${BASE_URL}/notice`,
+      link: url,
       description: escape(content.slice(0, 200)),
       pubDate: getTimestamp(doc, "createdAt"),
+      guid: url,
     })
   }
 
@@ -63,11 +71,14 @@ export async function GET() {
     const title = getField(doc, "title")
     const content = getField(doc, "content")
     if (!title) continue
+    const id = getDocId(doc)
+    const url = `${BASE_URL}/board/${id}`
     items.push({
       title: escape(title),
-      link: `${BASE_URL}/board`,
+      link: url,
       description: escape(content.slice(0, 200)),
       pubDate: getTimestamp(doc, "createdAt"),
+      guid: url,
     })
   }
 
@@ -85,6 +96,7 @@ ${items.map(item => `    <item>
       <link>${item.link}</link>
       <description>${item.description}</description>
       <pubDate>${item.pubDate}</pubDate>
+      <guid>${item.guid}</guid>
     </item>`).join("\n")}
   </channel>
 </rss>`
