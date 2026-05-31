@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Noto_Sans_KR } from "next/font/google"
 import "./globals.css"
 import Navbar from "./components/Navbar"
+import FloatingButton from "./components/FloatingButton"
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
@@ -96,6 +97,7 @@ export default function RootLayout({
       <body className={`${notoSansKR.className} bg-gray-100 text-gray-900 antialiased min-h-screen`}>
         <Navbar />
         <main>{children}</main>
+        <FloatingButton />
       </body>
     </html>
   )
