@@ -19,6 +19,7 @@ export const metadata: Metadata = {
     "메이플플래닛 파티 모집", "메이플플래닛 길드 모집", "메이플플래닛 거래",
     "메이플플래닛 메소 거래", "메이플플래닛 아이템 거래", "메이플플래닛 공략",
     "메이플플래닛 보스", "메이플플래닛 채팅", "메이플플래닛 유저",
+    "msd디스코드", "msd 디스코드", "MSD디스코드", "msd",
   ],
 }
 
@@ -281,6 +282,9 @@ export default function HomePage() {
           <p className="text-sm text-gray-400 leading-relaxed">
             메이플을 즐긴다면, 혼자보다 함께하는 공간에서
             더 빠르고 안전하게 정보를 얻어보세요.
+          </p>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            메이플디스코드(MSD디스코드)는 메이플 유저들 사이에서 'msd디스코드'로도 불리는 국내 최대 메이플 디스코드 서버입니다.
           </p>
         </div>
       </section>
