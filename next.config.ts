@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30일
   },
 
+  async redirects() {
+    return [
+      { source: "/mapleland", destination: "/home", permanent: true },
+      { source: "/report",    destination: "/home", permanent: true },
+    ]
+  },
+
   async rewrites() {
     return [
       { source: "/", destination: "/home" },
