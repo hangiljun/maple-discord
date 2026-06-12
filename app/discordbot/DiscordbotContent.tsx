@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useEffect, useCallback, useState } from "react"
+import { useLang } from "../contexts/LanguageContext"
 
 const SLIDES = ["/봇1.png", "/봇2.png", "/봇3.png", "/봇4.png", "/봇5.png", "/봇6.png", "/봇7.png"]
 
@@ -186,7 +187,7 @@ const data = {
 }
 
 export default function DiscordbotContent() {
-  const [lang, setLang] = useState<"ko" | "en">("ko")
+  const { lang } = useLang()
   const c = data[lang]
   const totalFeatures = c.features.reduce((acc, f) => acc + f.items.length, 0)
 
@@ -196,20 +197,6 @@ export default function DiscordbotContent() {
       {/* 히어로 */}
       <section className="border-b border-gray-100 py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-
-          {/* 언어 토글 */}
-          <div className="flex justify-end mb-6">
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-semibold">
-              <button onClick={() => setLang("ko")}
-                className={`px-4 py-1.5 transition-colors ${lang === "ko" ? "bg-purple-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
-                한국어
-              </button>
-              <button onClick={() => setLang("en")}
-                className={`px-4 py-1.5 transition-colors ${lang === "en" ? "bg-purple-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
-                English
-              </button>
-            </div>
-          </div>
 
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />

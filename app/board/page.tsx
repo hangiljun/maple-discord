@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect, useRef, useMemo, DragEvent } from "react"
 import Link from "next/link"
+import { useLang } from "../contexts/LanguageContext"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
@@ -31,7 +32,36 @@ interface ImageEntry {
   file: File
 }
 
+const boardT = {
+  ko: {
+    title: "자유게시판", subtitle: "자유롭게 글을 써보세요!",
+    writeBtn: "글쓰기", cancel: "취소",
+    search: "제목, 내용, 작성자 검색",
+    empty: (q: string) => q ? `"${q}"에 대한 검색 결과가 없어요.` : "아직 게시글이 없어요. 첫 글을 써보세요!",
+    pinned: "📌 고정", admin: "운영자", readMore: "자세히 보기 →",
+    posting: "등록 중...", postBtn: "등록하기",
+    guest: (name: string) => `비회원 · ${name}`,
+    imageNote: "이미지 첨부는 로그인 후 이용 가능해요.",
+    imageAdd: "사진 추가하기 · 클릭 또는 드래그",
+    imageFirst: "사진 첨부 · 클릭 또는 드래그 (선택)",
+  },
+  en: {
+    title: "Free Board", subtitle: "Post anything freely!",
+    writeBtn: "Write Post", cancel: "Cancel",
+    search: "Search title, content, or author",
+    empty: (q: string) => q ? `No results for "${q}".` : "No posts yet. Be the first to write!",
+    pinned: "📌 Pinned", admin: "Admin", readMore: "Read more →",
+    posting: "Posting...", postBtn: "Post",
+    guest: (name: string) => `Guest · ${name}`,
+    imageNote: "Image upload is available after login.",
+    imageAdd: "Add photo · Click or drag",
+    imageFirst: "Attach photo · Click or drag (optional)",
+  },
+}
+
 export default function BoardPage() {
+  const { lang } = useLang()
+  const bt = boardT[lang]
   const [posts, setPosts] = useState<Post[]>([])
   const [user, setUser] = useState<any>(null)
   const [userNickname, setUserNickname] = useState("")
@@ -227,8 +257,8 @@ export default function BoardPage() {
         <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-[#191F28]">자유게시판</h1>
-              <p className="text-[#8B95A1] text-sm mt-0.5">자유롭게 글을 써보세요!</p>
+              <h1 className="text-xl font-bold text-[#191F28]">{bt.title}</h1>
+              <p className="text-[#8B95A1] text-sm mt-0.5">{bt.subtitle}</p>
             </div>
             <button onClick={() => { if (showForm) resetForm(); else setShowForm(true) }}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
@@ -236,7 +266,7 @@ export default function BoardPage() {
                   ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
                   : "bg-[#3182F6] text-white hover:bg-[#1C6EE8]"
               }`}>
-              {showForm ? "취소" : "글쓰기"}
+              {showForm ? bt.cancel : bt.writeBtn}
             </button>
           </div>
           {/* 검색 */}
@@ -247,7 +277,7 @@ export default function BoardPage() {
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1) }}
-              placeholder="제목, 내용, 작성자 검색"
+              placeholder={bt.search}
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] placeholder:text-[#B0B8C1]"
             />
             {search && (
@@ -309,7 +339,7 @@ export default function BoardPage() {
               className="w-full p-3 rounded-xl border border-[#E5E8EB] text-sm text-[#191F28] outline-none focus:border-[#3182F6] resize-none placeholder:text-[#B0B8C1]" />
 
             {/* 이미지 첨부 — 로그인 유저만 */}
-            {!user && <p className="text-xs text-[#B0B8C1] px-1">이미지 첨부는 로그인 후 이용 가능해요.</p>}
+            {!user && <p className="text-xs text-[#B0B8C1] px-1">{bt.imageNote}</p>}
             {user && (
               <div>
                 {images.length > 0 && (
@@ -333,7 +363,7 @@ export default function BoardPage() {
                   className={`border-2 border-dashed rounded-xl cursor-pointer transition-colors py-4 px-4 text-center
                     ${dragging ? "border-[#3182F6] bg-[#EBF3FE]" : "border-[#E5E8EB] hover:border-[#3182F6] hover:bg-[#F9FAFB]"}`}>
                   <p className="text-xs text-[#8B95A1]">
-                    {images.length > 0 ? "사진 추가하기 · 클릭 또는 드래그" : "사진 첨부 · 클릭 또는 드래그 (선택)"}
+                    {images.length > 0 ? bt.imageAdd : bt.imageFirst}
                   </p>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
@@ -345,7 +375,7 @@ export default function BoardPage() {
               <span className="text-xs text-[#B0B8C1]">{form.content.length}/3000</span>
               <button onClick={handlePost} disabled={posting}
                 className="px-5 py-2 bg-[#3182F6] disabled:bg-[#E5E8EB] hover:bg-[#1C6EE8] text-white disabled:text-[#8B95A1] rounded-lg font-semibold text-sm transition-colors">
-                {posting ? "등록 중..." : "등록하기"}
+                {posting ? bt.posting : bt.postBtn}
               </button>
             </div>
           </div>
@@ -355,7 +385,7 @@ export default function BoardPage() {
         {sortedPosts.length === 0 ? (
           <div className="text-center py-24">
             <p className="text-[#8B95A1]">
-              {search.trim() ? `"${search.trim()}"에 대한 검색 결과가 없어요.` : "아직 게시글이 없어요. 첫 글을 써보세요!"}
+              {bt.empty(search.trim())}
             </p>
           </div>
         ) : (
@@ -371,13 +401,13 @@ export default function BoardPage() {
                     <div className="px-4 py-3 border-b border-[#E5E8EB] flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-wrap">
                         {post.pinned && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">📌 고정</span>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">{bt.pinned}</span>
                         )}
                         {post.isAdminPost && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200">운영자</span>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200">{bt.admin}</span>
                         )}
                         <span className="text-xs text-[#8B95A1]">
-                          {post.isGuest ? `비회원 · ${post.authorName}` : post.authorName} · {post.date}
+                          {post.isGuest ? bt.guest(post.authorName) : post.authorName} · {post.date}
                         </span>
                       </div>
                       <div className="flex items-center gap-0.5">
@@ -421,7 +451,7 @@ export default function BoardPage() {
                           <span className="text-xs text-[#B0B8C1]">❤️ {post.likeCount || 0}</span>
                         </div>
                         {post.imageUrls && post.imageUrls.length > 1 && (
-                          <span className="text-xs text-[#B0B8C1]">사진 {post.imageUrls.length}장</span>
+                          <span className="text-xs text-[#B0B8C1]">{lang === "ko" ? `사진 ${post.imageUrls.length}장` : `${post.imageUrls.length} photos`}</span>
                         )}
                       </div>
                     </div>

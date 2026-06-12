@@ -1,6 +1,6 @@
 "use client"
-import { useState } from "react"
 import Link from "next/link"
+import { useLang } from "../contexts/LanguageContext"
 
 const ko = {
   title: "이용약관",
@@ -89,7 +89,7 @@ const en = {
 }
 
 export default function TermsContent() {
-  const [lang, setLang] = useState<"ko" | "en">("ko")
+  const { lang } = useLang()
   const c = lang === "ko" ? ko : en
 
   return (
@@ -99,18 +99,8 @@ export default function TermsContent() {
         <div className="mb-10">
           <Link href="/home" className="text-sm text-purple-500 hover:underline">{c.backLink}</Link>
 
-          <div className="flex items-center justify-between mt-4 mb-2">
+          <div className="mt-4 mb-2">
             <h1 className="text-3xl font-black">{c.title}</h1>
-            <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-semibold">
-              <button
-                onClick={() => setLang("ko")}
-                className={`px-4 py-1.5 transition-colors ${lang === "ko" ? "bg-purple-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-              >한국어</button>
-              <button
-                onClick={() => setLang("en")}
-                className={`px-4 py-1.5 transition-colors ${lang === "en" ? "bg-purple-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-              >English</button>
-            </div>
           </div>
           <p className="text-sm text-gray-400">{c.updated}</p>
         </div>

@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useLang } from '../contexts/LanguageContext'
 
 const MenuIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -15,17 +16,43 @@ const XIcon = () => (
   </svg>
 )
 
-export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const pathname = usePathname()
-
-  const menuItems = [
+const menuItems = {
+  ko: [
     { href: "/home",       label: "홈" },
     { href: "/tip",        label: "거래 주의사항" },
     { href: "/notice",     label: "공지사항" },
     { href: "/board",      label: "자유게시판" },
     { href: "/discordbot", label: "봇 기능" },
-  ]
+  ],
+  en: [
+    { href: "/home",       label: "Home" },
+    { href: "/tip",        label: "Trade Guide" },
+    { href: "/notice",     label: "Notices" },
+    { href: "/board",      label: "Free Board" },
+    { href: "/discordbot", label: "Bot Features" },
+  ],
+}
+
+export default function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const pathname = usePathname()
+  const { lang, setLang } = useLang()
+  const items = menuItems[lang]
+
+  const LangToggle = ({ mobile = false }: { mobile?: boolean }) => (
+    <div className={`flex rounded-lg border border-[#E5E8EB] overflow-hidden text-xs font-bold ${mobile ? "w-full" : ""}`}>
+      <button
+        onClick={() => setLang("ko")}
+        className={`flex-1 px-3 py-1.5 transition-colors ${lang === "ko" ? "bg-[#3182F6] text-white" : "text-[#8B95A1] hover:bg-[#F2F4F6]"}`}>
+        한국어
+      </button>
+      <button
+        onClick={() => setLang("en")}
+        className={`flex-1 px-3 py-1.5 transition-colors ${lang === "en" ? "bg-[#3182F6] text-white" : "text-[#8B95A1] hover:bg-[#F2F4F6]"}`}>
+        English
+      </button>
+    </div>
+  )
 
   return (
     <>
@@ -39,7 +66,7 @@ export default function Navbar() {
 
           {/* 데스크탑 메뉴 */}
           <div className="hidden lg:flex items-center gap-0.5 flex-1">
-            {menuItems.map((item) => {
+            {items.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
               return (
                 <Link key={item.href} href={item.href}
@@ -54,7 +81,12 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* 햄버거 */}
+          {/* 데스크탑 언어 토글 */}
+          <div className="hidden lg:flex ml-auto">
+            <LangToggle />
+          </div>
+
+          {/* 모바일 햄버거 */}
           <div className="ml-auto lg:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
@@ -67,7 +99,7 @@ export default function Navbar() {
         {/* 모바일 드롭다운 */}
         {menuOpen && (
           <div className="lg:hidden bg-white border-t border-[#E5E8EB] py-2 flex flex-col">
-            {menuItems.map((item) => {
+            {items.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link key={item.href} href={item.href}
@@ -81,6 +113,10 @@ export default function Navbar() {
                 </Link>
               )
             })}
+            {/* 모바일 언어 토글 */}
+            <div className="px-5 py-3 border-t border-[#E5E8EB] mt-1">
+              <LangToggle mobile />
+            </div>
           </div>
         )}
       </nav>

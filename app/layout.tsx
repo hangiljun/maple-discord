@@ -4,6 +4,7 @@ import "./globals.css"
 import Navbar from "./components/Navbar"
 import FloatingButton from "./components/FloatingButton"
 import Footer from "./components/Footer"
+import { LanguageProvider } from "./contexts/LanguageContext"
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
@@ -97,10 +98,12 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${notoSansKR.className} bg-gray-100 text-gray-900 antialiased min-h-screen`}>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <FloatingButton />
+        <LanguageProvider>
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+          <FloatingButton />
+        </LanguageProvider>
       </body>
     </html>
   )

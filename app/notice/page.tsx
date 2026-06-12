@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useLang } from "../contexts/LanguageContext"
 import { db, auth } from "@/lib/firebase"
 import {
   collection, query, orderBy, onSnapshot, addDoc,
@@ -42,6 +43,25 @@ const categoryIcon: Record<string, string> = {
   공지: "📢",
 }
 
+const noticeT = {
+  ko: {
+    title: "공지사항", subtitle: "운영 공지 및 패치노트를 확인하세요",
+    writeBtn: "공지 작성", cancel: "취소", editTitle: "공지 수정", newTitle: "새 공지 작성",
+    catLabels: { "패치노트": "패치노트", "변경사항": "변경사항", "공지": "공지" } as Record<string,string>,
+    pinned: "📌 고정", empty: "아직 공지사항이 없어요",
+    readMore: "자세히 보기 →", photos: (n: number) => `사진 ${n}장`,
+    saving: "저장 중...", update: "수정 완료", post: "공지 등록",
+  },
+  en: {
+    title: "Notices", subtitle: "Check server notices and patch notes",
+    writeBtn: "Write Notice", cancel: "Cancel", editTitle: "Edit Notice", newTitle: "New Notice",
+    catLabels: { "패치노트": "Patch Notes", "변경사항": "Updates", "공지": "Notice" } as Record<string,string>,
+    pinned: "📌 Pinned", empty: "No notices yet",
+    readMore: "Read more →", photos: (n: number) => `${n} photos`,
+    saving: "Saving...", update: "Update", post: "Post Notice",
+  },
+}
+
 function getLegacyImages(notice: Notice): string[] {
   if (notice.imageUrls && notice.imageUrls.length > 0) return notice.imageUrls
   if (notice.imageUrl) return [notice.imageUrl]
@@ -81,6 +101,8 @@ function noticeToBlocks(notice: Notice): EditorBlock[] {
 const EMPTY_FORM = { title: "", category: "공지" as Notice["category"] }
 
 export default function NoticePage() {
+  const { lang } = useLang()
+  const nt = noticeT[lang]
   const [notices, setNotices] = useState<Notice[]>([])
   const [user, setUser] = useState<any>(null)
   const [adminUser, setAdminUser] = useState(false)
@@ -275,8 +297,8 @@ export default function NoticePage() {
         {/* 헤더 */}
         <div className="bg-white border border-[#E5E8EB] rounded-2xl px-5 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[#191F28]">공지사항</h1>
-            <p className="text-[#8B95A1] text-sm mt-0.5">운영 공지 및 패치노트를 확인하세요</p>
+            <h1 className="text-xl font-bold text-[#191F28]">{nt.title}</h1>
+            <p className="text-[#8B95A1] text-sm mt-0.5">{nt.subtitle}</p>
           </div>
           {adminUser && (
             <button
@@ -286,7 +308,7 @@ export default function NoticePage() {
                   ? "bg-[#F2F4F6] text-[#8B95A1] hover:bg-[#E5E8EB]"
                   : "bg-[#3182F6] text-white hover:bg-[#1C6EE8]"
               }`}>
-              {showForm && !editingId ? "취소" : "공지 작성"}
+              {showForm && !editingId ? nt.cancel : nt.writeBtn}
             </button>
           )}
         </div>
@@ -295,7 +317,7 @@ export default function NoticePage() {
         {adminUser && showForm && (
           <div className="bg-white border border-[#E5E8EB] rounded-2xl p-5 space-y-3">
             <p className="font-semibold text-[#191F28] text-sm">
-              {editingId ? "공지 수정" : "새 공지 작성"}
+              {editingId ? nt.editTitle : nt.newTitle}
             </p>
 
             <select value={form.category}
@@ -419,7 +441,7 @@ export default function NoticePage() {
             <div className="flex gap-2">
               <button onClick={handlePost} disabled={posting}
                 className="flex-1 py-3 bg-[#3182F6] disabled:bg-[#E5E8EB] hover:bg-[#1C6EE8] text-white disabled:text-[#8B95A1] rounded-xl font-semibold text-sm transition-colors">
-                {posting ? "저장 중..." : (editingId ? "수정 완료" : "공지 등록")}
+                {posting ? nt.saving : (editingId ? nt.update : nt.post)}
               </button>
               <button onClick={resetForm}
                 className="px-6 py-3 bg-[#F2F4F6] hover:bg-[#E5E8EB] text-[#4E5968] rounded-xl font-semibold text-sm transition-colors">
@@ -432,7 +454,7 @@ export default function NoticePage() {
         {/* 공지 목록 */}
         {notices.length === 0 ? (
           <div className="text-center py-24">
-            <p className="text-[#8B95A1]">아직 공지사항이 없어요</p>
+            <p className="text-[#8B95A1]">{nt.empty}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -453,11 +475,11 @@ export default function NoticePage() {
                     <div className="flex items-center gap-2">
                       {notice.pinned && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-500 border-red-200">
-                          📌 고정
+                          {nt.pinned}
                         </span>
                       )}
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${categoryStyle[notice.category]}`}>
-                        {categoryIcon[notice.category]} {notice.category}
+                        {categoryIcon[notice.category]} {nt.catLabels[notice.category] ?? notice.category}
                       </span>
                       <span className="text-xs text-[#8B95A1]">{notice.date}</span>
                     </div>
@@ -497,9 +519,9 @@ export default function NoticePage() {
                       </p>
                     )}
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-[#3182F6] font-medium">자세히 보기 →</span>
+                      <span className="text-xs text-[#3182F6] font-medium">{nt.readMore}</span>
                       {imgCount > 1 && (
-                        <span className="text-xs text-[#B0B8C1]">사진 {imgCount}장</span>
+                        <span className="text-xs text-[#B0B8C1]">{nt.photos(imgCount)}</span>
                       )}
                     </div>
                   </div>
