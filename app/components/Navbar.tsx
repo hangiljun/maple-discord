@@ -20,11 +20,11 @@ export default function Navbar() {
   const pathname = usePathname()
 
   const menuItems = [
-    { href: "/home",   label: "홈" },
+    { href: "/home",       label: "홈" },
+    { href: "/tip",        label: "거래 주의사항" },
+    { href: "/notice",     label: "공지사항" },
+    { href: "/board",      label: "자유게시판" },
     { href: "/discordbot", label: "봇 기능" },
-    { href: "/tip",    label: "거래 주의사항" },
-    { href: "/notice", label: "공지사항" },
-    { href: "/board",  label: "자유게시판" },
   ]
 
   return (
