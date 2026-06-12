@@ -17,8 +17,9 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
-      { source: "/mapleland", destination: "/home", permanent: true },
-      { source: "/report",    destination: "/home", permanent: true },
+      { source: "/mapleland",  destination: "/home",        permanent: true },
+      { source: "/report",     destination: "/home",        permanent: true },
+      { source: "/bot",        destination: "/discordbot",  permanent: true },
     ]
   },
 

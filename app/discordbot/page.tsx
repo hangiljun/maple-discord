@@ -4,7 +4,7 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "봇 기능 소개 | 메이플디스코드",
   description: "메이플디스코드 민원실 봇의 인증, 닉네임 관리, 사기 신고, 자동화 기능을 소개합니다.",
-  alternates: { canonical: "/bot" },
+  alternates: { canonical: "/discordbot" },
 }
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
