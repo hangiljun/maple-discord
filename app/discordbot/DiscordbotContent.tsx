@@ -1,5 +1,74 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
+
+const SLIDES = ["/봇1.png", "/봇2.png", "/봇3.png", "/봇4.png", "/봇5.png", "/봇6.png", "/봇7.png"]
+
+function BotSlideshow() {
+  const [cur, setCur] = useState(0)
+  const [fading, setFading] = useState(false)
+
+  const goTo = useCallback((idx: number) => {
+    setFading(true)
+    setTimeout(() => {
+      setCur(idx)
+      setFading(false)
+    }, 220)
+  }, [])
+
+  const prev = () => goTo((cur - 1 + SLIDES.length) % SLIDES.length)
+  const next = useCallback(() => goTo((cur + 1) % SLIDES.length), [cur, goTo])
+
+  useEffect(() => {
+    const t = setInterval(next, 3500)
+    return () => clearInterval(t)
+  }, [next])
+
+  return (
+    <div className="w-full max-w-3xl mx-auto px-6 py-10">
+      <div className="relative rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm select-none">
+
+        {/* 이미지 */}
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <img
+            src={SLIDES[cur]}
+            alt={`봇 기능 스크린샷 ${cur + 1}`}
+            className="absolute inset-0 w-full h-full object-contain transition-opacity duration-200"
+            style={{ opacity: fading ? 0 : 1 }}
+          />
+        </div>
+
+        {/* 좌우 화살표 */}
+        <button onClick={prev}
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white hover:shadow-md transition-all">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button onClick={next}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white hover:shadow-md transition-all">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        {/* 슬라이드 번호 */}
+        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[11px] font-semibold">
+          {cur + 1} / {SLIDES.length}
+        </div>
+      </div>
+
+      {/* 도트 */}
+      <div className="flex justify-center gap-2 mt-4">
+        {SLIDES.map((_, i) => (
+          <button key={i} onClick={() => goTo(i)}
+            className="rounded-full transition-all"
+            style={{
+              width: i === cur ? 20 : 8,
+              height: 8,
+              background: i === cur ? "#5865F2" : "#D1D5DB",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const DISCORD_URL = "https://discord.gg/2UwBw8dnSv"
 
@@ -173,6 +242,9 @@ export default function DiscordbotContent() {
           </a>
         </div>
       </section>
+
+      {/* 슬라이드쇼 */}
+      <BotSlideshow />
 
       {/* 기능 목록 */}
       <section className="max-w-4xl mx-auto px-6 py-16 space-y-14">
