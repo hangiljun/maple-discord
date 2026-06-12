@@ -21,6 +21,7 @@ export default function Navbar() {
 
   const menuItems = [
     { href: "/home",   label: "홈" },
+    { href: "/bot",    label: "봇 기능" },
     { href: "/tip",    label: "거래 주의사항" },
     { href: "/notice", label: "공지사항" },
     { href: "/board",  label: "자유게시판" },
