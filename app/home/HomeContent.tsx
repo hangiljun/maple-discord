@@ -155,7 +155,7 @@ export default function HomeContent() {
             </div>
 
             <div className="hidden lg:flex items-center justify-center" style={{ height: "85vh", maxHeight: "800px" }}>
-              <img src="/배경.png?v=3" alt="" aria-hidden className="h-full w-auto object-contain" />
+              <img src="/배경1.png" alt="" aria-hidden className="h-full w-auto object-contain" />
             </div>
           </div>
         </div>
