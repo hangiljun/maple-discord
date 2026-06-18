@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { useLang } from "../contexts/LanguageContext"
 import HeroTitle from "./HeroTitle"
 
@@ -81,6 +82,17 @@ const GAME_META = [
 export default function HomeContent() {
   const { lang } = useLang()
   const c = t[lang]
+  const [dateBadge, setDateBadge] = useState("")
+
+  useEffect(() => {
+    const now = new Date()
+    if (lang === "ko") {
+      setDateBadge(`${now.getMonth() + 1}월 ${now.getDate()}일 현재 온라인 · 5만 명 커뮤니티`)
+    } else {
+      const m = now.toLocaleString("en-US", { month: "short" })
+      setDateBadge(`${m} ${now.getDate()} · Online Now · 50K Community`)
+    }
+  }, [lang])
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -93,7 +105,7 @@ export default function HomeContent() {
             <div className="flex flex-col items-center text-center">
               <div className="inline-flex items-center gap-2 rounded-full px-5 py-2 mb-7 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200">
                 <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                {c.badge}
+                {dateBadge || c.badge}
               </div>
 
               <div className="flex flex-row gap-1.5 justify-center flex-wrap mb-8">
