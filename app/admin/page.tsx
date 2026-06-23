@@ -28,6 +28,16 @@ interface Notice {
   pinned?: boolean
 }
 
+interface Comment {
+  id: string
+  postId: string
+  authorName: string
+  content: string
+  isGuest: boolean
+  createdAt?: any
+  date: string
+}
+
 const EMPTY_FORM = { description: "", link: "" }
 
 export default function AdminPage() {
@@ -41,6 +51,7 @@ export default function AdminPage() {
   const [editExistingUrl, setEditExistingUrl] = useState("")
   const [saving, setSaving] = useState(false)
   const [notices, setNotices] = useState<Notice[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -64,6 +75,17 @@ export default function AdminPage() {
         const data = d.data()
         const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR") || ""
         return { id: d.id, ...data, date } as Notice
+      }))
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, "board_comments"), orderBy("createdAt", "desc"))
+    return onSnapshot(q, (snap) => {
+      setComments(snap.docs.map(d => {
+        const data = d.data()
+        const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || ""
+        return { id: d.id, ...data, date } as Comment
       }))
     })
   }, [])
@@ -129,6 +151,11 @@ export default function AdminPage() {
     await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
   }
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("댓글을 삭제할까요?")) return
+    await deleteDoc(doc(db, "board_comments", commentId))
+  }
+
   const handleUpdate = async () => {
     if (!form.description.trim() || !form.link.trim()) {
       alert("설명과 링크를 입력해주세요"); return
@@ -175,7 +202,7 @@ export default function AdminPage() {
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
           <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
-          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 — 활성 배너 {activeBanners.length}/4</p>
+          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 댓글 {comments.length}개</p>
         </div>
 
         {/* 추가 / 수정 폼 */}
@@ -323,6 +350,47 @@ export default function AdminPage() {
                         : "bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF]"
                     }`}>
                     {notice.pinned ? "고정 해제" : "📌 고정"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 댓글 관리 */}
+        <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5">
+            <h2 className="font-black text-white text-sm">💬 댓글 관리 (총 {comments.length}개)</h2>
+          </div>
+
+          {comments.length === 0 ? (
+            <p className="text-center text-[#5BA8D8] font-bold text-sm py-10">등록된 댓글이 없어요</p>
+          ) : (
+            <div className="divide-y divide-[#EBF7FF] max-h-[600px] overflow-y-auto">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex items-start gap-3 px-4 py-3 hover:bg-[#F9FCFF] transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-xs font-bold text-[#0A3D6B]">
+                        {comment.isGuest ? `비회원 · ${comment.authorName}` : comment.authorName}
+                      </span>
+                      <span className="text-[10px] text-[#8B95A1]">{comment.date}</span>
+                      <a
+                        href={`/board/${comment.postId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-[#1877D4] hover:underline font-bold"
+                      >
+                        게시글 보기 →
+                      </a>
+                    </div>
+                    <p className="text-sm text-[#4E5968] leading-relaxed line-clamp-2">{comment.content}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex-shrink-0"
+                  >
+                    삭제
                   </button>
                 </div>
               ))}

@@ -168,6 +168,9 @@ export default function BoardPostPage() {
         createdAt: serverTimestamp(),
       })
       setCommentForm({ name: "", password: "", content: "" })
+    } catch (error) {
+      console.error("댓글 작성 오류:", error)
+      alert("댓글 작성 중 오류가 발생했습니다. 콘솔을 확인해주세요.")
     } finally {
       setSubmittingComment(false)
     }
@@ -323,7 +326,7 @@ export default function BoardPostPage() {
                   </div>
                   <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{c.content}</p>
                 </div>
-                {(adminUser || (user && user.uid === c.authorUid) || (!user && c.isGuest)) && (
+                {(adminUser || c.isGuest) && (
                   <button onClick={() => handleCommentDelete(c)}
                     className="text-xs text-[#8B95A1] hover:text-red-400 transition-colors shrink-0 self-start">
                     삭제
