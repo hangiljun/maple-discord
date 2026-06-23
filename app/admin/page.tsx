@@ -39,10 +39,13 @@ interface Comment {
 }
 
 const EMPTY_FORM = { description: "", link: "" }
+const ADMIN_PASSWORD = "rlfwns55"
 
 export default function AdminPage() {
   const [adminUser, setAdminUser] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [authenticated, setAuthenticated] = useState(false)
+  const [passwordInput, setPasswordInput] = useState("")
   const [banners, setBanners] = useState<Banner[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -54,12 +57,29 @@ export default function AdminPage() {
   const [comments, setComments] = useState<Comment[]>([])
 
   useEffect(() => {
+    const stored = sessionStorage.getItem("admin_authenticated")
+    if (stored === "true") setAuthenticated(true)
+  }, [])
+
+  useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) setAdminUser(await isAdmin(u.uid))
       setLoading(false)
     })
     return () => unsub()
   }, [])
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordInput === ADMIN_PASSWORD) {
+      setAuthenticated(true)
+      sessionStorage.setItem("admin_authenticated", "true")
+      setPasswordInput("")
+    } else {
+      alert("비밀번호가 틀렸습니다")
+      setPasswordInput("")
+    }
+  }
 
   useEffect(() => {
     const q = query(collection(db, "banners"), orderBy("order"))
@@ -180,6 +200,36 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
+            <p className="text-4xl mb-3">🔐</p>
+            <h1 className="font-black text-[#0A3D6B] text-xl mb-2">관리자 인증</h1>
+            <p className="text-sm text-[#5BA8D8] font-bold mb-6">비밀번호를 입력해주세요</p>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="비밀번호 입력"
+                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors"
+              >
+                확인
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     )
   }

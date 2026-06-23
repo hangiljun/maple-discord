@@ -177,13 +177,12 @@ export default function BoardPostPage() {
   }
 
   const handleCommentDelete = async (comment: Comment) => {
-    if (!user) {
-      const pw = prompt("비밀번호를 입력해주세요")
-      if (!pw) return
-      const snap = await getDoc(doc(db, "board_comments", comment.id))
-      if (!snap.exists() || snap.data().guestPassword !== pw) { alert("비밀번호가 틀렸어요"); return }
-    } else if (!adminUser && user.uid !== comment.authorUid) {
-      alert("삭제 권한이 없어요"); return
+    const pw = prompt("비밀번호를 입력해주세요")
+    if (!pw) return
+    const snap = await getDoc(doc(db, "board_comments", comment.id))
+    if (!snap.exists() || snap.data().guestPassword !== pw) {
+      alert("비밀번호가 틀렸어요")
+      return
     }
     if (!confirm("댓글을 삭제할까요?")) return
     await deleteDocFn(doc(db, "board_comments", comment.id))
@@ -326,7 +325,7 @@ export default function BoardPostPage() {
                   </div>
                   <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{c.content}</p>
                 </div>
-                {(adminUser || c.isGuest) && (
+                {c.isGuest && (
                   <button onClick={() => handleCommentDelete(c)}
                     className="text-xs text-[#8B95A1] hover:text-red-400 transition-colors shrink-0 self-start">
                     삭제
