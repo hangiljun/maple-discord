@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { db, auth } from "@/lib/firebase"
 import {
-  collection, addDoc, deleteDoc, doc,
+  collection, addDoc, deleteDoc, doc, getDoc,
   onSnapshot, serverTimestamp, query, orderBy, updateDoc
 } from "firebase/firestore"
 import { uploadImageFile } from "@/lib/storage"
@@ -31,6 +31,7 @@ interface Notice {
 interface Comment {
   id: string
   postId: string
+  postTitle?: string
   authorName: string
   content: string
   isGuest: boolean
@@ -101,12 +102,27 @@ export default function AdminPage() {
 
   useEffect(() => {
     const q = query(collection(db, "board_comments"), orderBy("createdAt", "desc"))
-    return onSnapshot(q, (snap) => {
-      setComments(snap.docs.map(d => {
+    return onSnapshot(q, async (snap) => {
+      const commentsData = snap.docs.map(d => {
         const data = d.data()
         const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || ""
         return { id: d.id, ...data, date } as Comment
-      }))
+      })
+
+      // 각 댓글의 게시글 제목 가져오기
+      const commentsWithTitles = await Promise.all(
+        commentsData.map(async (comment) => {
+          try {
+            const postSnap = await getDoc(doc(db, "board_posts", comment.postId))
+            const postTitle = postSnap.exists() ? postSnap.data().title : "삭제된 게시글"
+            return { ...comment, postTitle }
+          } catch {
+            return { ...comment, postTitle: "게시글 없음" }
+          }
+        })
+      )
+
+      setComments(commentsWithTitles)
     })
   }, [])
 
@@ -419,22 +435,31 @@ export default function AdminPage() {
             <div className="divide-y divide-[#EBF7FF] max-h-[600px] overflow-y-auto">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex items-start gap-3 px-4 py-3 hover:bg-[#F9FCFF] transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-bold text-[#0A3D6B]">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    {/* 게시글 제목 */}
+                    <a
+                      href={`/board/${comment.postId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <p className="text-sm font-bold text-[#0A3D6B] hover:text-[#1877D4] transition-colors line-clamp-1">
+                        📄 {comment.postTitle || "게시글"}
+                      </p>
+                    </a>
+
+                    {/* 댓글 정보 */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-[#4E5968]">
                         {comment.isGuest ? `비회원 · ${comment.authorName}` : comment.authorName}
                       </span>
                       <span className="text-[10px] text-[#8B95A1]">{comment.date}</span>
-                      <a
-                        href={`/board/${comment.postId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-[#1877D4] hover:underline font-bold"
-                      >
-                        게시글 보기 →
-                      </a>
                     </div>
-                    <p className="text-sm text-[#4E5968] leading-relaxed line-clamp-2">{comment.content}</p>
+
+                    {/* 댓글 내용 */}
+                    <p className="text-sm text-[#4E5968] leading-relaxed line-clamp-2 pl-4 border-l-2 border-[#E5E8EB]">
+                      {comment.content}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleDeleteComment(comment.id)}
