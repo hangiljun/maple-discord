@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd c:\\\\maplediscordsite; npx vercel --prod --yes 2>&1 | Where-Object { $_ -match \"Aliased|maplediscord\" } | Select-Object -First 3)",
+      "PowerShell(cd c:\\\\maplediscordsite; npx vercel --prod --yes 2>&1 | Where-Object { $_ -match \"Aliased|https://maple\" } | Select-Object -First 2)",
+      "PowerShell(cd c:\\\\maplediscordsite; npx vercel --prod --yes 2>&1 | Where-Object { $_ -match \"Aliased\" })"
+    ]
+  }
+}

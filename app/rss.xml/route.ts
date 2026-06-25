@@ -55,11 +55,12 @@ export async function GET() {
   for (const doc of noticeDocs) {
     const title = getField(doc, "title")
     const content = getField(doc, "content")
+    const category = getField(doc, "category") || "공지"
     if (!title) continue
     const id = getDocId(doc)
     const url = `${BASE_URL}/notice/${id}`
     items.push({
-      title: escape(title),
+      title: escape(`[${category}] ${title}`),
       link: url,
       description: escape(content.slice(0, 200)),
       pubDate: getTimestamp(doc, "createdAt"),

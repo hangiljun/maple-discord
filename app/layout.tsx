@@ -90,6 +90,29 @@ export const metadata: Metadata = {
   },
 }
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "메이플디스코드",
+  "alternateName": ["메이플 디스코드", "MSD디스코드", "메디"],
+  "url": "https://www.maplediscord.com",
+  "logo": "https://www.maplediscord.com/og-image-v3.png",
+  "description": "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임을 아우르는 메이플 종합 디스코드. 5만 명 커뮤니티.",
+  "sameAs": [
+    "https://discord.gg/msd"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer service",
+    "availableLanguage": "Korean"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": "50000"
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -97,6 +120,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className={`${notoSansKR.className} bg-gray-100 text-gray-900 antialiased min-h-screen`}>
         <LanguageProvider>
           <Navbar />

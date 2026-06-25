@@ -102,14 +102,16 @@ export async function generateMetadata(
   const description = getPreviewText(notice) || `메이플디스코드 ${notice.category} 공지사항입니다.`
 
   return {
-    title: notice.title,
+    title: `${notice.title} - 메이플디스코드`,
     description,
-    alternates: { canonical: `/notice/${id}` },
+    keywords: ["메이플디스코드 공지", "메이플 디스코드", notice.category, notice.title],
+    alternates: { canonical: `https://www.maplediscord.com/notice/${id}` },
     openGraph: {
-      title: notice.title,
+      title: `${notice.title} - 메이플디스코드`,
       description,
-      url: `/notice/${id}`,
+      url: `https://www.maplediscord.com/notice/${id}`,
       type: "article",
+      ...(notice.thumbnailUrl && { images: [{ url: notice.thumbnailUrl, width: 1200, height: 630, alt: notice.title }] }),
     },
   }
 }
@@ -123,8 +125,35 @@ export default async function NoticeDetailPage(
 
   const blocks = getBlocks(notice)
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": notice.title,
+    "description": getPreviewText(notice),
+    "datePublished": notice.createdAt || new Date().toISOString(),
+    "dateModified": notice.createdAt || new Date().toISOString(),
+    "author": {
+      "@type": "Organization",
+      "name": "메이플디스코드"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "메이플디스코드",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.maplediscord.com/og-image-v3.png"
+      }
+    },
+    ...(notice.thumbnailUrl && { "image": notice.thumbnailUrl })
+  }
+
   return (
-    <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <div className="min-h-screen bg-[#F9FAFB] p-4 md:p-8">
       <div className="max-w-2xl mx-auto space-y-4">
 
         <Link href="/notice"
@@ -183,6 +212,7 @@ export default async function NoticeDetailPage(
         </Link>
 
       </div>
-    </div>
+      </div>
+    </>
   )
 }
