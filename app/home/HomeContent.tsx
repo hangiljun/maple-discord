@@ -258,24 +258,52 @@ export default function HomeContent() {
         </div>
       </section>
 
-      {/* ── SEO 텍스트 (한국어 고정) ── */}
-      <section className="max-w-4xl mx-auto px-4 py-16 border-b border-gray-100">
-        <div className="text-center space-y-3">
-          <p className="text-sm text-gray-400 leading-relaxed">
-            <strong className="text-gray-500">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛을 즐기는 유저들이 함께 모인 국내 최대 메이플 종합 디스코드 커뮤니티입니다.
-          </p>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            현재 5만 명 이상의 메이플러가 활동하고 있으며, 게임별 전용 채널을 통해 거래, 정보 공유, 파티 모집, 길드 모집, 커뮤니티 활동을 편하게 즐길 수 있습니다.
-          </p>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            또한 메이플봇을 통해 디스코드 안에서 캐릭터 정보, 링크스킬, 유니온 정보까지 바로 조회할 수 있어 더욱 편리합니다.
-          </p>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            안전한 거래 환경을 위해 인증 시스템과 사기 제보 채널을 운영하고 있으며, 메이플스토리 패치노트와 메이플랜드·메이플플래닛 공지도 빠르게 확인할 수 있습니다.
-          </p>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            메이플디스코드는 메이플 유저들 사이에서 'msd디스코드'로도 불리는 국내 최대 메이플 디스코드 서버입니다.
-          </p>
+      {/* ── SEO 텍스트 섹션 ── */}
+      <section className="max-w-4xl mx-auto px-6 py-20 border-b border-gray-100">
+        <div className="space-y-6">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">
+              메이플 디스코드, 모든 메이플러의 필수 커뮤니티
+            </h2>
+            <p className="text-gray-500 text-sm">
+              메이플스토리 · 메이플랜드 · 메이플플래닛 종합 디스코드 서버
+            </p>
+          </div>
+
+          <div className="space-y-4 text-sm md:text-base text-gray-600 leading-relaxed">
+            <p>
+              <strong className="text-gray-900 font-bold">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛을 즐기는 유저들이 함께 모인 <strong className="text-gray-900">국내 최대 메이플 종합 디스코드 커뮤니티</strong>입니다.
+              현재 5만 명 이상의 메이플러가 활동하고 있으며, 메이플 유저들 사이에서 '<strong className="text-gray-900">msd디스코드</strong>' 또는 '<strong className="text-gray-900">메디</strong>'로도 불립니다.
+            </p>
+
+            <p>
+              메이플스토리 KMS와 GMS, 메이플랜드 클래식 서버, 메이플플래닛 신규 서버까지 3개 게임 모두를 위한 <strong className="text-gray-900">전용 채널</strong>을 운영합니다.
+              메이플 아이템 거래, 메소 거래, 파티 모집, 길드 모집, 보스 공략, 정보 공유 등 메이플스토리 커뮤니티에 필요한 모든 기능을 한 곳에서 이용할 수 있습니다.
+            </p>
+
+            <p>
+              특히 <strong className="text-gray-900">메이플봇</strong>을 통해 디스코드 안에서 바로 캐릭터 정보 조회, 링크스킬 검색, 유니온 공격대원 효과 확인이 가능합니다.
+              공식 Nexon OpenAPI를 기반으로 하여 장비 정보, 헥사 코어, 레벨 히스토리까지 상세하게 확인할 수 있어 메이플스토리 유저들에게 필수적인 디스코드 봇입니다.
+            </p>
+
+            <p>
+              안전한 <strong className="text-gray-900">메이플 거래 환경</strong>을 위해 사진 인증 시스템과 사기꾼 제보 채널을 운영하고 있습니다.
+              메이플랜드 거래방과 메이플스토리 거래방 모두 인증된 유저만 이용할 수 있어 사기 위험을 최소화했습니다.
+              거래 주의사항 안내와 실시간 사기 유형 공유를 통해 메이플 커뮤니티의 안전한 거래 문화를 만들어가고 있습니다.
+            </p>
+
+            <p>
+              메이플스토리 패치노트, 메이플랜드 업데이트, 메이플플래닛 공지사항을 가장 빠르게 확인할 수 있으며,
+              게임별 이벤트 정보와 유저 간 공략 공유도 활발합니다. 메이플 길드 홍보, 메이플 파티 구인, 메이플 보스 공략까지
+              메이플스토리를 즐기는 데 필요한 모든 정보를 메이플디스코드에서 찾을 수 있습니다.
+            </p>
+
+            <p className="text-center pt-4 text-gray-500 text-sm">
+              메이플 디스코드 서버 | 메이플스토리 디스코드 | 메이플랜드 디스코드 | 메이플플래닛 디스코드 |
+              메이플 커뮤니티 | 메이플 거래방 | 메이플봇 | 메이플 캐릭터 조회 |
+              메이플 파티 모집 | 메이플 길드 모집 | 국내 최대 메이플 디스코드
+            </p>
+          </div>
         </div>
       </section>
 
