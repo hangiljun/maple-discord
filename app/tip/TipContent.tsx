@@ -266,6 +266,32 @@ function TipEn() {
             <div className="tp-fact-card"><div className="tp-fact-q"><span className="tp-q-badge">Q5</span>They're asking me to send a photo of my bank transfer — should I?</div><div className="tp-fact-a">In a 3-party scam, the buyer's transfer receipt is forwarded to the meso seller to prove payment. <strong>Only send it after verifying the person's identity by phone call.</strong></div></div>
           </div>
         </div>
+
+        {/* SEO 텍스트 */}
+        <div className="tp-mb-section" style={{borderTop:"1px solid rgba(0,0,0,0.08)",paddingTop:"40px",marginTop:"48px"}}>
+          <div style={{textAlign:"center",marginBottom:"24px"}}>
+            <h2 style={{fontSize:"clamp(20px, 4vw, 28px)",fontWeight:"900",color:"#0f172a",marginBottom:"8px"}}>
+              메이플 거래 사기 예방, 메이플디스코드에서 안전하게
+            </h2>
+            <p style={{color:"#64748b",fontSize:"14px"}}>
+              메이플스토리 · 메이플랜드 · 메이플플래닛 안전 거래 가이드
+            </p>
+          </div>
+          <div style={{color:"#64748b",fontSize:"14px",lineHeight:"1.8",maxWidth:"700px",margin:"0 auto"}}>
+            <p style={{marginBottom:"16px"}}>
+              <strong style={{color:"#0f172a",fontWeight:"700"}}>메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛 유저들의 안전한 거래 환경을 위해 거래 주의사항과 사기 예방 가이드를 제공합니다.
+              메이플 아이템 거래, 메소 거래 시 발생할 수 있는 사기 유형을 미리 파악하고, 1원 송금 인증 및 더치트 조회로 안전하게 거래하세요.
+            </p>
+            <p style={{marginBottom:"16px"}}>
+              메이플랜드 거래방과 메이플스토리 거래방에서는 사진 인증 시스템을 통해 본인 인증을 완료한 유저만 참여할 수 있어, 사기 위험을 최소화했습니다.
+              또한 사기꾼 제보 채널을 운영하여 실시간으로 사기 유형을 공유하고, 메이플 커뮤니티 전체가 안전한 거래 문화를 만들어가고 있습니다.
+            </p>
+            <p style={{color:"#94a3b8",fontSize:"13px",textAlign:"center",paddingTop:"16px",borderTop:"1px solid rgba(0,0,0,0.05)"}}>
+              메이플 거래 주의사항 | 메이플 사기 예방 | 메이플랜드 안전거래 | 메이플스토리 거래 가이드 |
+              메이플 아이템 거래 | 메이플 메소 거래 | 더치트 조회 | 1원 송금 인증 | 메이플 거래 사기 신고
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

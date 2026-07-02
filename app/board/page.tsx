@@ -485,6 +485,32 @@ export default function BoardPage() {
           </>
         )}
 
+        {/* SEO 텍스트 */}
+        <div className="bg-white border border-[#E5E8EB] rounded-2xl px-6 py-8 mt-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-black text-[#191F28] mb-2">
+              메이플 자유게시판, 소통과 정보 공유의 공간
+            </h2>
+            <p className="text-[#8B95A1] text-sm">
+              메이플스토리 · 메이플랜드 · 메이플플래닛 커뮤니티
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto space-y-4 text-sm text-[#64748b] leading-relaxed">
+            <p>
+              <strong className="text-[#191F28] font-bold">메이플디스코드 자유게시판</strong>은 메이플스토리, 메이플랜드, 메이플플래닛 유저들이 자유롭게 소통하고 정보를 공유하는 커뮤니티 공간입니다.
+              게임 공략, 질문과 답변, 팁과 노하우, 재미있는 이야기까지 모든 메이플 관련 주제를 다룹니다.
+            </p>
+            <p>
+              메이플 보스 공략, 메이플 직업 추천, 메이플랜드 레벨링 루트, 메이플 장비 세팅, 메이플 길드 모집 등 다양한 정보를 실시간으로 공유하세요.
+              5만 명의 메이플러가 함께하는 국내 최대 메이플 커뮤니티에서 유용한 정보를 얻고, 메이플 친구들과 소통하세요.
+            </p>
+            <p className="text-[#94a3b8] text-xs text-center pt-4 border-t border-[#E5E8EB]">
+              메이플스토리 자유게시판 | 메이플랜드 커뮤니티 | 메이플 질문 답변 | 메이플 공략 | 메이플 팁 |
+              메이플 직업 추천 | 메이플 보스 공략 | 메이플 길드 모집 | 메이플 파티 모집
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   )
