@@ -1,13 +1,11 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db, auth } from "@/lib/firebase"
+import { db } from "@/lib/firebase"
 import {
   collection, addDoc, deleteDoc, doc, getDoc,
   onSnapshot, serverTimestamp, query, orderBy, updateDoc
 } from "firebase/firestore"
 import { uploadImageFile } from "@/lib/storage"
-import { onAuthStateChanged } from "firebase/auth"
-import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
 
 interface Banner {
@@ -43,8 +41,6 @@ const EMPTY_FORM = { description: "", link: "" }
 const ADMIN_PASSWORD = "rlfwns55"
 
 export default function AdminPage() {
-  const [adminUser, setAdminUser] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
   const [passwordInput, setPasswordInput] = useState("")
   const [banners, setBanners] = useState<Banner[]>([])
@@ -60,14 +56,6 @@ export default function AdminPage() {
   useEffect(() => {
     const stored = sessionStorage.getItem("admin_authenticated")
     if (stored === "true") setAuthenticated(true)
-  }, [])
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) setAdminUser(await isAdmin(u.uid))
-      setLoading(false)
-    })
-    return () => unsub()
   }, [])
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -212,14 +200,6 @@ export default function AdminPage() {
     finally { setSaving(false) }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
@@ -245,17 +225,6 @@ export default function AdminPage() {
               </button>
             </form>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!adminUser) {
-    return (
-      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center">
-        <div className="text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10">
-          <p className="text-4xl mb-3">🔒</p>
-          <p className="font-black text-[#0A3D6B] text-lg">관리자 권한이 필요합니다</p>
         </div>
       </div>
     )
