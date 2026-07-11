@@ -37,6 +37,20 @@ interface Comment {
   date: string
 }
 
+interface Post {
+  id: string
+  title: string
+  content: string
+  authorName: string
+  isGuest: boolean
+  isAdminPost?: boolean
+  pinned?: boolean
+  viewCount?: number
+  likeCount?: number
+  createdAt?: any
+  date: string
+}
+
 const EMPTY_FORM = { description: "", link: "" }
 const ADMIN_PASSWORD = "rlfwns55"
 
@@ -52,6 +66,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [notices, setNotices] = useState<Notice[]>([])
   const [comments, setComments] = useState<Comment[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
 
   useEffect(() => {
     const stored = sessionStorage.getItem("admin_authenticated")
@@ -111,6 +126,17 @@ export default function AdminPage() {
       )
 
       setComments(commentsWithTitles)
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, "board_posts"), orderBy("createdAt", "desc"))
+    return onSnapshot(q, (snap) => {
+      setPosts(snap.docs.map(d => {
+        const data = d.data()
+        const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || ""
+        return { id: d.id, ...data, date } as Post
+      }))
     })
   }, [])
 
@@ -180,6 +206,18 @@ export default function AdminPage() {
     await deleteDoc(doc(db, "board_comments", commentId))
   }
 
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm("게시글을 삭제할까요? (연결된 댓글도 함께 삭제됩니다)")) return
+    await deleteDoc(doc(db, "board_posts", postId))
+    // 해당 게시글의 댓글도 삭제
+    const relatedComments = comments.filter(c => c.postId === postId)
+    await Promise.all(relatedComments.map(c => deleteDoc(doc(db, "board_comments", c.id))))
+  }
+
+  const handlePinPost = async (post: Post) => {
+    await updateDoc(doc(db, "board_posts", post.id), { pinned: !post.pinned })
+  }
+
   const handleUpdate = async () => {
     if (!form.description.trim() || !form.link.trim()) {
       alert("설명과 링크를 입력해주세요"); return
@@ -237,7 +275,7 @@ export default function AdminPage() {
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
           <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
-          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 댓글 {comments.length}개</p>
+          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 게시글 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 게시글 {posts.length}개 · 댓글 {comments.length}개</p>
         </div>
 
         {/* 추가 / 수정 폼 */}
@@ -386,6 +424,82 @@ export default function AdminPage() {
                     }`}>
                     {notice.pinned ? "고정 해제" : "📌 고정"}
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 게시글 관리 */}
+        <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5">
+            <h2 className="font-black text-white text-sm">📝 게시글 관리 (총 {posts.length}개 · 고정 {posts.filter(p => p.pinned).length}개)</h2>
+          </div>
+
+          {posts.length === 0 ? (
+            <p className="text-center text-[#5BA8D8] font-bold text-sm py-10">등록된 게시글이 없어요</p>
+          ) : (
+            <div className="divide-y divide-[#EBF7FF] max-h-[600px] overflow-y-auto">
+              {[...posts].sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1
+                if (!a.pinned && b.pinned) return 1
+                return 0
+              }).map((post) => (
+                <div key={post.id} className={`flex items-start gap-3 px-4 py-3 hover:bg-[#F9FCFF] transition-colors ${post.pinned ? "bg-blue-50" : ""}`}>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    {/* 게시글 제목 */}
+                    <a
+                      href={`/board/${post.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {post.pinned && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-500 border border-blue-200">📌 고정</span>
+                        )}
+                        {post.isAdminPost && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600">운영자</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-[#0A3D6B] hover:text-[#1877D4] transition-colors line-clamp-2">
+                        {post.title}
+                      </p>
+                    </a>
+
+                    {/* 게시글 정보 */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-[#4E5968]">
+                        {post.isGuest ? `비회원 · ${post.authorName}` : post.authorName}
+                      </span>
+                      <span className="text-[10px] text-[#8B95A1]">{post.date}</span>
+                      <span className="text-[10px] text-[#8B95A1]">조회 {post.viewCount || 0}</span>
+                      <span className="text-[10px] text-[#8B95A1]">좋아요 {post.likeCount || 0}</span>
+                    </div>
+
+                    {/* 게시글 내용 미리보기 */}
+                    <p className="text-xs text-[#8B95A1] leading-relaxed line-clamp-2 pl-4 border-l-2 border-[#E5E8EB]">
+                      {post.content}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handlePinPost(post)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-colors ${
+                        post.pinned
+                          ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          : "bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF]"
+                      }`}
+                    >
+                      {post.pinned ? "고정 해제" : "📌 고정"}
+                    </button>
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-black bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
