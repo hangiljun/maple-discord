@@ -198,24 +198,46 @@ export default function AdminPage() {
   }
 
   const handlePinNotice = async (notice: Notice) => {
-    await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+    try {
+      await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+    } catch (error: any) {
+      console.error("공지 고정 오류:", error)
+      alert("공지 고정 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("댓글을 삭제할까요?")) return
-    await deleteDoc(doc(db, "board_comments", commentId))
+    try {
+      await deleteDoc(doc(db, "board_comments", commentId))
+      alert("댓글이 삭제되었습니다.")
+    } catch (error: any) {
+      console.error("댓글 삭제 오류:", error)
+      alert("댓글 삭제 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm("게시글을 삭제할까요? (연결된 댓글도 함께 삭제됩니다)")) return
-    await deleteDoc(doc(db, "board_posts", postId))
-    // 해당 게시글의 댓글도 삭제
-    const relatedComments = comments.filter(c => c.postId === postId)
-    await Promise.all(relatedComments.map(c => deleteDoc(doc(db, "board_comments", c.id))))
+    try {
+      // 해당 게시글의 댓글도 삭제
+      const relatedComments = comments.filter(c => c.postId === postId)
+      await Promise.all(relatedComments.map(c => deleteDoc(doc(db, "board_comments", c.id))))
+      await deleteDoc(doc(db, "board_posts", postId))
+      alert("게시글이 삭제되었습니다.")
+    } catch (error: any) {
+      console.error("게시글 삭제 오류:", error)
+      alert("게시글 삭제 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handlePinPost = async (post: Post) => {
-    await updateDoc(doc(db, "board_posts", post.id), { pinned: !post.pinned })
+    try {
+      await updateDoc(doc(db, "board_posts", post.id), { pinned: !post.pinned })
+    } catch (error: any) {
+      console.error("게시글 고정 오류:", error)
+      alert("게시글 고정 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handleUpdate = async () => {

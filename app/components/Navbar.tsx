@@ -1,8 +1,10 @@
 "use client"
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useLang } from '../contexts/LanguageContext'
+import { auth } from '@/lib/firebase'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
 
 const MenuIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -35,9 +37,24 @@ const menuItems = {
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const pathname = usePathname()
   const { lang, setLang } = useLang()
   const items = menuItems[lang]
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  const handleLogout = async () => {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      await signOut(auth)
+      alert('로그아웃 되었습니다.')
+    }
+  }
 
   const LangToggle = ({ mobile = false }: { mobile?: boolean }) => (
     <div className={`flex rounded-lg border border-[#E5E8EB] overflow-hidden text-xs font-bold ${mobile ? "w-full" : ""}`}>
@@ -81,8 +98,23 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* 데스크탑 언어 토글 */}
-          <div className="hidden lg:flex ml-auto">
+          {/* 데스크탑 로그인/로그아웃 */}
+          <div className="hidden lg:flex ml-auto items-center gap-2">
+            {user ? (
+              <>
+                <span className="text-xs text-[#8B95A1]">{user.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 text-xs font-bold text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6] rounded-lg transition-colors">
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <Link href="/login"
+                className="px-3 py-1.5 text-xs font-bold text-white bg-[#3182F6] hover:bg-[#1C6EE8] rounded-lg transition-colors">
+                로그인
+              </Link>
+            )}
             <LangToggle />
           </div>
 
@@ -113,8 +145,30 @@ export default function Navbar() {
                 </Link>
               )
             })}
+            {/* 모바일 로그인/로그아웃 */}
+            <div className="px-5 py-3 border-t border-[#E5E8EB] mt-1 space-y-2">
+              {user ? (
+                <>
+                  <div className="text-xs text-[#8B95A1]">{user.email}</div>
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setMenuOpen(false)
+                    }}
+                    className="w-full px-3 py-2 text-sm font-bold text-[#8B95A1] hover:text-[#191F28] bg-[#F2F4F6] hover:bg-[#E5E8EB] rounded-lg transition-colors">
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <Link href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="block w-full px-3 py-2 text-sm font-bold text-center text-white bg-[#3182F6] hover:bg-[#1C6EE8] rounded-lg transition-colors">
+                  로그인
+                </Link>
+              )}
+            </div>
             {/* 모바일 언어 토글 */}
-            <div className="px-5 py-3 border-t border-[#E5E8EB] mt-1">
+            <div className="px-5 py-3 border-t border-[#E5E8EB]">
               <LangToggle mobile />
             </div>
           </div>
