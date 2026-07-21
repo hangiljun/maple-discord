@@ -124,7 +124,7 @@ export default function HomeContent() {
               <div className="grid grid-cols-3 gap-3 mb-10 w-full max-w-md items-stretch">
                 <div className="flex flex-col items-center px-3 py-4 rounded-2xl border border-gray-200">
                   <div className="flex-1 flex items-center justify-center w-full">
-                    <img src="/캐릭터.png?v=2" alt="" aria-hidden
+                    <img src="/캐릭터2.png?v=2" alt="" aria-hidden
                       className="w-full h-auto object-contain" style={{ maxWidth: "88px", maxHeight: "72px" }} />
                   </div>
                   <p className="text-2xl font-black text-gray-900 leading-none mt-2">50,000+</p>
@@ -167,7 +167,7 @@ export default function HomeContent() {
             </div>
 
             <div className="hidden lg:flex items-center justify-center" style={{ height: "85vh", maxHeight: "800px" }}>
-              <img src="/배경1.png" alt="" aria-hidden className="h-full w-auto object-contain" />
+              <img src="/배경2.png" alt="" aria-hidden className="h-full w-auto object-contain" />
             </div>
           </div>
         </div>
