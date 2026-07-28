@@ -3,7 +3,18 @@
     "allow": [
       "Bash(npm run build)",
       "Bash(firebase --version)",
-      "Bash(npx firebase-tools --version)"
+      "Bash(npx firebase-tools --version)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm run dev)",
+      "PowerShell($content = Invoke-WebRequest -Uri \"http://localhost:3000/home\" -UseBasicParsing; $content.Content | Out-File -FilePath \"$env:TEMP\\\\homepage.html\" -Encoding utf8; Write-Output \"HTML 저장 완료: $env:TEMP\\\\homepage.html\")",
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\캐릭터.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ Name = $file.Name; Width = $img.Width; Height = $img.Height; Resolution = \"$\\($img.Width\\) x $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\) }; $img.Dispose\\(\\) | Format-Table -AutoSize)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\링크 사진.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ 'File Name' = $file.Name; 'Width' = $img.Width; 'Height' = $img.Height; 'Resolution' = \"$\\($img.Width\\) × $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\); 'Added' = $file.LastWriteTime.ToString\\('yyyy-MM-dd HH:mm:ss'\\) }; $img.Dispose\\(\\) | Format-List)",
+      "PowerShell(node optimize-image.js)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\og-image-v4.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ 'File Name' = $file.Name; 'Width' = $img.Width; 'Height' = $img.Height; 'Resolution' = \"$\\($img.Width\\) × $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\); 'Created' = $file.CreationTime.ToString\\('yyyy-MM-dd HH:mm:ss'\\) }; $img.Dispose\\(\\) | Format-List)"
+    ],
+    "additionalDirectories": [
+      "D:\\웹사이트\\maplediscordsite 사이트\\public"
     ]
   }
 }
