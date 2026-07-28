@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/profile", "/messages", "/api/"],
+        disallow: ["/admin", "/dev", "/login", "/api/"],
       },
     ],
     sitemap: "https://www.maplediscord.com/sitemap.xml",

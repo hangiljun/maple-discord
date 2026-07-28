@@ -54,9 +54,9 @@ export const metadata: Metadata = {
       "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임 종합 디스코드. 5만 명 커뮤니티.",
     images: [
       {
-        url: "/og-image-v3.png",
-        width: 1024,
-        height: 1024,
+        url: "/og-image-v4.png",
+        width: 1200,
+        height: 630,
         alt: "메이플디스코드 - 메이플스토리·메이플랜드·메이플플래닛 종합 디스코드",
       },
     ],
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "메이플디스코드 | 메이플스토리·메이플랜드·메이플플래닛 종합 디스코드",
     description: "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임 종합 디스코드. 5만 명 커뮤니티.",
-    images: ["/og-image-v3.png"],
+    images: ["/og-image-v4.png"],
   },
 
   robots: {
@@ -96,20 +96,15 @@ const jsonLd = {
   "name": "메이플디스코드",
   "alternateName": ["메이플 디스코드", "MSD디스코드", "메디"],
   "url": "https://www.maplediscord.com",
-  "logo": "https://www.maplediscord.com/og-image-v3.png",
+  "logo": "https://www.maplediscord.com/og-image-v4.png",
   "description": "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임을 아우르는 메이플 종합 디스코드. 5만 명 커뮤니티.",
   "sameAs": [
-    "https://discord.gg/msd"
+    "https://discord.gg/2UwBw8dnSv"
   ],
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer service",
     "availableLanguage": "Korean"
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "reviewCount": "50000"
   }
 }
 

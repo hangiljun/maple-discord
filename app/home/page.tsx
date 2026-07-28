@@ -22,25 +22,6 @@ export const metadata: Metadata = {
   ],
 }
 
-// Schema.org 구조화 데이터 (Google SEO)
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "메이플디스코드",
-  alternateName: ["msd디스코드", "메디"],
-  url: "https://www.maplediscord.com",
-  logo: "https://www.maplediscord.com/logo.png",
-  description: "메이플스토리, 메이플랜드, 메이플플래닛 종합 디스코드 커뮤니티",
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.8",
-    ratingCount: "50000"
-  },
-  sameAs: [
-    "https://discord.gg/VB3kTJK"
-  ]
-}
-
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -58,10 +39,6 @@ export default function HomePage() {
   return (
     <>
       {/* Schema.org JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
