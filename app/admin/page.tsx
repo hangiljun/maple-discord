@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth"
 import {
   collection, addDoc, deleteDoc, doc, getDoc,
   onSnapshot, serverTimestamp, query, orderBy, updateDoc
@@ -52,11 +53,13 @@ interface Post {
 }
 
 const EMPTY_FORM = { description: "", link: "" }
-const ADMIN_PASSWORD = "rlfwns55"
 
 export default function AdminPage() {
-  const [authenticated, setAuthenticated] = useState(false)
-  const [passwordInput, setPasswordInput] = useState("")
+  const [authState, setAuthState] = useState<"loading" | "guest" | "denied" | "admin">("loading")
+  const [email, setEmail] = useState("")
+  const [pw, setPw] = useState("")
+  const [loginError, setLoginError] = useState("")
+  const [loggingIn, setLoggingIn] = useState(false)
   const [banners, setBanners] = useState<Banner[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -69,20 +72,33 @@ export default function AdminPage() {
   const [posts, setPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("admin_authenticated")
-    if (stored === "true") setAuthenticated(true)
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { setAuthState("guest"); return }
+      try {
+        const adminSnap = await getDoc(doc(db, "admin", user.uid))
+        setAuthState(adminSnap.exists() ? "admin" : "denied")
+      } catch {
+        setAuthState("denied")
+      }
+    })
+    return () => unsub()
   }, [])
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (passwordInput === ADMIN_PASSWORD) {
-      setAuthenticated(true)
-      sessionStorage.setItem("admin_authenticated", "true")
-      setPasswordInput("")
-    } else {
-      alert("비밀번호가 틀렸습니다")
-      setPasswordInput("")
+    setLoginError("")
+    setLoggingIn(true)
+    try {
+      await signInWithEmailAndPassword(auth, email, pw)
+    } catch {
+      setLoginError("이메일 또는 비밀번호가 올바르지 않아요")
+    } finally {
+      setLoggingIn(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth)
   }
 
   useEffect(() => {
@@ -260,31 +276,54 @@ export default function AdminPage() {
     finally { setSaving(false) }
   }
 
-  if (!authenticated) {
+  if (authState === "loading") {
+    return (
+      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
+        <p className="text-[#0A3D6B] font-bold">확인 중...</p>
+      </div>
+    )
+  }
+
+  if (authState === "guest") {
     return (
       <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
-            <p className="text-4xl mb-3">🔐</p>
-            <h1 className="font-black text-[#0A3D6B] text-xl mb-2">관리자 인증</h1>
-            <p className="text-sm text-[#5BA8D8] font-bold mb-6">비밀번호를 입력해주세요</p>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <input
-                type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="비밀번호 입력"
-                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors"
-              >
-                확인
+          <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
+            <div className="text-center">
+              <p className="text-4xl mb-3">🔐</p>
+              <h1 className="font-black text-[#0A3D6B] text-xl mb-2">관리자 로그인</h1>
+              <p className="text-sm text-[#5BA8D8] font-bold mb-6">관리자 계정으로 로그인해주세요</p>
+            </div>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일" autoComplete="username" autoFocus
+                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]" />
+              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
+                placeholder="비밀번호" autoComplete="current-password"
+                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]" />
+              {loginError && <p className="text-xs text-red-500 font-bold">{loginError}</p>}
+              <button type="submit" disabled={loggingIn}
+                className="w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] disabled:opacity-50 text-white rounded-xl font-black text-sm transition-colors">
+                {loggingIn ? "로그인 중..." : "로그인"}
               </button>
             </form>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (authState === "denied") {
+    return (
+      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
+          <p className="text-4xl mb-3">🚫</p>
+          <h1 className="font-black text-[#0A3D6B] text-xl mb-2">접근 권한이 없어요</h1>
+          <p className="text-sm text-[#5BA8D8] font-bold">이 계정은 관리자가 아니에요</p>
+          <button onClick={handleLogout}
+            className="mt-6 w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
+            다른 계정으로 로그인
+          </button>
         </div>
       </div>
     )
@@ -296,8 +335,16 @@ export default function AdminPage() {
 
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
-          <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
-          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 게시글 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 게시글 {posts.length}개 · 댓글 {comments.length}개</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
+              <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 게시글 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 게시글 {posts.length}개 · 댓글 {comments.length}개</p>
+            </div>
+            <button onClick={handleLogout}
+              className="px-4 py-2 text-xs font-bold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+              로그아웃
+            </button>
+          </div>
         </div>
 
         {/* 추가 / 수정 폼 */}
