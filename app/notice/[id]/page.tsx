@@ -52,7 +52,7 @@ async function getNotice(id: string): Promise<Notice | null> {
   try {
     const res = await fetch(
       `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/notices/${id}?key=${API_KEY}`,
-      { next: { revalidate: 60 } }
+      { cache: 'no-store' }  // 항상 최신 데이터 가져오기 (즉시 반영)
     )
     if (!res.ok) return null
     const json = await res.json()
