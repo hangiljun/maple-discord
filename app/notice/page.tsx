@@ -532,6 +532,32 @@ export default function NoticePage() {
           </div>
         )}
 
+        {/* SEO 텍스트 */}
+        <div className="bg-white border border-[#E5E8EB] rounded-2xl px-6 py-8 mt-6">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl md:text-3xl font-black text-[#191F28] mb-2">
+              메이플 공지사항, 가장 빠르게 확인하세요
+            </h2>
+            <p className="text-[#8B95A1] text-sm">
+              메이플스토리 · 메이플랜드 · 메이플플래닛 패치노트 및 업데이트 공지
+            </p>
+          </div>
+          <div className="max-w-2xl mx-auto space-y-4 text-sm text-[#64748b] leading-relaxed">
+            <p>
+              <strong className="text-[#191F28] font-bold">메이플디스코드</strong>는 메이플스토리, 메이플랜드, 메이플플래닛의 주요 패치노트, 업데이트 공지, 이벤트 정보를 가장 빠르게 전달합니다.
+              Nexon 공식 패치노트와 커뮤니티 핫이슈를 한 곳에서 확인하세요.
+            </p>
+            <p>
+              메이플스토리 신규 패치, 메이플랜드 클래식 서버 업데이트, 메이플플래닛 신규 콘텐츠까지 게임별 전용 공지 채널을 통해 실시간으로 안내합니다.
+              중요 공지는 디스코드 알림으로 자동 전송되어 놓치지 않고 확인할 수 있습니다.
+            </p>
+            <p className="text-[#94a3b8] text-xs text-center pt-4 border-t border-[#E5E8EB]">
+              메이플스토리 패치노트 | 메이플랜드 업데이트 | 메이플플래닛 공지 | 메이플 이벤트 | 메이플 공지사항 |
+              메이플 업데이트 일정 | 메이플스토리 점검 | 메이플 커뮤니티 공지
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   )

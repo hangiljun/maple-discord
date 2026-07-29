@@ -13,33 +13,6 @@ service cloud.firestore {
             .hasOnly(['mannerScore', 'mannerVoters']);
     }
 
-    // ── chats 컬렉션 (공개 거래 채팅) ────────────────────
-    match /chats/{chatId} {
-      allow read: if true;
-      allow create: if true;
-      allow delete: if request.auth != null
-        && (
-          request.auth.uid == resource.data.uid
-          || exists(/databases/$(database)/documents/admin/$(request.auth.uid))
-        );
-      allow update: if request.auth != null
-        && request.auth.uid == resource.data.uid;
-    }
-
-    // ── dm_rooms 컬렉션 (1:1 대화) ───────────────────────
-    match /dm_rooms/{chatId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if false;
-
-      match /messages/{messageId} {
-        allow read: if true;
-        allow create: if true;
-        allow update, delete: if false;
-      }
-    }
-
     // ── reports 컬렉션 (사기꾼 제보) ─────────────────────
     match /reports/{reportId} {
       allow read: if true;

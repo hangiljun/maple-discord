@@ -1,13 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
-import { db, auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth"
 import {
   collection, addDoc, deleteDoc, doc, getDoc,
   onSnapshot, serverTimestamp, query, orderBy, updateDoc
 } from "firebase/firestore"
 import { uploadImageFile } from "@/lib/storage"
-import { onAuthStateChanged } from "firebase/auth"
-import { isAdmin } from "@/lib/admin"
 import ImageUploader from "@/app/components/ImageUploader"
 
 interface Banner {
@@ -39,14 +38,28 @@ interface Comment {
   date: string
 }
 
+interface Post {
+  id: string
+  title: string
+  content: string
+  authorName: string
+  isGuest: boolean
+  isAdminPost?: boolean
+  pinned?: boolean
+  viewCount?: number
+  likeCount?: number
+  createdAt?: any
+  date: string
+}
+
 const EMPTY_FORM = { description: "", link: "" }
-const ADMIN_PASSWORD = "rlfwns55"
 
 export default function AdminPage() {
-  const [adminUser, setAdminUser] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [authenticated, setAuthenticated] = useState(false)
-  const [passwordInput, setPasswordInput] = useState("")
+  const [authState, setAuthState] = useState<"loading" | "guest" | "denied" | "admin">("loading")
+  const [email, setEmail] = useState("")
+  const [pw, setPw] = useState("")
+  const [loginError, setLoginError] = useState("")
+  const [loggingIn, setLoggingIn] = useState(false)
   const [banners, setBanners] = useState<Banner[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -56,30 +69,36 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false)
   const [notices, setNotices] = useState<Notice[]>([])
   const [comments, setComments] = useState<Comment[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("admin_authenticated")
-    if (stored === "true") setAuthenticated(true)
-  }, [])
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) setAdminUser(await isAdmin(u.uid))
-      setLoading(false)
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) { setAuthState("guest"); return }
+      try {
+        const adminSnap = await getDoc(doc(db, "admin", user.uid))
+        setAuthState(adminSnap.exists() ? "admin" : "denied")
+      } catch {
+        setAuthState("denied")
+      }
     })
     return () => unsub()
   }, [])
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (passwordInput === ADMIN_PASSWORD) {
-      setAuthenticated(true)
-      sessionStorage.setItem("admin_authenticated", "true")
-      setPasswordInput("")
-    } else {
-      alert("비밀번호가 틀렸습니다")
-      setPasswordInput("")
+    setLoginError("")
+    setLoggingIn(true)
+    try {
+      await signInWithEmailAndPassword(auth, email, pw)
+    } catch {
+      setLoginError("이메일 또는 비밀번호가 올바르지 않아요")
+    } finally {
+      setLoggingIn(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await signOut(auth)
   }
 
   useEffect(() => {
@@ -123,6 +142,17 @@ export default function AdminPage() {
       )
 
       setComments(commentsWithTitles)
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, "board_posts"), orderBy("createdAt", "desc"))
+    return onSnapshot(q, (snap) => {
+      setPosts(snap.docs.map(d => {
+        const data = d.data()
+        const date = data.createdAt?.toDate()?.toLocaleDateString("ko-KR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || ""
+        return { id: d.id, ...data, date } as Post
+      }))
     })
   }, [])
 
@@ -184,12 +214,46 @@ export default function AdminPage() {
   }
 
   const handlePinNotice = async (notice: Notice) => {
-    await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+    try {
+      await updateDoc(doc(db, "notices", notice.id), { pinned: !notice.pinned })
+    } catch (error: any) {
+      console.error("공지 고정 오류:", error)
+      alert("공지 고정 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm("댓글을 삭제할까요?")) return
-    await deleteDoc(doc(db, "board_comments", commentId))
+    try {
+      await deleteDoc(doc(db, "board_comments", commentId))
+      alert("댓글이 삭제되었습니다.")
+    } catch (error: any) {
+      console.error("댓글 삭제 오류:", error)
+      alert("댓글 삭제 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
+  }
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm("게시글을 삭제할까요? (연결된 댓글도 함께 삭제됩니다)")) return
+    try {
+      // 해당 게시글의 댓글도 삭제
+      const relatedComments = comments.filter(c => c.postId === postId)
+      await Promise.all(relatedComments.map(c => deleteDoc(doc(db, "board_comments", c.id))))
+      await deleteDoc(doc(db, "board_posts", postId))
+      alert("게시글이 삭제되었습니다.")
+    } catch (error: any) {
+      console.error("게시글 삭제 오류:", error)
+      alert("게시글 삭제 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
+  }
+
+  const handlePinPost = async (post: Post) => {
+    try {
+      await updateDoc(doc(db, "board_posts", post.id), { pinned: !post.pinned })
+    } catch (error: any) {
+      console.error("게시글 고정 오류:", error)
+      alert("게시글 고정 실패: " + (error.message || "권한이 없습니다. 관리자 계정으로 로그인해주세요."))
+    }
   }
 
   const handleUpdate = async () => {
@@ -212,36 +276,35 @@ export default function AdminPage() {
     finally { setSaving(false) }
   }
 
-  if (loading) {
+  if (authState === "loading") {
     return (
-      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#1877D4] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
+        <p className="text-[#0A3D6B] font-bold">확인 중...</p>
       </div>
     )
   }
 
-  if (!authenticated) {
+  if (authState === "guest") {
     return (
       <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
-            <p className="text-4xl mb-3">🔐</p>
-            <h1 className="font-black text-[#0A3D6B] text-xl mb-2">관리자 인증</h1>
-            <p className="text-sm text-[#5BA8D8] font-bold mb-6">비밀번호를 입력해주세요</p>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <input
-                type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="비밀번호 입력"
-                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors"
-              >
-                확인
+          <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
+            <div className="text-center">
+              <p className="text-4xl mb-3">🔐</p>
+              <h1 className="font-black text-[#0A3D6B] text-xl mb-2">관리자 로그인</h1>
+              <p className="text-sm text-[#5BA8D8] font-bold mb-6">관리자 계정으로 로그인해주세요</p>
+            </div>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일" autoComplete="username" autoFocus
+                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]" />
+              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)}
+                placeholder="비밀번호" autoComplete="current-password"
+                className="w-full p-3 border-2 border-[#90C4E8] rounded-xl text-sm font-bold outline-none focus:border-[#1877D4]" />
+              {loginError && <p className="text-xs text-red-500 font-bold">{loginError}</p>}
+              <button type="submit" disabled={loggingIn}
+                className="w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] disabled:opacity-50 text-white rounded-xl font-black text-sm transition-colors">
+                {loggingIn ? "로그인 중..." : "로그인"}
               </button>
             </form>
           </div>
@@ -250,12 +313,17 @@ export default function AdminPage() {
     )
   }
 
-  if (!adminUser) {
+  if (authState === "denied") {
     return (
-      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center">
-        <div className="text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10">
-          <p className="text-4xl mb-3">🔒</p>
-          <p className="font-black text-[#0A3D6B] text-lg">관리자 권한이 필요합니다</p>
+      <div className="min-h-screen bg-[#D6EEFF] flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center bg-white border-2 border-[#5BA8D8] rounded-2xl p-10 shadow-lg">
+          <p className="text-4xl mb-3">🚫</p>
+          <h1 className="font-black text-[#0A3D6B] text-xl mb-2">접근 권한이 없어요</h1>
+          <p className="text-sm text-[#5BA8D8] font-bold">이 계정은 관리자가 아니에요</p>
+          <button onClick={handleLogout}
+            className="mt-6 w-full py-3 bg-[#1877D4] hover:bg-[#0D47A1] text-white rounded-xl font-black text-sm transition-colors">
+            다른 계정으로 로그인
+          </button>
         </div>
       </div>
     )
@@ -267,8 +335,16 @@ export default function AdminPage() {
 
         {/* 헤더 */}
         <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] rounded-2xl p-5 shadow-lg">
-          <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
-          <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 댓글 {comments.length}개</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white">🛡️ 관리자 페이지</h1>
+              <p className="text-sm text-sky-200 font-bold mt-1">배너 관리 · 공지 핀 관리 · 게시글 관리 · 댓글 관리 — 활성 배너 {activeBanners.length}/4 · 게시글 {posts.length}개 · 댓글 {comments.length}개</p>
+            </div>
+            <button onClick={handleLogout}
+              className="px-4 py-2 text-xs font-bold text-white bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+              로그아웃
+            </button>
+          </div>
         </div>
 
         {/* 추가 / 수정 폼 */}
@@ -417,6 +493,82 @@ export default function AdminPage() {
                     }`}>
                     {notice.pinned ? "고정 해제" : "📌 고정"}
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 게시글 관리 */}
+        <div className="bg-white border-2 border-[#5BA8D8] rounded-2xl overflow-hidden shadow-md">
+          <div className="bg-gradient-to-r from-[#0A3D6B] to-[#1877D4] px-4 py-2.5">
+            <h2 className="font-black text-white text-sm">📝 게시글 관리 (총 {posts.length}개 · 고정 {posts.filter(p => p.pinned).length}개)</h2>
+          </div>
+
+          {posts.length === 0 ? (
+            <p className="text-center text-[#5BA8D8] font-bold text-sm py-10">등록된 게시글이 없어요</p>
+          ) : (
+            <div className="divide-y divide-[#EBF7FF] max-h-[600px] overflow-y-auto">
+              {[...posts].sort((a, b) => {
+                if (a.pinned && !b.pinned) return -1
+                if (!a.pinned && b.pinned) return 1
+                return 0
+              }).map((post) => (
+                <div key={post.id} className={`flex items-start gap-3 px-4 py-3 hover:bg-[#F9FCFF] transition-colors ${post.pinned ? "bg-blue-50" : ""}`}>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    {/* 게시글 제목 */}
+                    <a
+                      href={`/board/${post.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {post.pinned && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-500 border border-blue-200">📌 고정</span>
+                        )}
+                        {post.isAdminPost && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600">운영자</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-bold text-[#0A3D6B] hover:text-[#1877D4] transition-colors line-clamp-2">
+                        {post.title}
+                      </p>
+                    </a>
+
+                    {/* 게시글 정보 */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-[#4E5968]">
+                        {post.isGuest ? `비회원 · ${post.authorName}` : post.authorName}
+                      </span>
+                      <span className="text-[10px] text-[#8B95A1]">{post.date}</span>
+                      <span className="text-[10px] text-[#8B95A1]">조회 {post.viewCount || 0}</span>
+                      <span className="text-[10px] text-[#8B95A1]">좋아요 {post.likeCount || 0}</span>
+                    </div>
+
+                    {/* 게시글 내용 미리보기 */}
+                    <p className="text-xs text-[#8B95A1] leading-relaxed line-clamp-2 pl-4 border-l-2 border-[#E5E8EB]">
+                      {post.content}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handlePinPost(post)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-colors ${
+                        post.pinned
+                          ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          : "bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF]"
+                      }`}
+                    >
+                      {post.pinned ? "고정 해제" : "📌 고정"}
+                    </button>
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-black bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

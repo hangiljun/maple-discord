@@ -82,7 +82,7 @@ export default function Navbar() {
           </div>
 
           {/* 데스크탑 언어 토글 */}
-          <div className="hidden lg:flex ml-auto">
+          <div className="hidden lg:flex ml-auto items-center gap-2">
             <LangToggle />
           </div>
 
@@ -114,7 +114,7 @@ export default function Navbar() {
               )
             })}
             {/* 모바일 언어 토글 */}
-            <div className="px-5 py-3 border-t border-[#E5E8EB] mt-1">
+            <div className="px-5 py-3 border-t border-[#E5E8EB]">
               <LangToggle mobile />
             </div>
           </div>

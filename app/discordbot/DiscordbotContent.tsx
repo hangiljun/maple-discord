@@ -276,6 +276,37 @@ export default function DiscordbotContent() {
         </div>
       </section>
 
+      {/* SEO 텍스트 */}
+      <section className="max-w-4xl mx-auto px-6 py-16 border-t border-gray-100">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-3">
+            메이플봇, 디스코드에서 바로 사용하는 메이플스토리 정보 조회 봇
+          </h2>
+          <p className="text-gray-500 text-sm">
+            메이플스토리 캐릭터 정보 · 링크스킬 · 유니온 조회
+          </p>
+        </div>
+        <div className="max-w-2xl mx-auto space-y-4 text-sm text-gray-600 leading-relaxed">
+          <p>
+            <strong className="text-gray-900 font-bold">메이플봇</strong>은 메이플디스코드에서 제공하는 메이플스토리 전용 디스코드 봇입니다.
+            디스코드 채팅창에서 슬래시 커맨드만으로 메이플스토리 캐릭터 정보, 링크스킬, 유니온 공격대원 효과를 실시간으로 조회할 수 있습니다.
+          </p>
+          <p>
+            메이플 캐릭터 정보 조회 기능으로 장비 정보, 헥사 코어, 레벨 히스토리를 확인하고,
+            메이플 링크스킬 검색 기능으로 직업별 링크스킬 효과를 빠르게 찾아보세요.
+            또한 메이플 유니온 검색 기능으로 공격대원 효과를 직업군별로 탐색할 수 있습니다.
+          </p>
+          <p>
+            메이플 파티 모집 기능을 사용하면 디스코드 내에서 파티원을 쉽게 모집할 수 있으며,
+            버튼 클릭만으로 파티 참가 신청과 마감을 관리할 수 있어 메이플스토리 보스 공략이나 메이플랜드 파티 플레이 시 매우 유용합니다.
+          </p>
+          <p className="text-gray-400 text-xs text-center pt-4 border-t border-gray-100">
+            메이플봇 | 메이플스토리 디스코드 봇 | 메이플 캐릭터 조회 | 메이플 링크스킬 검색 | 메이플 유니온 검색 |
+            메이플 파티 모집 봇 | 메이플스토리 정보 봇 | 디스코드 메이플봇
+          </p>
+        </div>
+      </section>
+
     </div>
   )
 }

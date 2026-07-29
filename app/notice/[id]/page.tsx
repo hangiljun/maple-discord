@@ -141,7 +141,7 @@ export default async function NoticeDetailPage(
       "name": "메이플디스코드",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://www.maplediscord.com/og-image-v3.png"
+        "url": "https://www.maplediscord.com/og-image-v4.png"
       }
     },
     ...(notice.thumbnailUrl && { "image": notice.thumbnailUrl })
