@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "메이플 공지사항", "메이플스토리 패치노트", "메이플랜드 공지",
     "메이플플래닛 공지", "메이플 디스코드 공지", "메이플 업데이트",
   ],
-  alternates: { canonical: "/notice" },
+  alternates: { canonical: "https://www.maplediscord.com/notice" },
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -86,9 +86,9 @@ export async function GET() {
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>메이플랜드 거래방</title>
+    <title>메이플디스코드</title>
     <link>${BASE_URL}</link>
-    <description>메이플랜드 메소 거래, 아이템 안전거래, 교환 전문 디스코드 거래방</description>
+    <description>메이플스토리·메이플랜드·메이플플래닛 종합 디스코드. 공지사항, 자유게시판, 커뮤니티 소식.</description>
     <language>ko</language>
     <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>

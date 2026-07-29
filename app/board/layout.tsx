@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "메이플 자유게시판", "메이플스토리 커뮤니티", "메이플랜드 커뮤니티",
     "메이플플래닛 커뮤니티", "메이플 디스코드 게시판", "메이플 정보 공유",
   ],
-  alternates: { canonical: "/board" },
+  alternates: { canonical: "https://www.maplediscord.com/board" },
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

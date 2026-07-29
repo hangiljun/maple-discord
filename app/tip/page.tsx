@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "메이플 거래 사기", "메이플랜드 안전거래", "메이플스토리 거래 주의사항",
     "메이플 사기 예방", "메이플 아이템 거래", "메이플 메소 거래",
   ],
-  alternates: { canonical: "/tip" },
+  alternates: { canonical: "https://www.maplediscord.com/tip" },
 }
 
 export default function TipPage() {
