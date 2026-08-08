@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore"
 import { onAuthStateChanged } from "firebase/auth"
 import { isAdmin } from "@/lib/admin"
+import Markdown from "@/app/components/Markdown"
 
 interface Post {
   id: string
@@ -239,7 +240,7 @@ export default function PostClient({ initialPost, postId }: PostClientProps) {
             ) : (
               <>
                 <h1 className="text-lg font-bold text-[#191F28] leading-snug">{post.title}</h1>
-                <p className="text-sm text-[#4E5968] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                <Markdown>{post.content}</Markdown>
                 {post.imageUrls && post.imageUrls.length > 0 && (
                   <div className="space-y-3 pt-1">
                     {post.imageUrls.map((url, i) => (

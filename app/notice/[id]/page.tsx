@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import LinkifyText from "@/app/components/LinkifyText"
+import Markdown from "@/app/components/Markdown"
 
 const PROJECT_ID = "maplediscord-cfc6a"
 const API_KEY = "AIzaSyDn72fWR9UcseyGgK3uefx66f7o9Bv2t9A"
@@ -188,9 +188,9 @@ export default async function NoticeDetailPage(
             )}
             {blocks.map((block, i) =>
               block.type === "text" ? (
-                <p key={i} className="text-sm text-[#4E5968] leading-relaxed whitespace-pre-wrap">
-                  <LinkifyText text={block.value} />
-                </p>
+                <div key={i}>
+                  <Markdown>{block.value}</Markdown>
+                </div>
               ) : (
                 <div key={i} className="w-full bg-[#F9FAFB] rounded-xl overflow-hidden border border-[#E5E8EB]">
                   <img
