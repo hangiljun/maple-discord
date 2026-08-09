@@ -484,15 +484,27 @@ export default function AdminPage() {
                     </div>
                     <p className="font-bold text-sm text-[#0A3D6B] mt-1 truncate">{notice.title}</p>
                   </div>
-                  <button
-                    onClick={() => handlePinNotice(notice)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-colors flex-shrink-0 ${
-                      notice.pinned
-                        ? "bg-red-100 text-red-600 hover:bg-red-200"
-                        : "bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF]"
-                    }`}>
-                    {notice.pinned ? "고정 해제" : "📌 고정"}
-                  </button>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <a
+                      href={`/notice#edit-${notice.id}`}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        window.location.href = `/notice?edit=${notice.id}`
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-black bg-[#EBF7FF] text-[#1877D4] hover:bg-[#D0E8FF] transition-colors text-center"
+                    >
+                      수정
+                    </a>
+                    <button
+                      onClick={() => handlePinNotice(notice)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-black transition-colors ${
+                        notice.pinned
+                          ? "bg-red-100 text-red-600 hover:bg-red-200"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}>
+                      {notice.pinned ? "고정 해제" : "📌 고정"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

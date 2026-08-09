@@ -114,6 +114,7 @@ export default function NoticePage() {
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("")
   const [existingThumbnailUrl, setExistingThumbnailUrl] = useState<string>("")
   const [posting, setPosting] = useState(false)
+  const [editPending, setEditPending] = useState<string | null>(null)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -133,6 +134,21 @@ export default function NoticePage() {
       }))
     })
   }, [])
+
+  // URL 파라미터로 edit ID 받기
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const editId = params.get('edit')
+    if (editId && adminUser && notices.length > 0) {
+      const notice = notices.find(n => n.id === editId)
+      if (notice && !editingId) {
+        handleEdit(notice)
+        // URL에서 파라미터 제거
+        window.history.replaceState({}, '', '/notice')
+      }
+    }
+  }, [notices, adminUser])
 
   const resetForm = () => {
     setForm(EMPTY_FORM)
