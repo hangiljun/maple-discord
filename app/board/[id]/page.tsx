@@ -50,9 +50,11 @@ export async function generateMetadata(
   return {
     title: post.title,
     description,
+    alternates: { canonical: `https://www.maplediscord.com/board/${id}` },
     openGraph: {
       title: post.title,
       description,
+      url: `https://www.maplediscord.com/board/${id}`,
       type: "article",
       authors: [author],
     },

@@ -73,7 +73,7 @@ export async function generateMetadata(
   const description = getPreviewText(notice) || `메이플디스코드 ${notice.category} 공지사항입니다.`
 
   return {
-    title: `${notice.title} - 메이플디스코드`,
+    title: notice.title,
     description,
     keywords: ["메이플디스코드 공지", "메이플 디스코드", notice.category, notice.title],
     alternates: { canonical: `https://www.maplediscord.com/notice/${id}` },

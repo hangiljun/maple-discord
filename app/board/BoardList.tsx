@@ -505,10 +505,6 @@ export default function BoardList({ initialPosts }: { initialPosts: Post[] }) {
               메이플 보스 공략, 메이플 직업 추천, 메이플랜드 레벨링 루트, 메이플 장비 세팅, 메이플 길드 모집 등 다양한 정보를 실시간으로 공유하세요.
               5만 명의 메이플러가 함께하는 국내 최대 메이플 커뮤니티에서 유용한 정보를 얻고, 메이플 친구들과 소통하세요.
             </p>
-            <p className="text-[#94a3b8] text-xs text-center pt-4 border-t border-[#E5E8EB]">
-              메이플스토리 자유게시판 | 메이플랜드 커뮤니티 | 메이플 질문 답변 | 메이플 공략 | 메이플 팁 |
-              메이플 직업 추천 | 메이플 보스 공략 | 메이플 길드 모집 | 메이플 파티 모집
-            </p>
           </div>
         </div>
 

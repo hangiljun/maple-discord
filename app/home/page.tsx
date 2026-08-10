@@ -2,11 +2,10 @@ import type { Metadata } from "next"
 import HomeContent from "./HomeContent"
 
 export const metadata: Metadata = {
-  title: "메이플디스코드 | 메이플스토리·메이플랜드·메이플플래닛 종합 디스코드",
   description:
     "메이플스토리, 메이플랜드, 메이플플래닛 3개 게임을 아우르는 메이플 종합 디스코드. " +
     "5만 명 커뮤니티에서 실시간 거래, 캐릭터 정보 조회, 공지 확인까지.",
-  alternates: { canonical: "https://www.maplediscord.com/home" },
+  alternates: { canonical: "https://www.maplediscord.com" },
   keywords: [
     "메이플스토리 디스코드", "메이플랜드 디스코드", "메이플플래닛 디스코드",
     "메이플 디스코드", "메이플 커뮤니티", "메이플봇", "메이플 캐릭터 조회",

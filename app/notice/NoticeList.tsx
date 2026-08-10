@@ -567,10 +567,6 @@ export default function NoticeList({ initialNotices }: { initialNotices: Notice[
               메이플스토리 신규 패치, 메이플랜드 클래식 서버 업데이트, 메이플플래닛 신규 콘텐츠까지 게임별 전용 공지 채널을 통해 실시간으로 안내합니다.
               중요 공지는 디스코드 알림으로 자동 전송되어 놓치지 않고 확인할 수 있습니다.
             </p>
-            <p className="text-[#94a3b8] text-xs text-center pt-4 border-t border-[#E5E8EB]">
-              메이플스토리 패치노트 | 메이플랜드 업데이트 | 메이플플래닛 공지 | 메이플 이벤트 | 메이플 공지사항 |
-              메이플 업데이트 일정 | 메이플스토리 점검 | 메이플 커뮤니티 공지
-            </p>
           </div>
         </div>
 
