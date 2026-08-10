@@ -1,8 +1,19 @@
+import type { Metadata } from 'next'
 import NoticeList from './NoticeList'
 import { parseFirestoreDoc, FIREBASE_PROJECT_ID, FIREBASE_API_KEY } from '@/lib/firestore-rest'
 
 // ISR: 5분마다 서버 HTML 갱신 (크롤러가 보는 캐시)
 export const revalidate = 300
+
+export const metadata: Metadata = {
+  title: '공지사항',
+  description: '메이플스토리·메이플랜드·메이플플래닛 패치노트, 업데이트 공지, 이벤트 정보를 가장 빠르게 확인하세요.',
+  openGraph: {
+    url: '/notice',
+    title: '공지사항',
+    description: '메이플스토리·메이플랜드·메이플플래닛 패치노트, 업데이트 공지, 이벤트 정보를 가장 빠르게 확인하세요.',
+  },
+}
 
 type SavedBlock = { type: "text"; value: string } | { type: "image"; url: string }
 
