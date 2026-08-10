@@ -1,9 +1,7 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import PostClient from "./PostClient"
-
-const PROJECT_ID = "maplediscord-cfc6a"
-const API_KEY = "AIzaSyDn72fWR9UcseyGgK3uefx66f7o9Bv2t9A"
+import { parseFirestoreDoc, FIREBASE_PROJECT_ID, FIREBASE_API_KEY } from "@/lib/firestore-rest"
 
 interface Post {
   id: string
@@ -21,37 +19,10 @@ interface Post {
   date: string
 }
 
-function parseFirestoreDoc(id: string, fields: any): Post {
-  function parseValue(v: any): any {
-    if (!v) return null
-    if (v.stringValue !== undefined) return v.stringValue
-    if (v.integerValue !== undefined) return Number(v.integerValue)
-    if (v.booleanValue !== undefined) return v.booleanValue
-    if (v.timestampValue !== undefined) return v.timestampValue
-    if (v.arrayValue) return (v.arrayValue.values || []).map(parseValue)
-    if (v.mapValue) {
-      const obj: any = {}
-      for (const k in v.mapValue.fields) obj[k] = parseValue(v.mapValue.fields[k])
-      return obj
-    }
-    return null
-  }
-
-  const data: any = {}
-  for (const key in fields) data[key] = parseValue(fields[key])
-
-  const ts = data.createdAt
-  const date = ts
-    ? new Date(ts).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })
-    : ""
-
-  return { id, ...data, date }
-}
-
 async function getPost(id: string): Promise<Post | null> {
   try {
     const res = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/board_posts/${id}?key=${API_KEY}`,
+      `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/board_posts/${id}?key=${FIREBASE_API_KEY}`,
       { next: { revalidate: 0 }, cache: 'no-store' }
     )
     if (!res.ok) return null

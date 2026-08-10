@@ -1,16 +1,9 @@
 import type { Metadata, Viewport } from "next"
-import { Noto_Sans_KR } from "next/font/google"
 import "./globals.css"
 import Navbar from "./components/Navbar"
 import FloatingButton from "./components/FloatingButton"
 import Footer from "./components/Footer"
 import { LanguageProvider } from "./contexts/LanguageContext"
-
-const notoSansKR = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
-  display: "swap",
-})
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -127,7 +120,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${notoSansKR.className} bg-gray-100 text-gray-900 antialiased min-h-screen`}>
+      <body className="bg-gray-100 text-gray-900 antialiased min-h-screen">
         <LanguageProvider>
           <Navbar />
           <main>{children}</main>
