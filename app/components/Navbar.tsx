@@ -33,11 +33,27 @@ const menuItems = {
   ],
 }
 
+const serverMenuItems = {
+  ko: [
+    { href: "/maplestory",  label: "메이플스토리" },
+    { href: "/mapleland",   label: "메이플랜드" },
+    { href: "/mapleplanet", label: "메이플플래닛" },
+  ],
+  en: [
+    { href: "/maplestory",  label: "MapleStory" },
+    { href: "/mapleland",   label: "MapleLand" },
+    { href: "/mapleplanet", label: "MaplePlanet" },
+  ],
+}
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [serverDropdownOpen, setServerDropdownOpen] = useState(false)
+  const [mobileServerOpen, setMobileServerOpen] = useState(false)
   const pathname = usePathname()
   const { lang, setLang } = useLang()
   const items = menuItems[lang]
+  const serverItems = serverMenuItems[lang]
 
   const LangToggle = ({ mobile = false }: { mobile?: boolean }) => (
     <div className={`flex rounded-lg border border-[#E5E8EB] overflow-hidden text-xs font-bold ${mobile ? "w-full" : ""}`}>
@@ -79,6 +95,47 @@ export default function Navbar() {
                 </Link>
               )
             })}
+
+            {/* 서버 드롭다운 */}
+            <div
+              className="relative"
+              onMouseEnter={() => setServerDropdownOpen(true)}
+              onMouseLeave={() => setServerDropdownOpen(false)}
+            >
+              <button
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  serverItems.some(s => pathname === s.href || pathname.startsWith(s.href + "/"))
+                    ? "text-[#3182F6] bg-[#EBF3FE] font-semibold"
+                    : "text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6]"
+                }`}
+              >
+                {lang === "ko" ? "서버" : "Servers"}
+              </button>
+
+              {/* 드롭다운 메뉴 (항상 DOM에 존재, CSS로 숨김) */}
+              <div
+                className={`absolute top-full left-0 mt-1 bg-white border border-[#E5E8EB] rounded-lg shadow-lg py-1 min-w-[160px] ${
+                  serverDropdownOpen ? "block" : "hidden"
+                }`}
+              >
+                {serverItems.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`block px-4 py-2 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "text-[#3182F6] bg-[#EBF3FE]"
+                          : "text-[#191F28] hover:bg-[#F2F4F6]"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           {/* 데스크탑 언어 토글 */}
@@ -113,6 +170,42 @@ export default function Navbar() {
                 </Link>
               )
             })}
+
+            {/* 모바일 서버 메뉴 */}
+            <div>
+              <button
+                onClick={() => setMobileServerOpen(!mobileServerOpen)}
+                className={`w-full px-5 py-3 text-sm font-medium text-left transition-colors ${
+                  serverItems.some(s => pathname === s.href)
+                    ? "text-[#3182F6] bg-[#EBF3FE]"
+                    : "text-[#191F28] hover:bg-[#F2F4F6]"
+                }`}
+              >
+                {lang === "ko" ? "서버" : "Servers"} {mobileServerOpen ? "▲" : "▼"}
+              </button>
+              {mobileServerOpen && (
+                <div className="bg-[#F9FAFB]">
+                  {serverItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className={`block px-8 py-2 text-sm font-medium transition-colors ${
+                          isActive
+                            ? "text-[#3182F6] bg-[#EBF3FE]"
+                            : "text-[#191F28] hover:bg-[#F2F4F6]"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* 모바일 언어 토글 */}
             <div className="px-5 py-3 border-t border-[#E5E8EB]">
               <LangToggle mobile />
