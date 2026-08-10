@@ -181,6 +181,8 @@ export default function HomeContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {c.games.map((g, i) => {
             const meta = GAME_META[i]
+            const gameSlug = ['maplestory', 'mapleland', 'mapleplanet'][i]
+
             return (
               <div key={g.name} className="rounded-2xl border p-5 flex flex-col gap-4" style={{ borderColor: meta.border }}>
                 <div className="flex items-center gap-3">
@@ -197,11 +199,24 @@ export default function HomeContent() {
                     </li>
                   ))}
                 </ul>
-                <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer"
-                  className="mt-auto text-center text-xs font-bold py-2 rounded-xl border transition-colors hover:opacity-70"
-                  style={{ color: meta.color, borderColor: meta.border }}>
-                  {c.channelBtn}
-                </a>
+                <div className="mt-auto flex gap-2">
+                  <Link
+                    href={`/${gameSlug}`}
+                    className="flex-1 text-center text-xs font-bold py-2 rounded-xl border transition-colors hover:bg-gray-50"
+                    style={{ color: meta.color, borderColor: meta.border }}
+                  >
+                    자세히 보기 →
+                  </Link>
+                  <a
+                    href={DISCORD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-xl text-white text-xs font-bold transition-all hover:-translate-y-0.5"
+                    style={{ background: meta.color }}
+                  >
+                    입장하기
+                  </a>
+                </div>
               </div>
             )
           })}

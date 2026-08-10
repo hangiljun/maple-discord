@@ -17,7 +17,6 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
-      { source: "/mapleland",  destination: "/home",        permanent: true },
       { source: "/report",     destination: "/home",        permanent: true },
       { source: "/bot",        destination: "/discordbot",  permanent: true },
       // ✨ www 리다이렉트 (색인 분산 방지)
