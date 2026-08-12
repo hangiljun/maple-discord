@@ -11,10 +11,40 @@
       "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\캐릭터.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ Name = $file.Name; Width = $img.Width; Height = $img.Height; Resolution = \"$\\($img.Width\\) x $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\) }; $img.Dispose\\(\\) | Format-Table -AutoSize)",
       "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\링크 사진.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ 'File Name' = $file.Name; 'Width' = $img.Width; 'Height' = $img.Height; 'Resolution' = \"$\\($img.Width\\) × $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\); 'Added' = $file.LastWriteTime.ToString\\('yyyy-MM-dd HH:mm:ss'\\) }; $img.Dispose\\(\\) | Format-List)",
       "PowerShell(node optimize-image.js)",
-      "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\og-image-v4.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ 'File Name' = $file.Name; 'Width' = $img.Width; 'Height' = $img.Height; 'Resolution' = \"$\\($img.Width\\) × $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\); 'Created' = $file.CreationTime.ToString\\('yyyy-MM-dd HH:mm:ss'\\) }; $img.Dispose\\(\\) | Format-List)"
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $file = Get-Item \"public\\\\og-image-v4.png\"; $img = [System.Drawing.Image]::FromFile\\($file.FullName\\); [PSCustomObject]@{ 'File Name' = $file.Name; 'Width' = $img.Width; 'Height' = $img.Height; 'Resolution' = \"$\\($img.Width\\) × $\\($img.Height\\)\"; 'Size\\(KB\\)' = [math]::Round\\($file.Length/1KB,2\\); 'Size\\(MB\\)' = [math]::Round\\($file.Length/1MB,2\\); 'Created' = $file.CreationTime.ToString\\('yyyy-MM-dd HH:mm:ss'\\) }; $img.Dispose\\(\\) | Format-List)",
+      "Read(//d/������Ʈ/**)",
+      "PowerShell(npm install react-markdown remark-gfm)",
+      "PowerShell(npm install -D @tailwindcss/typography)",
+      "PowerShell(npm list react-markdown remark-gfm @tailwindcss/typography)",
+      "PowerShell(taskkill /PID 22376 /F)",
+      "WebFetch(domain:www.maplediscord.com)",
+      "WebFetch(domain:firestore.googleapis.com)",
+      "PowerShell(taskkill /PID 25588 /F)",
+      "PowerShell($proc = Get-Process | Where-Object { $_.ProcessName -eq 'node' }; if \\($proc\\) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue })",
+      "PowerShell(Get-Process -Id \\(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue\\).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, State, OwningProcess | ForEach-Object { $_ | Add-Member -NotePropertyName ProcessName -NotePropertyValue \\(Get-Process -Id $_.OwningProcess\\).ProcessName -PassThru })",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force -ErrorAction SilentlyContinue })",
+      "Read(//d/������Ʈ/maplediscordsite ����Ʈ/app/**)",
+      "PowerShell(git add app/board/BoardList.tsx app/board/[id]/page.tsx app/home/page.tsx app/notice/NoticeList.tsx app/notice/[id]/page.tsx app/tip/TipContent.tsx app/tip/page.tsx)",
+      "PowerShell(git push origin main)",
+      "PowerShell(git add app/board/page.tsx app/notice/page.tsx app/tip/page.tsx app/sitemap.ts app/layout.tsx)",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\������Ʈ\\\\maplediscordsite ����Ʈ\\\\app\\\\mapleland\" -Force)",
+      "PowerShell(git add app/maplestory app/mapleland app/mapleplanet next.config.ts app/sitemap.ts app/home/HomeContent.tsx)",
+      "PowerShell(git add app/components/Navbar.tsx)",
+      "PowerShell(git add app/data/servers.ts app/components/ServerDetail.tsx app/maplestory/page.tsx app/mapleland/page.tsx app/mapleplanet/page.tsx)",
+      "PowerShell(Get-ChildItem \"d:\\\\웹사이트\\\\maplediscordsite 사이트\\\\public\" -File | Select-Object Name, @{Name=\"Size\\(KB\\)\";Expression={[math]::Round\\($_.Length/1KB,1\\)}})",
+      "Read(//d/������Ʈ/maplediscordsite ����Ʈ/public/**)",
+      "PowerShell(Get-ChildItem \"d:\\\\웹사이트\\\\maplediscordsite 사이트\\\\public\" -Recurse -File | Measure-Object -Property Length -Sum | Select-Object @{Name=\"TotalMB\";Expression={[math]::Round\\($_.Sum/1MB,2\\)}})",
+      "PowerShell(git add -A)"
     ],
     "additionalDirectories": [
-      "D:\\웹사이트\\maplediscordsite 사이트\\public"
+      "D:\\웹사이트\\maplediscordsite 사이트\\public",
+      "D:\\웹사이트\\maplediscordsite 사이트\\.next",
+      "d:\\������Ʈ\\maplediscordsite ����Ʈ",
+      "d:\\������Ʈ\\maplediscordsite ����Ʈ\\app",
+      "d:\\������Ʈ\\maplediscordsite ����Ʈ\\app\\components",
+      "d:\\������Ʈ\\maplediscordsite ����Ʈ\\lib",
+      "d:\\������Ʈ\\maplediscordsite ����Ʈ\\public"
     ]
   }
 }
