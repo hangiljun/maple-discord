@@ -22,15 +22,18 @@ const menuItems = {
     { href: "/tip",        label: "거래 주의사항" },
     { href: "/notice",     label: "공지사항" },
     { href: "/board",      label: "자유게시판" },
-    { href: "/discordbot", label: "봇 기능" },
   ],
   en: [
     { href: "/home",       label: "Home" },
     { href: "/tip",        label: "Trade Guide" },
     { href: "/notice",     label: "Notices" },
     { href: "/board",      label: "Free Board" },
-    { href: "/discordbot", label: "Bot Features" },
   ],
+}
+
+const botMenuItem = {
+  ko: { href: "/discordbot", label: "봇 기능" },
+  en: { href: "/discordbot", label: "Bot Features" },
 }
 
 const serverMenuItems = {
@@ -54,6 +57,7 @@ export default function Navbar() {
   const { lang, setLang } = useLang()
   const items = menuItems[lang]
   const serverItems = serverMenuItems[lang]
+  const botItem = botMenuItem[lang]
 
   const LangToggle = ({ mobile = false }: { mobile?: boolean }) => (
     <div className={`flex rounded-lg border border-[#E5E8EB] overflow-hidden text-xs font-bold ${mobile ? "w-full" : ""}`}>
@@ -136,6 +140,18 @@ export default function Navbar() {
                 })}
               </div>
             </div>
+
+            {/* 봇 기능 */}
+            <Link
+              href={botItem.href}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                pathname === botItem.href || pathname.startsWith(botItem.href + "/")
+                  ? "text-[#3182F6] bg-[#EBF3FE] font-semibold"
+                  : "text-[#8B95A1] hover:text-[#191F28] hover:bg-[#F2F4F6]"
+              }`}
+            >
+              {botItem.label}
+            </Link>
           </div>
 
           {/* 데스크탑 언어 토글 */}
@@ -205,6 +221,19 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+
+            {/* 모바일 봇 기능 */}
+            <Link
+              href={botItem.href}
+              onClick={() => setMenuOpen(false)}
+              className={`px-5 py-3 text-sm font-medium transition-colors ${
+                pathname === botItem.href || pathname.startsWith(botItem.href + "/")
+                  ? "text-[#3182F6] bg-[#EBF3FE]"
+                  : "text-[#191F28] hover:bg-[#F2F4F6]"
+              }`}
+            >
+              {botItem.label}
+            </Link>
 
             {/* 모바일 언어 토글 */}
             <div className="px-5 py-3 border-t border-[#E5E8EB]">
