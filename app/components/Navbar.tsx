@@ -114,7 +114,7 @@ export default function Navbar() {
 
               {/* 드롭다운 메뉴 (항상 DOM에 존재, CSS로 숨김) */}
               <div
-                className={`absolute top-full left-0 mt-1 bg-white border border-[#E5E8EB] rounded-lg shadow-lg py-1 min-w-[160px] ${
+                className={`absolute top-full left-0 bg-white border border-[#E5E8EB] rounded-lg shadow-lg py-1 min-w-[160px] ${
                   serverDropdownOpen ? "block" : "hidden"
                 }`}
               >
